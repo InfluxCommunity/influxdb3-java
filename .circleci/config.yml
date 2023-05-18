@@ -67,7 +67,6 @@ jobs:
           DOCKER_INFLUXDB_INIT_ORG: "my-org"
           DOCKER_INFLUXDB_INIT_BUCKET: "my-bucket"
           DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "my-token"
-    resource_class: large
     steps:
       - checkout
       - restore_cache:
