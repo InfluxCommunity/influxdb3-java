@@ -159,5 +159,5 @@ workflows:
           name: jdk-17
           maven-image: "cimg/openjdk:17.0"
       - tests-java:
-          name: jdk-20
-          maven-image: "cimg/openjdk:20.0"
+          name: jdk-19
+          maven-image: "cimg/openjdk:19.0"
