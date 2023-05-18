@@ -52,7 +52,7 @@ dependencies {
 
 ## Usage
 
-To start with the client, import the `com.influxdb3` package and create a `InfluxDBClient` by:
+To start with the client, import the `com.influxdb.v3.client` package and create a `InfluxDBClient` by:
 
 ```java
 // TBD

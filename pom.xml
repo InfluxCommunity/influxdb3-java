@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    The MIT License
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.influxdb</groupId>
+    <artifactId>influxdb3-java</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <name>InfluxDB 3 Java Client</name>
+    <description>
+        The Java client that provides an easy and convenient way to interact with InfluxDB 3.
+        This package supports both writing data to InfluxDB and querying data using the FlightSQL client,
+        which allows you to execute SQL queries against InfluxDB IOx.
+    </description>
+
+    <url>https://github.com/bonitoo-io/influxdb3-java/tree/main</url>
+
+    <inceptionYear>2023</inceptionYear>
+
+    <organization>
+        <name>InfluxData, Inc.</name>
+        <url>https://influxdata.com</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>The MIT License (MIT)</name>
+            <url>https://raw.githubusercontent.com/bonitoo-io/influxdb3-java/main/LICENSE</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Jakub Bednar</name>
+            <email>jakub.bednar@bonitoo.io</email>
+            <organization>Bonitoo</organization>
+            <organizationUrl>https://www.bonitoo.io</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:bonitoo-io/influxdb3-java.git</connection>
+        <developerConnection>scm:git:git@github.com:bonitoo-io/influxdb3-java.git</developerConnection>
+        <url>https://github.com/bonitoo-io/influxdb3-java/tree/main</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+        <site>
+            <id>GitHubPages</id>
+            <url>https://bonitoo-io.github.io/influxdb3-java/</url>
+        </site>
+    </distributionManagement>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <junit-jupiter.version>5.9.1</junit-jupiter.version>
+
+        <plugin.surefire.version>3.0.0</plugin.surefire.version>
+        <plugin.jacoco.version>0.8.8</plugin.jacoco.version>
+    </properties>
+
+    <build>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                    <failsOnError>true</failsOnError>
+                    <configLocation>checkstyle.xml</configLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <linkXRef>false</linkXRef>
+                    <sourceDirectories>
+                        <sourceDirectory>src/main/java</sourceDirectory>
+                    </sourceDirectories>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>checkstyle</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>4.2</version>
+                <configuration>
+                    <strictCheck>true</strictCheck>
+                    <failIfUnknown>true</failIfUnknown>
+                    <mapping>
+                        <java>SLASHSTAR_STYLE</java>
+                        <conf>SCRIPT_STYLE</conf>
+                        <cnf>SCRIPT_STYLE</cnf>
+                        <toml>SCRIPT_STYLE</toml>
+                        <yml>SCRIPT_STYLE</yml>
+                    </mapping>
+                    <useDefaultExcludes>false</useDefaultExcludes>
+                    <licenseSets>
+                        <licenseSet>
+                            <header>./license_header.txt</header>
+                            <excludes>
+                                **/target/**, **/*.jar, **/.git/**, **/.*, **/*.png, **/*.iml, **/*.bolt, .idea/**,
+                                **/*nightly*/**, **/.m2/**, LICENSE, **/*.md, **/.github/**, license_header.txt,
+                                release.properties/, **/pom.xml.releaseBackup, **/pom.xml.tag, **/semantic.yml, codecov.yml
+                            </excludes>
+                        </licenseSet>
+                    </licenseSets>
+                    <properties>
+                        <organizationName>${project.organization.name}</organizationName>
+                    </properties>
+                    <dependencyPolicies>
+                        <dependencyPolicy>
+                            <type>LICENSE_NAME</type>
+                            <rule>APPROVE</rule>
+                            <value>The MIT License (MIT)</value>
+                        </dependencyPolicy>
+                        <dependencyPolicy>
+                            <type>LICENSE_NAME</type>
+                            <rule>APPROVE</rule>
+                            <value>The MIT License</value>
+                        </dependencyPolicy>
+                        <dependencyPolicy>
+                            <type>LICENSE_NAME</type>
+                            <rule>APPROVE</rule>
+                            <value>Apache-2.0</value>
+                        </dependencyPolicy>
+                        <dependencyPolicy>
+                            <type>LICENSE_URL</type>
+                            <rule>APPROVE</rule>
+                            <value>http://www.apache.org/licenses/LICENSE-2.0.txt</value>
+                        </dependencyPolicy>
+                        <dependencyPolicy>
+                            <type>LICENSE_URL</type>
+                            <rule>APPROVE</rule>
+                            <value>https://www.apache.org/licenses/LICENSE-2.0.txt</value>
+                        </dependencyPolicy>
+                        <dependencyPolicy>
+                            <type>LICENSE_URL</type>
+                            <rule>APPROVE</rule>
+                            <value>https://www.apache.org/licenses/LICENSE-2.0</value>
+                        </dependencyPolicy>
+                        <dependencyPolicy>
+                            <type>LICENSE_URL</type>
+                            <rule>APPROVE</rule>
+                            <value>http://opensource.org/licenses/BSD-3-Clause</value>
+                        </dependencyPolicy>
+                        <dependencyPolicy>
+                            <type>LICENSE_URL</type>
+                            <rule>APPROVE</rule>
+                            <value>https://www.eclipse.org/legal/epl-v20.html</value>
+                        </dependencyPolicy>
+                    </dependencyPolicies>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${plugin.surefire.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.vintage</groupId>
+                        <artifactId>junit-vintage-engine</artifactId>
+                        <version>${junit-jupiter.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${plugin.surefire.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.vintage</groupId>
+                        <artifactId>junit-vintage-engine</artifactId>
+                        <version>${junit-jupiter.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${plugin.jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report-integration</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>report-integration</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.1</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>2.14.2</version>
+                <configuration>
+                    <rulesUri>file://${project.basedir}/maven-version-rules.xml</rulesUri>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.3.9</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
+</project>
