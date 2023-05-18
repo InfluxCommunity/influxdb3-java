@@ -88,7 +88,7 @@ jobs:
           when: always
           command: |
             mkdir test-results
-            cp -r ./*/TEST-*.xml test-results/ || true
+            cp target/surefire-reports/*.xml test-results/ || true
       - store_test_results:
           path: test-results
       - run:
