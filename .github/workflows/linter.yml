@@ -33,4 +33,5 @@ jobs:
           VALIDATE_MARKDOWN: true
           VALIDATE_BASH: true
           VALIDATE_JAVA: true
+          JAVA_FILE_NAME: 'checkstyle.xml'
           VALIDATE_GITHUB_ACTIONS: true
