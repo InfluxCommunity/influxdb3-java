@@ -90,12 +90,31 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <junit-jupiter.version>5.9.3</junit-jupiter.version>
+        <reactor-netty.version>1.1.7</reactor-netty.version>
 
         <plugin.surefire.version>3.1.0</plugin.surefire.version>
         <plugin.jacoco.version>0.8.8</plugin.jacoco.version>
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>flight-sql</artifactId>
+            <version>12.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-core</artifactId>
+            <version>${reactor-netty.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty-http</artifactId>
+            <version>${reactor-netty.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
