@@ -21,11 +21,12 @@
  */
 package com.influxdb.v3.client.config;
 
-import com.influxdb.v3.client.write.WritePrecision;
+import java.time.Duration;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
+import com.influxdb.v3.client.write.WritePrecision;
 
 class InfluxDBClientConfigsTest {
 

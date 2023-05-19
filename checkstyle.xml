@@ -86,7 +86,7 @@
             <property name="specialImportsRegExp" value="com.influxdb"/>
             <property name="sortImportsInGroupAlphabetically" value="true"/>
             <property name="customImportOrderRules"
-                      value="STANDARD_JAVA_PACKAGE###SPECIAL_IMPORTS###THIRD_PARTY_PACKAGE###STATIC"/>
+                      value="STANDARD_JAVA_PACKAGE###THIRD_PARTY_PACKAGE###SPECIAL_IMPORTS###STATIC"/>
         </module>
 
 
@@ -143,7 +143,6 @@
         <!--module name="HiddenField"/-->
         <module name="IllegalInstantiation"/>
         <module name="InnerAssignment"/>
-        <module name="MagicNumber"/>
         <module name="MissingSwitchDefault"/>
         <!--<module name="RedundantThrows"/>-->
         <module name="SimplifyBooleanExpression"/>
