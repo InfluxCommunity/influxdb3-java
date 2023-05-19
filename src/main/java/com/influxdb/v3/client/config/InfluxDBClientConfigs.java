@@ -21,13 +21,13 @@
  */
 package com.influxdb.v3.client.config;
 
-import com.influxdb.v3.client.write.WritePrecision;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.StringJoiner;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import com.influxdb.v3.client.write.WritePrecision;
 
 /**
  * Configuration properties for an {@code InfluxDBClient}.
@@ -125,9 +125,13 @@ public final class InfluxDBClientConfigs {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         InfluxDBClientConfigs that = (InfluxDBClientConfigs) o;
         return Objects.equals(hostUrl, that.hostUrl)
                 && Objects.equals(authToken, that.authToken)
@@ -291,6 +295,7 @@ public final class InfluxDBClientConfigs {
         }
     }
 
+    @SuppressWarnings("MagicNumber")
     private InfluxDBClientConfigs(@Nonnull final Builder builder) {
         hostUrl = builder.hostUrl;
         authToken = builder.authToken;
