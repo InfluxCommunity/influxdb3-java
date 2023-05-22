@@ -112,6 +112,6 @@ class WriteParametersTest {
         WriteParameters parameters = new WriteParameters(null, null, null);
 
         Assertions.assertThat(parameters.hashCode()).isNotNull();
-        Assertions.assertThat(parameters).isEqualTo(parameters);
+        Assertions.assertThat(parameters).isEqualTo(new WriteParameters(null, null, null));
     }
 }
