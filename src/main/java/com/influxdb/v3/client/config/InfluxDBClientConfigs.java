@@ -124,6 +124,15 @@ public final class InfluxDBClientConfigs {
         return disableServerCertificateValidation;
     }
 
+    /**
+     * Validates the configuration properties.
+     */
+    public void validate() {
+        if (hostUrl == null || hostUrl.isEmpty()) {
+            throw new IllegalArgumentException("The hostname or IP address of the InfluxDB server has to be defined.");
+        }
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) {

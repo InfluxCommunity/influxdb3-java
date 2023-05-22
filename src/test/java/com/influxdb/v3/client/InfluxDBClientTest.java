@@ -24,11 +24,23 @@ package com.influxdb.v3.client;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class DummyTest {
+class InfluxDBClientTest {
 
     @Test
-    void mappingLinks() {
+    void requiredHostUrl() {
 
-        Assertions.assertThat(true).isTrue();
+        //noinspection DataFlowIssue
+        Assertions.assertThatThrownBy(() -> InfluxDBClient.getInstance(null, "my-token", "my-database"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("The hostname or IP address of the InfluxDB server has to be defined.");
+    }
+
+    @Test
+    public void autoCloseable() throws Exception {
+
+        try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086", "my-token", "my-database")) {
+
+            Assertions.assertThat(client).isNotNull();
+        }
     }
 }
