@@ -360,7 +360,7 @@ public final class Point {
 
         sb.append(" ");
 
-        WritePrecision precisionNotNull = precision != null ? precision : WritePrecision.NS;
+        WritePrecision precisionNotNull = precision != null ? precision : WriteParameters.DEFAULT_WRITE_PRECISION;
 
         if (WritePrecision.NS.equals(precisionNotNull)) {
             if (this.time instanceof BigDecimal) {
