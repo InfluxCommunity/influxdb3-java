@@ -203,15 +203,15 @@ public final class Point {
      * @return this
      */
     @Nonnull
-    public Point time(@Nullable final Instant time) {
+    public Point setTimestamp(@Nullable final Instant time) {
 
         if (time == null) {
-            return time(null, WritePrecision.NS);
+            return setTimestamp(null, WritePrecision.NS);
         }
 
         BigInteger convertedTime = NanosecondConverter.convert(time, WritePrecision.NS);
 
-        return time(convertedTime, WritePrecision.NS);
+        return setTimestamp(convertedTime, WritePrecision.NS);
     }
 
     /**
@@ -222,7 +222,7 @@ public final class Point {
      * @return this
      */
     @Nonnull
-    public Point time(@Nullable final Number time, @Nonnull final WritePrecision precision) {
+    public Point setTimestamp(@Nullable final Number time, @Nonnull final WritePrecision precision) {
 
         Arguments.checkNotNull(precision, "precision");
 
@@ -239,9 +239,9 @@ public final class Point {
      * @return this
      */
     @Nonnull
-    public Point time(@Nullable final Long time, @Nonnull final WritePrecision precision) {
+    public Point setTimestamp(@Nullable final Long time, @Nonnull final WritePrecision precision) {
 
-        return time((Number) time, precision);
+        return setTimestamp((Number) time, precision);
     }
 
     /**

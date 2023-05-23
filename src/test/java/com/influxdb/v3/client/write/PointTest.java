@@ -190,7 +190,7 @@ class PointTest {
         Point point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(123L, WritePrecision.S);
+                .setTimestamp(123L, WritePrecision.S);
 
         Assertions.assertThat(point.toLineProtocol(WritePrecision.S)).isEqualTo("h2o,location=europe level=2i 123");
     }
@@ -201,7 +201,7 @@ class PointTest {
         Point point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(new BigInteger("123"), WritePrecision.S);
+                .setTimestamp(new BigInteger("123"), WritePrecision.S);
 
         Assertions.assertThat(point.toLineProtocol(WritePrecision.S)).isEqualTo("h2o,location=europe level=2i 123");
 
@@ -209,7 +209,7 @@ class PointTest {
         point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(new BigInteger("43658216763800123456"), WritePrecision.NS);
+                .setTimestamp(new BigInteger("43658216763800123456"), WritePrecision.NS);
 
         Assertions.assertThat(point.toLineProtocol()).isEqualTo("h2o,location=europe level=2i 43658216763800123456");
     }
@@ -220,14 +220,14 @@ class PointTest {
         Point point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(new BigDecimal("123"), WritePrecision.S);
+                .setTimestamp(new BigDecimal("123"), WritePrecision.S);
 
         Assertions.assertThat(point.toLineProtocol(WritePrecision.S)).isEqualTo("h2o,location=europe level=2i 123");
 
         point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(new BigDecimal("1.23E+02"), WritePrecision.NS);
+                .setTimestamp(new BigDecimal("1.23E+02"), WritePrecision.NS);
 
         Assertions.assertThat(point.toLineProtocol()).isEqualTo("h2o,location=europe level=2i 123");
 
@@ -235,7 +235,7 @@ class PointTest {
         point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(new BigDecimal("43658216763800123456"), WritePrecision.NS);
+                .setTimestamp(new BigDecimal("43658216763800123456"), WritePrecision.NS);
 
         Assertions.assertThat(point.toLineProtocol()).isEqualTo("h2o,location=europe level=2i 43658216763800123456");
     }
@@ -246,14 +246,14 @@ class PointTest {
         Point point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(Float.valueOf("123"), WritePrecision.S);
+                .setTimestamp(Float.valueOf("123"), WritePrecision.S);
 
         Assertions.assertThat(point.toLineProtocol(WritePrecision.S)).isEqualTo("h2o,location=europe level=2i 123");
 
         point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(Float.valueOf("1.23"), WritePrecision.NS);
+                .setTimestamp(Float.valueOf("1.23"), WritePrecision.NS);
 
         Assertions.assertThat(point.toLineProtocol()).isEqualTo("h2o,location=europe level=2i 1");
     }
@@ -266,7 +266,7 @@ class PointTest {
         Point point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(time);
+                .setTimestamp(time);
 
         Assertions.assertThat(point.toLineProtocol()).isEqualTo("h2o,location=europe level=2i 43658216763800123456");
     }
@@ -277,7 +277,7 @@ class PointTest {
         Point point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(null);
+                .setTimestamp(null);
 
         Assertions.assertThat(point.toLineProtocol()).isEqualTo("h2o,location=europe level=2i");
     }
@@ -290,7 +290,7 @@ class PointTest {
         Point point = Point.measurement("h2o")
                 .addTag("location", "europe")
                 .addField("level", 2)
-                .time(time);
+                .setTimestamp(time);
 
         Assertions.assertThat(point.toLineProtocol()).isEqualTo("h2o,location=europe level=2i 1655029563800123456");
     }

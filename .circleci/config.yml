@@ -55,7 +55,7 @@ jobs:
         default: &default-maven-image "cimg/openjdk:8.0"
     docker:
       - image: << parameters.maven-image >>
-      - image: voltrondata/flight-sql:latest
+      - image: voltrondata/flight-sql:arrow-11.0.0
         environment:
           FLIGHT_PASSWORD: "flight_password"
           PRINT_QUERIES: "1"
