@@ -21,43 +21,13 @@
  */
 package com.influxdb.v3.client;
 
-import java.io.IOException;
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-
-public abstract class AbstractMockServerTest {
-
-    protected String baseURL;
-    protected MockWebServer mockServer;
-
-    @BeforeEach
-    protected void startMockServer() {
-
-        mockServer = new MockWebServer();
-        try {
-            mockServer.start();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        baseURL = mockServer.url("/").url().toString();
-    }
-
-    @AfterEach
-    protected void shutdownMockServer() throws IOException {
-        mockServer.shutdown();
-    }
-
-    @Nonnull
-    protected MockResponse createResponse(final int responseCode) {
-
-        return new MockResponse()
-                .setResponseCode(responseCode)
-                .setHeader("Content-Type", "text/csv; charset=utf-8")
-                .setHeader("Date", "Tue, 26 Jun 2018 13:15:01 GMT");
+/**
+ * The InfluxDBApiException is thrown when an error occurs while interacting with InfluxDB.
+ */
+public class InfluxDBApiException extends RuntimeException {
+    public InfluxDBApiException(@Nullable final String message) {
+        super(message);
     }
 }

@@ -61,7 +61,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void writeEmptyBatch() {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writeRecords(Collections.singletonList(null));
 
@@ -70,7 +70,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void databaseParameter() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writeRecord("mem,tag=one value=1.0");
 
@@ -83,7 +83,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void databaseParameterSpecified() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writeRecord("mem,tag=one value=1.0", new WriteParameters("my-database-2", null, null));
 
@@ -98,7 +98,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     void databaseParameterRequired() throws Exception {
         client.close();
         client = InfluxDBClient.getInstance(baseURL, null, null);
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         Assertions.assertThatThrownBy(() -> client.writeRecord("mem,tag=one value=1.0"))
                 .isInstanceOf(IllegalStateException.class)
@@ -111,7 +111,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void precisionParameter() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writeRecord("mem,tag=one value=1.0");
 
@@ -124,7 +124,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void precisionParameterSpecified() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writeRecord("mem,tag=one value=1.0", new WriteParameters(null, null, WritePrecision.S));
 
@@ -137,7 +137,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void orgParameterSpecified() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writePoint(
                 Point
@@ -156,7 +156,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void orgParameterNotSpecified() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writePoint(Point
                 .measurement("h2o")
@@ -173,7 +173,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void contentType() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writeRecord("mem,tag=one value=1.0");
 
@@ -185,7 +185,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void body() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         client.writeRecord("mem,tag=one value=1.0");
 
@@ -197,7 +197,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @Test
     void bodyConcat() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         Point point1 = Point.measurement("mem")
                 .addTag("tag", "one")

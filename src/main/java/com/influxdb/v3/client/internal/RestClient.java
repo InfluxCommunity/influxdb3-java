@@ -22,28 +22,41 @@
 package com.influxdb.v3.client.internal;
 
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import reactor.netty.ByteBufFlux;
+import reactor.netty.ByteBufMono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.http.client.HttpClientResponse;
 import reactor.netty.resources.ConnectionProvider;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
+import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.config.InfluxDBClientConfigs;
 
 final class RestClient implements AutoCloseable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(RestClient.class);
+
     private final HttpClient client;
     private final ConnectionProvider connectionProvider;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     RestClient(@Nonnull final InfluxDBClientConfigs configs) {
         Arguments.checkNotNull(configs, "configs");
@@ -99,7 +112,7 @@ final class RestClient implements AutoCloseable {
             });
         }
 
-        Mono<HttpClientResponse> response;
+        Mono<Tuple2<HttpClientResponse, String>> responseMono;
         HttpClient.RequestSender requestSender = client
                 .headers(headers -> {
                     if (contentType != null) {
@@ -110,16 +123,57 @@ final class RestClient implements AutoCloseable {
                 .uri(uriEncoder.toString());
 
         if (data != null && !data.isEmpty()) {
-            response = requestSender.send(ByteBufFlux.fromString(Mono.just(data))).response();
+            responseMono = requestSender.send(ByteBufFlux.fromString(Mono.just(data))).responseSingle(toBody());
         } else {
-            response = requestSender.response();
+            responseMono = requestSender.responseSingle(toBody());
         }
 
-        response.block();
+        Tuple2<HttpClientResponse, String> tuple = responseMono.block();
+        HttpClientResponse response = tuple != null ? tuple.getT1() : null;
+        if (response != null) {
+            if (response.status().code() < 200 || response.status().code() >= 300) {
+                String reason = "";
+                String body = tuple.getT2();
+                if (!body.isEmpty()) {
+                    try {
+                        reason = objectMapper.readTree(body).get("message").asText();
+                    } catch (JsonProcessingException e) {
+                        LOG.debug("Can't parse msg from response {}", response);
+                    }
+                }
+
+                if (reason.isEmpty()) {
+                    reason = Stream.of("X-Platform-Error-Code", "X-Influx-Error", "X-InfluxDb-Error")
+                            .map(name -> response.responseHeaders().get(name))
+                            .filter(message -> message != null && !message.isEmpty()).findFirst()
+                            .orElse("");
+                }
+
+                if (reason.isEmpty()) {
+                    reason = body;
+                }
+
+                if (reason.isEmpty()) {
+                    reason = response.status().reasonPhrase();
+                }
+
+                String message = String.format("HTTP status code: %d; Message: %s", response.status().code(), reason);
+                throw new InfluxDBApiException(message);
+            }
+        }
     }
 
     @Override
     public void close() {
         connectionProvider.dispose();
     }
+
+    @Nonnull
+    private static BiFunction<HttpClientResponse, ByteBufMono, Mono<Tuple2<HttpClientResponse, String>>> toBody() {
+        return (response, bodyMono) -> bodyMono
+                .asString()
+                .switchIfEmpty(Mono.just(""))
+                .map(body -> Tuples.of(response, body));
+    }
+
 }

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.AbstractMockServerTest;
+import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.config.InfluxDBClientConfigs;
 
 public class RestClientTest extends AbstractMockServerTest {
@@ -88,7 +89,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void authenticationHeader() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         restClient = new RestClient(new InfluxDBClientConfigs.Builder()
                 .hostUrl(baseURL)
@@ -105,7 +106,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void authenticationHeaderNotDefined() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         restClient = new RestClient(new InfluxDBClientConfigs.Builder()
                 .hostUrl(baseURL)
@@ -121,7 +122,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void userAgent() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         restClient = new RestClient(new InfluxDBClientConfigs.Builder()
                 .hostUrl(baseURL)
@@ -137,7 +138,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void uri() throws InterruptedException {
-        mockServer.enqueue(createResponse());
+        mockServer.enqueue(createResponse(200));
 
         restClient = new RestClient(new InfluxDBClientConfigs.Builder()
                 .hostUrl(baseURL)
@@ -162,5 +163,64 @@ public class RestClientTest extends AbstractMockServerTest {
                 .assertThat(restClient)
                 .extracting("client.config.followRedirectPredicate")
                 .isNotNull();
+    }
+
+    @Test
+    public void error() {
+        mockServer.enqueue(createResponse(404));
+
+        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
+                .hostUrl(baseURL)
+                .build());
+
+        Assertions.assertThatThrownBy(
+                () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                .isInstanceOf(InfluxDBApiException.class)
+                .hasMessage("HTTP status code: 404; Message: Client Error");
+    }
+
+    @Test
+    public void errorFromHeader() {
+        mockServer.enqueue(createResponse(500).setHeader("X-Influx-Error", "not used"));
+
+        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
+                .hostUrl(baseURL)
+                .build());
+
+        Assertions.assertThatThrownBy(
+                () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                .isInstanceOf(InfluxDBApiException.class)
+                .hasMessage("HTTP status code: 500; Message: not used");
+    }
+
+    @Test
+    public void errorFromBody() {
+        mockServer.enqueue(createResponse(401)
+                .setHeader("X-Influx-Error", "not used")
+                .setBody("{\"message\":\"token does not have sufficient permissions\"}"));
+
+        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
+                .hostUrl(baseURL)
+                .build());
+
+        Assertions.assertThatThrownBy(
+                () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                .isInstanceOf(InfluxDBApiException.class)
+                .hasMessage("HTTP status code: 401; Message: token does not have sufficient permissions");
+    }
+
+    @Test
+    public void errorFromBodyText() {
+        mockServer.enqueue(createResponse(402)
+                .setBody("token is over the limit"));
+
+        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
+                .hostUrl(baseURL)
+                .build());
+
+        Assertions.assertThatThrownBy(
+                () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                .isInstanceOf(InfluxDBApiException.class)
+                .hasMessage("HTTP status code: 402; Message: token is over the limit");
     }
 }
