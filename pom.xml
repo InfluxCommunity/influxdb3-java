@@ -91,7 +91,7 @@
 
         <junit-jupiter.version>5.9.1</junit-jupiter.version>
 
-        <plugin.surefire.version>3.0.0</plugin.surefire.version>
+        <plugin.surefire.version>3.1.0</plugin.surefire.version>
         <plugin.jacoco.version>0.8.8</plugin.jacoco.version>
     </properties>
 
