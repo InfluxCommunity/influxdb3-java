@@ -44,6 +44,7 @@ import com.influxdb.v3.client.internal.Arguments;
 public final class WriteParameters {
 
     public static final WritePrecision DEFAULT_WRITE_PRECISION = WritePrecision.NS;
+    public static final WriteParameters DEFAULTS = new WriteParameters(null, null, null);
 
     private final String database;
     private final String organization;
@@ -71,7 +72,7 @@ public final class WriteParameters {
      * @param configs with default value
      * @return The destination organization for writes.
      */
-    @Nonnull
+    @Nullable
     public String organizationSafe(@Nonnull final InfluxDBClientConfigs configs) {
         Arguments.checkNotNull(configs, "configs");
         return isNotDefined(organization) ? configs.getOrganization() : organization;
@@ -81,7 +82,7 @@ public final class WriteParameters {
      * @param configs with default value
      * @return The destination database for writes.
      */
-    @Nonnull
+    @Nullable
     public String databaseSafe(@Nonnull final InfluxDBClientConfigs configs) {
         Arguments.checkNotNull(configs, "configs");
         return isNotDefined(database) ? configs.getDatabase() : database;

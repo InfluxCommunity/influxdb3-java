@@ -21,11 +21,14 @@
  */
 package com.influxdb.v3.client;
 
+import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.influxdb.v3.client.config.InfluxDBClientConfigs;
 import com.influxdb.v3.client.internal.InfluxDBClientImpl;
+import com.influxdb.v3.client.write.Point;
+import com.influxdb.v3.client.write.WriteParameters;
 
 /**
  * The InfluxDBClient interface provides a client for interact with InfluxDB 3.
@@ -33,6 +36,66 @@ import com.influxdb.v3.client.internal.InfluxDBClientImpl;
  * which allows you to execute SQL queries against InfluxDB IOx.
  */
 public interface InfluxDBClient extends AutoCloseable {
+
+    /**
+     * Write a record specified in the InfluxDB Line Protocol to the InfluxDB server.
+     *
+     * @param record the record specified in the InfluxDB Line Protocol, can be null
+     */
+    void writeRecord(@Nullable final String record);
+
+    /**
+     * Write a record specified in the InfluxDB Line Protocol to the InfluxDB server.
+     *
+     * @param record     the record specified in the InfluxDB Line Protocol, can be null
+     * @param parameters the parameters for writing data to InfluxDB
+     */
+    void writeRecord(@Nullable final String record, @Nonnull final WriteParameters parameters);
+
+    /**
+     * Write records specified in the InfluxDB Line Protocol to the InfluxDB server.
+     *
+     * @param records the records specified in the InfluxDB Line Protocol, cannot be null
+     */
+    void writeRecords(@Nonnull final List<String> records);
+
+    /**
+     * Write records specified in the InfluxDB Line Protocol to the InfluxDB server.
+     *
+     * @param records    the records specified in the InfluxDB Line Protocol, cannot be null
+     * @param parameters the parameters for writing data to InfluxDB
+     */
+    void writeRecords(@Nonnull final List<String> records, @Nonnull final WriteParameters parameters);
+
+    /**
+     * Write a {@link Point} to the InfluxDB server.
+     *
+     * @param point the {@link Point} to write, can be null
+     */
+    void writePoint(@Nullable final Point point);
+
+    /**
+     * Write a {@link Point} to the InfluxDB server.
+     *
+     * @param point      the {@link Point} to write, can be null
+     * @param parameters the parameters for writing data to InfluxDB
+     */
+    void writePoint(@Nullable final Point point, @Nonnull final WriteParameters parameters);
+
+    /**
+     * Write a list of {@link Point} to the InfluxDB server.
+     *
+     * @param points the list of {@link Point} to write, cannot be null
+     */
+    void writePoints(@Nonnull final List<Point> points);
+
+    /**
+     * Write a list of {@link Point} to the InfluxDB server.
+     *
+     * @param points     the list of {@link Point} to write, cannot be null
+     * @param parameters the parameters for writing data to InfluxDB
+     */
+    void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteParameters parameters);
 
     /**
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying

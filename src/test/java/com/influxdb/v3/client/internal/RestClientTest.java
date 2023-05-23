@@ -95,7 +95,7 @@ public class RestClientTest extends AbstractMockServerTest {
                 .authToken("my-token")
                 .build());
 
-        restClient.request(HttpMethod.GET, "ping");
+        restClient.request("ping", HttpMethod.GET, null, null, null);
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
@@ -111,7 +111,7 @@ public class RestClientTest extends AbstractMockServerTest {
                 .hostUrl(baseURL)
                 .build());
 
-        restClient.request(HttpMethod.GET, "ping");
+        restClient.request("ping", HttpMethod.GET, null, null, null);
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
@@ -127,7 +127,7 @@ public class RestClientTest extends AbstractMockServerTest {
                 .hostUrl(baseURL)
                 .build());
 
-        restClient.request(HttpMethod.GET, "ping");
+        restClient.request("ping", HttpMethod.GET, null, null, null);
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
@@ -143,7 +143,7 @@ public class RestClientTest extends AbstractMockServerTest {
                 .hostUrl(baseURL)
                 .build());
 
-        restClient.request(HttpMethod.GET, "ping");
+        restClient.request("ping", HttpMethod.GET, null, null, null);
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
