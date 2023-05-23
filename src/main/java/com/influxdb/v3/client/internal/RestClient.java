@@ -22,20 +22,67 @@
 package com.influxdb.v3.client.internal;
 
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
+
+import com.google.common.base.Strings;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 
 import com.influxdb.v3.client.config.InfluxDBClientConfigs;
 
 final class RestClient implements AutoCloseable {
 
-    private final InfluxDBClientConfigs configs;
+    private final HttpClient client;
+    private final ConnectionProvider connectionProvider;
 
     RestClient(@Nonnull final InfluxDBClientConfigs configs) {
         Arguments.checkNotNull(configs, "configs");
-        this.configs = configs;
+
+        // user agent version
+        Package mainPackage = RestClient.class.getPackage();
+        String version = mainPackage != null ? mainPackage.getImplementationVersion() : "unknown";
+        String userAgent = String.format("influxdb3-java/%s", version != null ? version : "unknown");
+
+        // connection pool
+        connectionProvider = ConnectionProvider.builder("influxdb-client").build();
+
+        // SSL verification
+        SslContextBuilder sslContextBuilder = SslContextBuilder.forClient();
+        if (configs.getDisableServerCertificateValidation()) {
+            sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+        }
+        SslContext sslContext;
+        try {
+            sslContext = sslContextBuilder.build();
+        } catch (SSLException e) {
+            throw new RuntimeException(e);
+        }
+
+        String baseUrl = configs.getHostUrl().endsWith("/")
+                ? configs.getHostUrl() : String.format("%s/", configs.getHostUrl());
+        this.client = HttpClient.create(connectionProvider)
+                .baseUrl(baseUrl)
+                .responseTimeout(configs.getResponseTimeout())
+                .followRedirect(configs.getAllowHttpRedirects())
+                .headers(headers -> {
+                    headers.add("User-Agent", userAgent);
+                    if (!Strings.isNullOrEmpty(configs.getAuthToken())) {
+                        headers.add("Authorization", String.format("Token %s", configs.getAuthToken()));
+                    }
+                })
+                .secure(t -> t.sslContext(sslContext));
     }
 
+    void request(final HttpMethod method, final String uri) {
+        client.request(method).uri(String.format("%s%s", client.configuration().baseUrl(), uri)).response().block();
+    }
 
     @Override
     public void close() {
+        connectionProvider.dispose();
     }
 }

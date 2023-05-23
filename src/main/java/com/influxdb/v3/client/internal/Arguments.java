@@ -153,6 +153,7 @@ public final class Arguments {
     /**
      * Checks that the precision reference to one of {@link Arguments#ALLOWED_PRECISION}.
      *
+     * @param precision the precision to check
      * @throws IllegalArgumentException if the object is not one of {@link Arguments#ALLOWED_PRECISION}
      */
     public static void checkPrecision(@Nullable final ChronoUnit precision) throws IllegalArgumentException {

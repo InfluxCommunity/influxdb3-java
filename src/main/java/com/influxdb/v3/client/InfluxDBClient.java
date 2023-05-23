@@ -60,6 +60,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
      * common operations such as writing, querying.
      *
+     * @param configs the configuration for the InfluxDB client
      * @return new instance of the {@link InfluxDBClient}
      */
     @Nonnull
