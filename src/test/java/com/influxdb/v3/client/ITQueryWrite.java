@@ -1,3 +1,24 @@
+/*
+ * The MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 package com.influxdb.v3.client;
 
 import java.util.Arrays;
@@ -35,7 +56,12 @@ class ITQueryWrite {
                     ?
                     new GenericContainer<>("voltrondata/flight-sql:arrow-11.0.0")
                             .withExposedPorts(31337)
-                            .withCreateContainerCmdModifier(cmd -> cmd.withHostConfig(new HostConfig().withPortBindings(new PortBinding(Ports.Binding.bindPort(31337), new ExposedPort(31337)))))
+                            .withCreateContainerCmdModifier(cmd -> cmd.withHostConfig(new HostConfig()
+                                    .withPortBindings(new PortBinding(
+                                            Ports.Binding.bindPort(31337),
+                                            new ExposedPort(31337))
+                                    )
+                            ))
                             .withEnv("FLIGHT_PASSWORD", "flight_password")
                             .withEnv("PRINT_QUERIES", "1")
                     :
@@ -44,7 +70,12 @@ class ITQueryWrite {
                     ?
                     new GenericContainer<>("influxdb:latest")
                             .withExposedPorts(8086, 8086)
-                            .withCreateContainerCmdModifier(cmd -> cmd.withHostConfig(new HostConfig().withPortBindings(new PortBinding(Ports.Binding.bindPort(8086), new ExposedPort(8086)))))
+                            .withCreateContainerCmdModifier(cmd -> cmd.withHostConfig(new HostConfig()
+                                    .withPortBindings(new PortBinding(
+                                            Ports.Binding.bindPort(8086),
+                                            new ExposedPort(8086))
+                                    )
+                            ))
                             .withEnv("DOCKER_INFLUXDB_INIT_MODE", "setup")
                             .withEnv("DOCKER_INFLUXDB_INIT_USERNAME", "my-user")
                             .withEnv("DOCKER_INFLUXDB_INIT_PASSWORD", "my-password")
@@ -123,7 +154,8 @@ class ITQueryWrite {
         String hostUrl = System.getenv("FLIGHT_SQL_URL");
 
         HashMap<String, String> headers = new HashMap<String, String>() {{
-            put("Authorization", "Basic " + Base64.getEncoder().encodeToString(("flight_username:flight_password").getBytes()));
+            put("Authorization", "Basic " + Base64.getEncoder()
+                    .encodeToString(("flight_username:flight_password").getBytes()));
         }};
 
         return new InfluxDBClientImpl(new InfluxDBClientConfigs.Builder()
