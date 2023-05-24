@@ -53,6 +53,9 @@ jobs:
       maven-image:
         type: string
         default: &default-maven-image "cimg/openjdk:8.0"
+      arg-line:
+        type: string
+        default: ""
     docker:
       - image: << parameters.maven-image >>
         environment:
@@ -80,7 +83,7 @@ jobs:
       - run:
           name: "Running tests"
           command: |
-            mvn -B -U clean install -Dbuild.env=CI -DargLine="--add-opens=java.base/java.nio=ALL-UNNAMED"
+            mvn -B -U clean install -Dbuild.env=CI -DargLine="<< parameters.arg-line >>"
       - save_cache:
           name: Saving Maven Cache
           key: *cache-key
@@ -161,6 +164,8 @@ workflows:
       - tests-java:
           name: jdk-17
           maven-image: "cimg/openjdk:17.0"
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - tests-java:
           name: jdk-19
           maven-image: "cimg/openjdk:19.0"
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
