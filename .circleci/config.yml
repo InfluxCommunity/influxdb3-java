@@ -80,7 +80,7 @@ jobs:
       - run:
           name: "Running tests"
           command: |
-            mvn -B -U clean install -Dbuild.env=CI
+            mvn -B -U clean install -Dbuild.env=CI --add-opens=java.base/java.nio=ALL-UNNAMED
       - save_cache:
           name: Saving Maven Cache
           key: *cache-key
