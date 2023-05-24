@@ -30,6 +30,8 @@ which allows you to execute SQL queries against InfluxDB IOx.
 
 ## Installation
 
+> :warning: When using Java 9 or later, some JDK internals must be exposed by adding `--add-opens=java.base/java.nio=ALL-UNNAMED` to your JVM arguments.
+
 Add the latest version of the client to your project:
 
 ### Maven dependency
@@ -51,8 +53,6 @@ dependencies {
 ```
 
 ## Usage
-
-> :warning: When using Java 9 or later, some JDK internals must be exposed by adding `--add-opens=java.base/java.nio=ALL-UNNAMED` to your JVM arguments.
 
 To start with the client, import the `com.influxdb.v3.client` package and create a `InfluxDBClient` by:
 
