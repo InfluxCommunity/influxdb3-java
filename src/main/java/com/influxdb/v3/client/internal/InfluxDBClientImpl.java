@@ -21,19 +21,25 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.netty.handler.codec.http.HttpMethod;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.config.InfluxDBClientConfigs;
+import com.influxdb.v3.client.query.QueryParameters;
 import com.influxdb.v3.client.write.Point;
 import com.influxdb.v3.client.write.WriteParameters;
 import com.influxdb.v3.client.write.WritePrecision;
@@ -42,18 +48,29 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     private static final Logger LOG = Logger.getLogger(InfluxDBClientImpl.class.getName());
 
-    private boolean closed = false;
+    private static final String DATABASE_REQUIRED_MESSAGE = "Please specify the 'Database' as a method parameter "
+            + "or use default configuration at 'InfluxDBClientConfigs.database'.";
 
+    private boolean closed = false;
     private final InfluxDBClientConfigs configs;
+
     private final RestClient restClient;
+    private final FlightSqlClient flightSqlClient;
 
     public InfluxDBClientImpl(@Nonnull final InfluxDBClientConfigs configs) {
+        this(configs, new HashMap<>());
+    }
+
+    public InfluxDBClientImpl(@Nonnull final InfluxDBClientConfigs configs,
+                              @Nonnull final HashMap<String, String> headers) {
         Arguments.checkNotNull(configs, "configs");
+        Arguments.checkNotNull(headers, "headers");
 
         configs.validate();
 
         this.configs = configs;
         this.restClient = new RestClient(configs);
+        this.flightSqlClient = new FlightSqlClient(configs, headers);
     }
 
     @Override
@@ -104,9 +121,47 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         writeData(points, parameters);
     }
 
+    @Nonnull
     @Override
-    public void close() {
+    public Stream<Object[]> query(@Nonnull final String query) {
+        return query(query, QueryParameters.DEFAULTS);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryParameters parameters) {
+        return queryData(query, parameters)
+                .flatMap(vector -> {
+                    List<FieldVector> fieldVectors = vector.getFieldVectors();
+                    return IntStream
+                            .range(0, vector.getRowCount())
+                            .mapToObj(rowNumber -> {
+
+                                ArrayList<Object> row = new ArrayList<>();
+                                for (FieldVector fieldVector : fieldVectors) {
+                                    row.add(fieldVector.getObject(rowNumber));
+                                }
+                                return row.toArray();
+                            });
+                });
+    }
+
+    @Nonnull
+    @Override
+    public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query) {
+        return queryBatches(query, QueryParameters.DEFAULTS);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query, @Nonnull final QueryParameters parameters) {
+        return queryData(query, parameters);
+    }
+
+    @Override
+    public void close() throws Exception {
         restClient.close();
+        flightSqlClient.close();
         closed = true;
     }
 
@@ -151,5 +206,24 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         }
 
         restClient.request("/api/v2/write", HttpMethod.POST, lineProtocol, "text/plain; charset=utf-8", queryParams);
+    }
+
+    @Nonnull
+    private Stream<VectorSchemaRoot> queryData(@Nonnull final String query,
+                                               @Nonnull final QueryParameters parameters) {
+
+        Arguments.checkNonEmpty(query, "query");
+        Arguments.checkNotNull(parameters, "parameters");
+
+        if (closed) {
+            throw new IllegalStateException("InfluxDBClient has been closed.");
+        }
+
+        String database = parameters.databaseSafe(configs);
+        if (database == null || database.isEmpty()) {
+            throw new IllegalStateException(DATABASE_REQUIRED_MESSAGE);
+        }
+
+        return flightSqlClient.execute(query, database);
     }
 }

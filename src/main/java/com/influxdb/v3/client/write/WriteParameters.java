@@ -100,22 +100,6 @@ public final class WriteParameters {
     }
 
     /**
-     * Enforces that the destination {@code database}.
-     *
-     * @param configs with default values
-     * @throws IllegalArgumentException if the database is not defined
-     */
-    public void check(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
-
-        if (isNotDefined(database) && isNotDefined(configs.getDatabase())) {
-            throw new IllegalArgumentException("Expecting a non-empty string for destination database. "
-                    + "Please specify the database as a method parameter or use default configuration "
-                    + "at 'InfluxDBClientConfigs.Database'.");
-        }
-    }
-
-    /**
      * Copy current parameters with new precision.
      *
      * @param precision new precision

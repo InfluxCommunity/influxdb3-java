@@ -22,11 +22,15 @@
 package com.influxdb.v3.client;
 
 import java.util.List;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import org.apache.arrow.vector.VectorSchemaRoot;
+
 import com.influxdb.v3.client.config.InfluxDBClientConfigs;
 import com.influxdb.v3.client.internal.InfluxDBClientImpl;
+import com.influxdb.v3.client.query.QueryParameters;
 import com.influxdb.v3.client.write.Point;
 import com.influxdb.v3.client.write.WriteParameters;
 
@@ -96,6 +100,78 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param parameters the parameters for writing data to InfluxDB
      */
     void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteParameters parameters);
+
+    /**
+     * Query data from InfluxDB IOx using FlightSQL.
+     * <p>
+     * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
+     * <pre>
+     * try (Stream&lt;Object[]&gt; rows = client.query("select * from cpu")) {
+     *      rows.forEach(row -&gt; {
+     *          // process row
+     *      }
+     * });
+     * </pre>
+     *
+     * @param query the SQL query string to execute, cannot be null
+     * @return Batches of rows returned by the query
+     */
+    @Nonnull
+    Stream<Object[]> query(@Nonnull final String query);
+
+    /**
+     * Query data from InfluxDB IOx using FlightSQL.
+     * <p>
+     * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
+     * <pre>
+     * try (Stream&lt;Object[]&gt; rows = client.query("select * from cpu", parameters)) {
+     *      rows.forEach(row -&gt; {
+     *          // process row
+     *      }
+     * });
+     * </pre>
+     *
+     * @param query      the SQL query string to execute, cannot be null
+     * @param parameters the parameters for querying data from InfluxDB
+     * @return Batches of rows returned by the query
+     */
+    @Nonnull
+    Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryParameters parameters);
+
+    /**
+     * Query data from InfluxDB IOx using FlightSQL.
+     * <p>
+     * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
+     * <pre>
+     * try (Stream&lt;VectorSchemaRoot&gt; batches = client.queryBatches("select * from cpu")) {
+     *      batches.forEach(batch -&gt; {
+     *          // process batch
+     *      }
+     * });
+     * </pre>
+     *
+     * @param query the SQL query string to execute, cannot be null
+     * @return Batches of rows returned by the query
+     */
+    @Nonnull
+    Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query);
+
+    /**
+     * Query data from InfluxDB IOx using FlightSQL.
+     * <pre>
+     * try (Stream&lt;VectorSchemaRoot&gt; batches = client.queryBatches("select * from cpu", parameters)) {
+     *      batches.forEach(batch -&gt; {
+     *          // process batch
+     *      }
+     * });
+     * </pre>
+     *
+     * @param query      the SQL query string to execute, cannot be null
+     * @param parameters the parameters for querying data from InfluxDB
+     * @return Batches of rows returned by the query
+     */
+    @Nonnull
+    Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query, @Nonnull final QueryParameters parameters);
 
     /**
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying

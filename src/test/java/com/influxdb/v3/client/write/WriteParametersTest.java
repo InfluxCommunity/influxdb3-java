@@ -39,51 +39,6 @@ class WriteParametersTest {
     }
 
     @Test
-    void check() {
-        new WriteParameters("my-database", "my-org", WritePrecision.NS).check(optionsBuilder.build());
-
-        Object[][] tests = {
-                new Object[]{
-                        new WriteParameters("my-database", "my-org", WritePrecision.NS), optionsBuilder.build(), null
-                },
-                new Object[]{
-                        new WriteParameters("my-database", null, WritePrecision.NS), optionsBuilder.build(), null
-                },
-                new Object[]{
-                        new WriteParameters("my-database", "", WritePrecision.NS), optionsBuilder.build(), null
-                },
-                new Object[]{
-                        new WriteParameters(null, "my-org", WritePrecision.NS), optionsBuilder.build(),
-                        "Expecting a non-empty string for destination database. Please specify the database as a "
-                                + "method parameter or use default configuration at 'InfluxDBClientConfigs.Database'."
-                },
-                new Object[]{
-                        new WriteParameters("", "my-org", WritePrecision.NS), optionsBuilder.build(),
-                        "Expecting a non-empty string for destination database. Please specify the database as a "
-                                + "method parameter or use default configuration at 'InfluxDBClientConfigs.Database'."
-                },
-                new Object[]{
-                        new WriteParameters(null, "my-org", WritePrecision.NS),
-                        optionsBuilder.database("my-database").build(), null
-                },
-        };
-
-        for (Object[] test : tests) {
-            WriteParameters parameters = (WriteParameters) test[0];
-            InfluxDBClientConfigs options = (InfluxDBClientConfigs) test[1];
-            String message = (String) test[2];
-
-            if (message == null) {
-                parameters.check(options);
-            } else {
-                Assertions.assertThatThrownBy(() -> parameters.check(options))
-                        .isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage(message);
-            }
-        }
-    }
-
-    @Test
     void optionParameters() {
         InfluxDBClientConfigs options = optionsBuilder
                 .database("my-database")
