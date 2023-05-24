@@ -32,7 +32,7 @@ which allows you to execute SQL queries against InfluxDB IOx.
 
 Add the latest version of the client to your project:
 
-##### Maven dependency:
+### Maven dependency
 
 ```xml
 <dependency>
@@ -42,7 +42,7 @@ Add the latest version of the client to your project:
 </dependency>
 ```
 
-##### Or when using Gradle:
+### Or when using Gradle
 
 ```groovy
 dependencies {
