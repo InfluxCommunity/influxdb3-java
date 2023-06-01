@@ -52,7 +52,7 @@ jobs:
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
             chmod +x ./codecov
-            ./codecov
+            ./codecov -f target/site/jacoco/jacoco.xml -f target/site/jacoco-it/jacoco.xml
 
   check-dependencies:
     parameters:
