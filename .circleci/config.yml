@@ -104,6 +104,6 @@ workflows:
           maven-image: "cimg/openjdk:17.0"
           arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - tests-java:
-          name: jdk-19
-          maven-image: "cimg/openjdk:19.0"
+          name: jdk-20
+          maven-image: "cimg/openjdk:20.0"
           arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
