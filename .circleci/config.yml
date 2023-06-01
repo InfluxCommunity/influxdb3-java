@@ -21,7 +21,7 @@ jobs:
       - run:
           name: "Running tests"
           command: |
-            mvn -B -U clean jacoco:prepare-agent install -DargLine="<< parameters.arg-line >>"
+            mvn -B -U clean install -DargLine="@{argLine} << parameters.arg-line >>"
       - save_cache:
           name: Saving Maven Cache
           key: *cache-key
