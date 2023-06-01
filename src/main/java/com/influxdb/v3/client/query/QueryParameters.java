@@ -34,6 +34,7 @@ import com.influxdb.v3.client.internal.Arguments;
  * Supports to specify:
  * <ul>
  *     <li><code>database</code> - specifies the database to be used for InfluxDB operations</li>
+ *     <li><code>queryType</code> - specifies the type of query sent to InfluxDB. Default to 'SQL'.</li>
  * </ul>
  */
 @ThreadSafe
@@ -41,17 +42,31 @@ import com.influxdb.v3.client.internal.Arguments;
 public final class QueryParameters {
 
     public static final QueryParameters DEFAULTS = new QueryParameters(null);
+    public static final QueryParameters INFLUX_QL = new QueryParameters(null, QueryType.InfluxQL);
 
     private final String database;
+    private final QueryType queryType;
 
     /**
      * Construct QueryAPI parameters.
      *
-     * @param database     The database to be used for InfluxDB operations.
-     *                     If it is not specified then use {@link InfluxDBClientConfigs#getDatabase()}.
+     * @param database The database to be used for InfluxDB operations.
+     *                 If it is not specified then use {@link InfluxDBClientConfigs#getDatabase()}.
      */
     public QueryParameters(@Nullable final String database) {
+        this(database, QueryType.SQL);
+    }
+
+    /**
+     * Construct QueryAPI parameters.
+     *
+     * @param database  The database to be used for InfluxDB operations.
+     *                  If it is not specified then use {@link InfluxDBClientConfigs#getDatabase()}.
+     * @param queryType The type of query sent to InfluxDB. If it is not specified then use {@link QueryType#SQL}.
+     */
+    public QueryParameters(@Nullable final String database, @Nullable final QueryType queryType) {
         this.database = database;
+        this.queryType = queryType;
     }
 
     /**
@@ -62,6 +77,14 @@ public final class QueryParameters {
     public String databaseSafe(@Nonnull final InfluxDBClientConfigs configs) {
         Arguments.checkNotNull(configs, "configs");
         return isNotDefined(database) ? configs.getDatabase() : database;
+    }
+
+    /**
+     * @return The type of query sent to InfluxDB, cannot be null.
+     */
+    @Nonnull
+    public QueryType queryTypeSafe() {
+        return queryType == null ? QueryType.SQL : queryType;
     }
 
     private boolean isNotDefined(final String option) {

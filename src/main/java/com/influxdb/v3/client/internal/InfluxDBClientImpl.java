@@ -58,19 +58,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     private final FlightSqlClient flightSqlClient;
 
     public InfluxDBClientImpl(@Nonnull final InfluxDBClientConfigs configs) {
-        this(configs, new HashMap<>());
-    }
-
-    public InfluxDBClientImpl(@Nonnull final InfluxDBClientConfigs configs,
-                              @Nonnull final HashMap<String, String> headers) {
         Arguments.checkNotNull(configs, "configs");
-        Arguments.checkNotNull(headers, "headers");
 
         configs.validate();
 
         this.configs = configs;
         this.restClient = new RestClient(configs);
-        this.flightSqlClient = new FlightSqlClient(configs, headers);
+        this.flightSqlClient = new FlightSqlClient(configs);
     }
 
     @Override
@@ -206,7 +200,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             return;
         }
 
-        restClient.request("/api/v2/write", HttpMethod.POST, lineProtocol, "text/plain; charset=utf-8", queryParams);
+        restClient.request("api/v2/write", HttpMethod.POST, lineProtocol, "text/plain; charset=utf-8", queryParams);
     }
 
     @Nonnull
@@ -225,6 +219,6 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             throw new IllegalStateException(DATABASE_REQUIRED_MESSAGE);
         }
 
-        return flightSqlClient.execute(query, database);
+        return flightSqlClient.execute(query, database, parameters.queryTypeSafe());
     }
 }

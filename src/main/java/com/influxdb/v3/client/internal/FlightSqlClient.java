@@ -21,11 +21,13 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -33,69 +35,79 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.Metadata;
 import org.apache.arrow.flight.FlightClient;
-import org.apache.arrow.flight.FlightEndpoint;
-import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.HeaderCallOption;
 import org.apache.arrow.flight.Location;
-import org.apache.arrow.flight.LocationSchemes;
+import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.grpc.MetadataAdapter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 import com.influxdb.v3.client.config.InfluxDBClientConfigs;
+import com.influxdb.v3.client.query.QueryType;
 
 final class FlightSqlClient implements AutoCloseable {
 
-    private final InfluxDBClientConfigs configs;
-    private final Map<String, String> headers;
+    private final HeaderCallOption headers;
+    private final FlightClient client;
 
-    private final org.apache.arrow.flight.sql.FlightSqlClient client;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    FlightSqlClient(@Nonnull final InfluxDBClientConfigs configs, @Nonnull final Map<String, String> headers) {
+    FlightSqlClient(@Nonnull final InfluxDBClientConfigs configs) {
         Arguments.checkNotNull(configs, "configs");
-        Arguments.checkNotNull(headers, "headers");
-
-        this.configs = configs;
-        this.headers = headers;
-
-        Location location;
-        try {
-            location = new Location(configs.getHostUrl()
-                    .replace("https", LocationSchemes.GRPC_TLS)
-                    .replace("http", LocationSchemes.GRPC_INSECURE));
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-
-        FlightClient flightClient = FlightClient.builder()
-                .location(location)
-                .allocator(new RootAllocator(Long.MAX_VALUE))
-                .verifyServer(!configs.getDisableServerCertificateValidation())
-                .build();
-
-        this.client = new org.apache.arrow.flight.sql.FlightSqlClient(flightClient);
-    }
-
-    @Nonnull
-    Stream<VectorSchemaRoot> execute(@Nonnull final String query, @Nonnull final String database) {
 
         MetadataAdapter metadata = new MetadataAdapter(new Metadata());
         if (configs.getAuthToken() != null && !configs.getAuthToken().isEmpty()) {
             metadata.insert("Authorization", "Bearer " + configs.getAuthToken());
         }
 
-        metadata.insert("database", database);
-        metadata.insert("bucket-name", database);
-        headers.forEach(metadata::insert);
+        this.headers = new HeaderCallOption(metadata);
 
-        HeaderCallOption headers = new HeaderCallOption(metadata);
+        Location location;
+        try {
+            URI uri = new URI(configs.getHostUrl());
+            if ("https".equals(uri.getScheme())) {
+                location = Location.forGrpcTls(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 443);
+            } else {
+                location = Location.forGrpcInsecure(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 80);
+            }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
 
-        FlightInfo info = client.execute(query, headers);
-        FlightSqlIterator iterator = new FlightSqlIterator(info.getEndpoints(), headers);
+        client = FlightClient.builder()
+                .location(location)
+                .allocator(new RootAllocator(Long.MAX_VALUE))
+                .verifyServer(!configs.getDisableServerCertificateValidation())
+                .build();
+    }
+
+    @Nonnull
+    Stream<VectorSchemaRoot> execute(@Nonnull final String query,
+                                     @Nonnull final String database,
+                                     @Nonnull final QueryType queryType) {
+
+        HashMap<String, String> ticketData = new HashMap<String, String>() {{
+            put("database", database);
+            put("sql_query", query);
+            put("query_type", queryType.name().toLowerCase());
+        }};
+
+        String json;
+        try {
+            json = objectMapper.writeValueAsString(ticketData);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
+        FlightStream stream = client.getStream(ticket, headers);
+        FlightSqlIterator iterator = new FlightSqlIterator(stream);
 
         Spliterator<VectorSchemaRoot> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL);
         return StreamSupport.stream(spliterator, false).onClose(iterator::close);
@@ -106,20 +118,15 @@ final class FlightSqlClient implements AutoCloseable {
         client.close();
     }
 
-    private final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {
+    private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {
 
-        private final HeaderCallOption headers;
         private final List<AutoCloseable> autoCloseable = new ArrayList<>();
 
-        private final Iterator<FlightEndpoint> flightEndpoints;
-
-        private FlightStream currentStream = null;
+        private final FlightStream flightStream;
         private VectorSchemaRoot currentVectorSchemaRoot = null;
 
-        private FlightSqlIterator(@Nonnull final List<FlightEndpoint> flightEndpoints,
-                                  @Nonnull final HeaderCallOption headers) {
-            this.flightEndpoints = flightEndpoints.iterator();
-            this.headers = headers;
+        private FlightSqlIterator(@Nonnull final FlightStream flightStream) {
+            this.flightStream = flightStream;
             loadNext();
         }
 
@@ -151,16 +158,11 @@ final class FlightSqlClient implements AutoCloseable {
 
         private void loadNext() {
 
-            if (currentStream != null && currentStream.next()) {
-                currentVectorSchemaRoot = currentStream.getRoot();
+            if (flightStream != null && flightStream.next()) {
+                currentVectorSchemaRoot = flightStream.getRoot();
                 autoCloseable.add(currentVectorSchemaRoot);
 
-            } else if (flightEndpoints.hasNext()) {
-                currentStream = client.getStream(flightEndpoints.next().getTicket(), headers);
-                autoCloseable.add(currentStream);
-
-                loadNext();
-            } else {
+            }  else {
                 currentVectorSchemaRoot = null;
             }
         }
