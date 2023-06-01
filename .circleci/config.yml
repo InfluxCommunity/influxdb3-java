@@ -21,7 +21,7 @@ jobs:
       - run:
           name: "Running tests"
           command: |
-            mvn -B -U clean install -DargLine="<< parameters.arg-line >>"
+            mvn -B -U clean jacoco:prepare-agent install -DargLine="<< parameters.arg-line >>"
       - save_cache:
           name: Saving Maven Cache
           key: *cache-key
@@ -52,7 +52,7 @@ jobs:
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
             chmod +x ./codecov
-            ./codecov -f '/home/circleci/project/target/site/jacoco/jacoco.xml,/home/circleci/project/target/site/jacoco-it/jacoco.xml'
+            ./codecov
 
   check-dependencies:
     parameters:
