@@ -29,10 +29,14 @@ import com.influxdb.v3.client.query.QueryParameters;
 import com.influxdb.v3.client.write.Point;
 
 /**
- * The example depends on the "influxdb3-java" module and this module should be built first by running "mvn install" in the root directory.
+ * The example depends on the "influxdb3-java" module and this module should be built first
+ * by running "mvn install" in the root directory.
  */
-public class IOxExample {
-    public static void main(String[] args) throws Exception {
+public final class IOxExample {
+    private IOxExample() {
+    }
+
+    public static void main(final String[] args) throws Exception {
         String hostUrl = "https://us-east-1-1.aws.cloud2.influxdata.com";
         char[] authToken = "my-token".toCharArray();
         String database = "database";
@@ -42,7 +46,7 @@ public class IOxExample {
             //
             // Write by Point
             //
-            var point = Point.measurement("temperature")
+            Point point = Point.measurement("temperature")
                     .addTag("location", "west")
                     .addField("value", 55.15)
                     .setTimestamp(Instant.now().minusSeconds(-10));
@@ -74,7 +78,9 @@ public class IOxExample {
             System.out.printf("-----------------------------------------%n");
             System.out.printf("| %-16s | %-18s |%n", "time", "mean");
             System.out.printf("-----------------------------------------%n");
-            String influxQL = "select MEAN(value) from temperature group by time(1d) fill(none) order by time desc limit 10";
+
+            String influxQL =
+                    "select MEAN(value) from temperature group by time(1d) fill(none) order by time desc limit 10";
             try (Stream<Object[]> stream = client.query(influxQL, QueryParameters.INFLUX_QL)) {
                 stream.forEach(row -> System.out.printf("| %-16s | %-18s |%n", row[1], row[2]));
             }

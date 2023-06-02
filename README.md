@@ -85,7 +85,7 @@ to insert data, you can use code like this:
 //
 // Write by Point
 //
-var point = Point.measurement("temperature")
+Point point = Point.measurement("temperature")
         .addTag("location", "west")
         .addField("value", 55.15)
         .setTimestamp(Instant.now().minusSeconds(-10));
@@ -121,6 +121,7 @@ System.out.printf("--------------------------------------------------------%n%n"
 System.out.printf("-----------------------------------------%n");
 System.out.printf("| %-16s | %-18s |%n", "time", "mean");
 System.out.printf("-----------------------------------------%n");
+
 String influxQL = "select MEAN(value) from temperature group by time(1d) fill(none) order by time desc limit 10";
 try (Stream<Object[]> stream = client.query(influxQL, QueryParameters.INFLUX_QL)) {
     stream.forEach(row -> System.out.printf("| %-16s | %-18s |%n", row[1], row[2]));
