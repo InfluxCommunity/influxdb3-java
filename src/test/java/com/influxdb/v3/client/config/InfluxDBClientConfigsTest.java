@@ -30,9 +30,9 @@ import com.influxdb.v3.client.write.WritePrecision;
 
 class InfluxDBClientConfigsTest {
 
-    private InfluxDBClientConfigs.Builder configsBuilder = new InfluxDBClientConfigs.Builder()
+    private final InfluxDBClientConfigs.Builder configsBuilder = new InfluxDBClientConfigs.Builder()
             .hostUrl("http://localhost:9999")
-            .authToken("my-token")
+            .authToken("my-token".toCharArray())
             .organization("my-org")
             .database("my-db")
             .writePrecision(WritePrecision.NS)

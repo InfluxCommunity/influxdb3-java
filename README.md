@@ -57,19 +57,76 @@ dependencies {
 To start with the client, import the `com.influxdb.v3.client` package and create a `InfluxDBClient` by:
 
 ```java
-// TBD
+package com.influxdb.v3;
+
+import java.time.Instant;
+import java.util.stream.Stream;
+
+import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.query.QueryParameters;
+import com.influxdb.v3.client.write.Point;
+
+public class IOxExample {
+    public static void main(String[] args) throws Exception {
+        String hostUrl = "https://us-east-1-1.aws.cloud2.influxdata.com";
+        char[] authToken = "my-token".toCharArray();
+        String database = "database";
+
+        try (InfluxDBClient client = InfluxDBClient.getInstance(hostUrl, authToken, database)) {
+            // ...
+        }
+    }
+}
 ```
 
 to insert data, you can use code like this:
 
 ```java
-// TBD
+//
+// Write by Point
+//
+var point = Point.measurement("temperature")
+        .addTag("location", "west")
+        .addField("value", 55.15)
+        .setTimestamp(Instant.now().minusSeconds(-10));
+client.writePoint(point);
+
+//
+// Write by LineProtocol
+//
+String record = "temperature,location=north value=60.0";
+client.writeRecord(record);
 ```
 
 to query your data, you can use code like this:
 
 ```java
-// TBD
+//
+// Query by SQL
+//
+System.out.printf("--------------------------------------------------------%n");
+System.out.printf("| %-8s | %-8s | %-30s |%n", "location", "value", "time");
+System.out.printf("--------------------------------------------------------%n");
+
+String sql = "select time,location,value from temperature order by time desc limit 10";
+try (Stream<Object[]> stream = client.query(sql)) {
+    stream.forEach(row -> System.out.printf("| %-8s | %-8s | %-30s |%n", row[1], row[2], row[0]));
+}
+
+System.out.printf("--------------------------------------------------------%n%n");
+
+//
+// Query by InfluxQL
+//
+System.out.printf("-----------------------------------------%n");
+System.out.printf("| %-16s | %-18s |%n", "time", "mean");
+System.out.printf("-----------------------------------------%n");
+String influxQL = "select MEAN(value) from temperature group by time(1d) fill(none) order by time desc limit 10";
+try (Stream<Object[]> stream = client.query(influxQL, QueryParameters.INFLUX_QL)) {
+    stream.forEach(row -> System.out.printf("| %-16s | %-18s |%n", row[1], row[2]));
+}
+
+System.out.printf("-----------------------------------------%n");
 ```
 
 ## Feedback

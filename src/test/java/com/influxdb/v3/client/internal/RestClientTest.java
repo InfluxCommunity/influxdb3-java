@@ -93,7 +93,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         restClient = new RestClient(new InfluxDBClientConfigs.Builder()
                 .hostUrl(baseURL)
-                .authToken("my-token")
+                .authToken("my-token".toCharArray())
                 .build());
 
         restClient.request("ping", HttpMethod.GET, null, null, null);

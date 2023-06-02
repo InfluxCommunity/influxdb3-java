@@ -40,7 +40,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     @BeforeEach
     void initClient() {
-        client = InfluxDBClient.getInstance(baseURL, "my-token", "my-database");
+        client = InfluxDBClient.getInstance(baseURL, "my-token".toCharArray(), "my-database");
     }
 
     @AfterEach

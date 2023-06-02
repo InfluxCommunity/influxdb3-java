@@ -22,6 +22,7 @@
 package com.influxdb.v3.client.config;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.StringJoiner;
 import javax.annotation.Nonnull;
@@ -37,7 +38,7 @@ import com.influxdb.v3.client.write.WritePrecision;
 public final class InfluxDBClientConfigs {
 
     private final String hostUrl;
-    private final String authToken;
+    private final char[] authToken;
     private final String organization;
     private final String database;
     private final WritePrecision writePrecision;
@@ -61,7 +62,7 @@ public final class InfluxDBClientConfigs {
      * @return authentication token for accessing the InfluxDB server, may be null
      */
     @Nullable
-    public String getAuthToken() {
+    public char[] getAuthToken() {
         return authToken;
     }
 
@@ -143,7 +144,7 @@ public final class InfluxDBClientConfigs {
         }
         InfluxDBClientConfigs that = (InfluxDBClientConfigs) o;
         return Objects.equals(hostUrl, that.hostUrl)
-                && Objects.equals(authToken, that.authToken)
+                && Arrays.equals(authToken, that.authToken)
                 && Objects.equals(organization, that.organization)
                 && Objects.equals(database, that.database)
                 && writePrecision == that.writePrecision
@@ -154,15 +155,14 @@ public final class InfluxDBClientConfigs {
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostUrl, authToken, organization, database, writePrecision, responseTimeout,
-                allowHttpRedirects, disableServerCertificateValidation);
+        return Objects.hash(hostUrl, Arrays.hashCode(authToken), organization, database, writePrecision,
+                responseTimeout, allowHttpRedirects, disableServerCertificateValidation);
     }
 
     @Override
     public String toString() {
         return new StringJoiner(", ", InfluxDBClientConfigs.class.getSimpleName() + "InfluxDBClientConfigs[", "]")
                 .add("hostUrl='" + hostUrl + "'")
-                .add("authToken='" + authToken + "'")
                 .add("organization='" + organization + "'")
                 .add("database='" + database + "'")
                 .add("writePrecision=" + writePrecision)
@@ -179,7 +179,7 @@ public final class InfluxDBClientConfigs {
      */
     public static final class Builder {
         private String hostUrl;
-        private String authToken;
+        private char[] authToken;
         private String organization;
         private String database;
         private WritePrecision writePrecision;
@@ -207,7 +207,7 @@ public final class InfluxDBClientConfigs {
          * @return this
          */
         @Nonnull
-        public Builder authToken(@Nullable final String authToken) {
+        public Builder authToken(@Nullable final char[] authToken) {
 
             this.authToken = authToken;
             return this;

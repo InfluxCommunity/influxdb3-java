@@ -184,7 +184,7 @@ public interface InfluxDBClient extends AutoCloseable {
      */
     @Nonnull
     static InfluxDBClient getInstance(@Nonnull final String hostUrl,
-                                      @Nullable final String authToken,
+                                      @Nullable final char[] authToken,
                                       @Nullable final String database) {
         InfluxDBClientConfigs configs = new InfluxDBClientConfigs.Builder()
                 .hostUrl(hostUrl)

@@ -30,7 +30,6 @@ import javax.net.ssl.SSLException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import io.netty.handler.ssl.SslContext;
@@ -89,8 +88,8 @@ final class RestClient implements AutoCloseable {
                 .followRedirect(configs.getAllowHttpRedirects())
                 .headers(headers -> {
                     headers.add("User-Agent", userAgent);
-                    if (!Strings.isNullOrEmpty(configs.getAuthToken())) {
-                        headers.add("Authorization", String.format("Token %s", configs.getAuthToken()));
+                    if (configs.getAuthToken() != null && configs.getAuthToken().length > 0) {
+                        headers.add("Authorization", String.format("Token %s", new String(configs.getAuthToken())));
                     }
                 })
                 .secure(t -> t.sslContext(sslContext));

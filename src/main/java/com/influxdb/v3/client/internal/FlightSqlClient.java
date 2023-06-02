@@ -62,8 +62,8 @@ final class FlightSqlClient implements AutoCloseable {
         Arguments.checkNotNull(configs, "configs");
 
         MetadataAdapter metadata = new MetadataAdapter(new Metadata());
-        if (configs.getAuthToken() != null && !configs.getAuthToken().isEmpty()) {
-            metadata.insert("Authorization", "Bearer " + configs.getAuthToken());
+        if (configs.getAuthToken() != null && configs.getAuthToken().length > 0) {
+            metadata.insert("Authorization", "Bearer " + new String(configs.getAuthToken()));
         }
 
         this.headers = new HeaderCallOption(metadata);

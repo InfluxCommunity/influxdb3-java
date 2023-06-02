@@ -102,7 +102,7 @@ class ITQueryWrite {
     private static InfluxDBClient getInstance() {
         return InfluxDBClient.getInstance(
                 System.getenv("TESTING_INFLUXDB_URL"),
-                System.getenv("TESTING_INFLUXDB_TOKEN"),
+                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
                 System.getenv("TESTING_INFLUXDB_DATABASE"));
     }
 }

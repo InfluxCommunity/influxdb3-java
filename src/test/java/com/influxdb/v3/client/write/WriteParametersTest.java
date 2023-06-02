@@ -35,7 +35,7 @@ class WriteParametersTest {
     void before() {
         optionsBuilder = new InfluxDBClientConfigs.Builder()
                 .hostUrl("http://localhost:8086")
-                .authToken("my-token");
+                .authToken("my-token".toCharArray());
     }
 
     @Test

@@ -30,7 +30,7 @@ class InfluxDBClientTest {
     void requiredHostUrl() {
 
         //noinspection DataFlowIssue
-        Assertions.assertThatThrownBy(() -> InfluxDBClient.getInstance(null, "my-token", "my-database"))
+        Assertions.assertThatThrownBy(() -> InfluxDBClient.getInstance(null, "my-token".toCharArray(), "my-database"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("The hostname or IP address of the InfluxDB server has to be defined.");
     }
@@ -38,7 +38,8 @@ class InfluxDBClientTest {
     @Test
     public void autoCloseable() throws Exception {
 
-        try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086", "my-token", "my-database")) {
+        try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086",
+                "my-token".toCharArray(), "my-database")) {
 
             Assertions.assertThat(client).isNotNull();
         }
