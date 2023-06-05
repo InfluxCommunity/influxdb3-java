@@ -21,7 +21,9 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.Optional;
 
 import io.netty.handler.codec.http.HttpMethod;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -48,8 +50,7 @@ public class RestClientTest extends AbstractMockServerTest {
     public void baseUrl() {
         restClient = new RestClient(new InfluxDBClientConfigs.Builder().hostUrl("http://localhost:8086").build());
         Assertions
-                .assertThat(restClient)
-                .extracting("client.config.baseUrl")
+                .assertThat(restClient.baseUrl)
                 .isEqualTo("http://localhost:8086/");
     }
 
@@ -57,8 +58,7 @@ public class RestClientTest extends AbstractMockServerTest {
     public void baseUrlSlashEnd() {
         restClient = new RestClient(new InfluxDBClientConfigs.Builder().hostUrl("http://localhost:8086/").build());
         Assertions
-                .assertThat(restClient)
-                .extracting("client.config.baseUrl")
+                .assertThat(restClient.baseUrl)
                 .isEqualTo("http://localhost:8086/");
     }
 
@@ -69,10 +69,10 @@ public class RestClientTest extends AbstractMockServerTest {
                 .responseTimeout(Duration.ofSeconds(13))
                 .build());
 
-        Assertions
-                .assertThat(restClient)
-                .extracting("client.config.responseTimeout")
-                .isEqualTo(Duration.ofSeconds(13));
+        Optional<Duration> connectTimeout = restClient.client.connectTimeout();
+
+        Assertions.assertThat(connectTimeout).isPresent();
+        Assertions.assertThat(connectTimeout.get()).isEqualTo(Duration.ofSeconds(13));
     }
 
     @Test
@@ -81,10 +81,8 @@ public class RestClientTest extends AbstractMockServerTest {
                 .hostUrl("http://localhost:8086")
                 .build());
 
-        Assertions
-                .assertThat(restClient)
-                .extracting("client.config.followRedirectPredicate")
-                .isNull();
+        HttpClient.Redirect redirect = restClient.client.followRedirects();
+        Assertions.assertThat(redirect).isEqualTo(HttpClient.Redirect.NEVER);
     }
 
     @Test
@@ -159,10 +157,8 @@ public class RestClientTest extends AbstractMockServerTest {
                 .allowHttpRedirects(true)
                 .build());
 
-        Assertions
-                .assertThat(restClient)
-                .extracting("client.config.followRedirectPredicate")
-                .isNotNull();
+        HttpClient.Redirect redirect = restClient.client.followRedirects();
+        Assertions.assertThat(redirect).isEqualTo(HttpClient.Redirect.NORMAL);
     }
 
     @Test
@@ -174,9 +170,9 @@ public class RestClientTest extends AbstractMockServerTest {
                 .build());
 
         Assertions.assertThatThrownBy(
-                () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
                 .isInstanceOf(InfluxDBApiException.class)
-                .hasMessage("HTTP status code: 404; Message: Client Error");
+                .hasMessage("HTTP status code: 404; Message: Not Found");
     }
 
     @Test
@@ -188,7 +184,7 @@ public class RestClientTest extends AbstractMockServerTest {
                 .build());
 
         Assertions.assertThatThrownBy(
-                () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
                 .isInstanceOf(InfluxDBApiException.class)
                 .hasMessage("HTTP status code: 500; Message: not used");
     }
@@ -204,7 +200,7 @@ public class RestClientTest extends AbstractMockServerTest {
                 .build());
 
         Assertions.assertThatThrownBy(
-                () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
                 .isInstanceOf(InfluxDBApiException.class)
                 .hasMessage("HTTP status code: 401; Message: token does not have sufficient permissions");
     }
@@ -219,7 +215,7 @@ public class RestClientTest extends AbstractMockServerTest {
                 .build());
 
         Assertions.assertThatThrownBy(
-                () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
                 .isInstanceOf(InfluxDBApiException.class)
                 .hasMessage("HTTP status code: 402; Message: token is over the limit");
     }

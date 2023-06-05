@@ -28,9 +28,11 @@ The Java client that provides an easy and convenient way to interact with Influx
 This package supports both writing data to InfluxDB and querying data using the FlightSQL client,
 which allows you to execute SQL queries against InfluxDB IOx.
 
+> :warning: This client requires Java 11 and is compatible up to and including Java 20.
+
 ## Installation
 
-> :warning: When using Java 9 or later, some JDK internals must be exposed by adding `--add-opens=java.base/java.nio=ALL-UNNAMED` to your JVM arguments.
+> :warning: Some JDK internals must be exposed by adding `--add-opens=java.base/java.nio=ALL-UNNAMED` to your JVM arguments.
 
 Add the latest version of the client to your project:
 

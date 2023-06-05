@@ -43,7 +43,13 @@ import com.influxdb.v3.client.internal.Arguments;
 @SuppressWarnings("ConstantConditions")
 public final class WriteParameters {
 
+    /**
+     * Default WritePrecision.
+     */
     public static final WritePrecision DEFAULT_WRITE_PRECISION = WritePrecision.NS;
+    /**
+     * Default WriteParameters.
+     */
     public static final WriteParameters DEFAULTS = new WriteParameters(null, null, null);
 
     private final String database;

@@ -26,9 +26,21 @@ package com.influxdb.v3.client.write;
  */
 public enum WritePrecision {
 
+    /**
+     * Time precision in milliseconds.
+     */
     MS,
+    /**
+     * Time precision in seconds.
+     */
     S,
+    /**
+     * Time precision in microseconds.
+     */
     US,
-    NS;
+    /**
+     * Time precision in nanoseconds.
+     */
+    NS
 }
 

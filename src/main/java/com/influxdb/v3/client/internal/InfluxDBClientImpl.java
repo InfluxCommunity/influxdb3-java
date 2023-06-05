@@ -44,6 +44,11 @@ import com.influxdb.v3.client.write.Point;
 import com.influxdb.v3.client.write.WriteParameters;
 import com.influxdb.v3.client.write.WritePrecision;
 
+/**
+ * Implementation of the InfluxDBClient. It is thread-safe and can be safely shared between threads.
+ * <p>
+ * Please use {@link InfluxDBClient} to create an instance.
+ */
 public final class InfluxDBClientImpl implements InfluxDBClient {
 
     private static final Logger LOG = Logger.getLogger(InfluxDBClientImpl.class.getName());
@@ -57,6 +62,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     private final RestClient restClient;
     private final FlightSqlClient flightSqlClient;
 
+    /**
+     * Creates an instance using the specified configs.
+     * <p>
+     * Please use {@link InfluxDBClient} to create an instance.
+     *
+     * @param configs the client configs.
+     */
     public InfluxDBClientImpl(@Nonnull final InfluxDBClientConfigs configs) {
         Arguments.checkNotNull(configs, "configs");
 
@@ -176,7 +188,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         }
 
         WritePrecision precision = parameters.precisionSafe(configs);
-        Map<String, String> queryParams = new HashMap<String, String>() {{
+        Map<String, String> queryParams = new HashMap<>() {{
             put("bucket", database);
             put("org", parameters.organizationSafe(configs));
             put("precision", precision.name().toLowerCase());

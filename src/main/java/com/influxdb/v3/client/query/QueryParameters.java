@@ -41,7 +41,13 @@ import com.influxdb.v3.client.internal.Arguments;
 @SuppressWarnings("ConstantConditions")
 public final class QueryParameters {
 
+    /**
+     * Default QueryAPI parameters.
+     */
     public static final QueryParameters DEFAULTS = new QueryParameters(null);
+    /**
+     * Default QueryAPI parameters for InfluxQL.
+     */
     public static final QueryParameters INFLUX_QL = new QueryParameters(null, QueryType.InfluxQL);
 
     private final String database;

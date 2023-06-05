@@ -27,7 +27,21 @@ import javax.annotation.Nullable;
  * The InfluxDBApiException is thrown when an error occurs while interacting with InfluxDB.
  */
 public class InfluxDBApiException extends RuntimeException {
+    /**
+     * Construct a new InfluxDBApiException with the specified detail message.
+     *
+     * @param message the detail message.
+     */
     public InfluxDBApiException(@Nullable final String message) {
         super(message);
+    }
+
+    /**
+     * Construct a new InfluxDBApiException with the specified cause.
+     *
+     * @param cause   the cause.
+     */
+    public InfluxDBApiException(@Nullable final Throwable cause) {
+        super(cause);
     }
 }

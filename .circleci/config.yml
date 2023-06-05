@@ -69,7 +69,7 @@ jobs:
             - maven-cache_v1-<< parameters.maven-image >>-
       - run:
           name: "Check dependency rules"
-          command: mvn enforcer:enforce -Drules=banDuplicatePomDependencyVersions,dependencyConvergence
+          command: mvn enforcer:enforce -Denforcer.rules=banDuplicatePomDependencyVersions,dependencyConvergence
 
   check-licenses:
     parameters:
@@ -94,8 +94,6 @@ workflows:
     jobs:
       # - check-dependencies
       - check-licenses
-      - tests-java:
-          name: jdk-8
       - tests-java:
           name: jdk-11
           maven-image: "cimg/openjdk:11.0"
