@@ -92,7 +92,7 @@ workflows:
   version: 2
   build:
     jobs:
-      # - check-dependencies
+      - check-dependencies
       - check-licenses
       - tests-java:
           name: jdk-11
