@@ -93,6 +93,7 @@
 
         <plugin.surefire.version>3.1.0</plugin.surefire.version>
         <plugin.jacoco.version>0.8.8</plugin.jacoco.version>
+        <netty-handler.version>4.1.93.Final</netty-handler.version>
     </properties>
 
     <dependencies>
@@ -156,19 +157,19 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-handler</artifactId>
-            <version>4.1.92.Final</version>
+            <version>${netty-handler.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-buffer</artifactId>
-            <version>4.1.92.Final</version>
+            <version>${netty-handler.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec</artifactId>
-            <version>4.1.92.Final</version>
+            <version>${netty-handler.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.netty</groupId>
@@ -180,7 +181,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http2</artifactId>
-            <version>4.1.92.Final</version>
+            <version>${netty-handler.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.netty</groupId>
