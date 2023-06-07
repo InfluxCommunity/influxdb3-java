@@ -1,51 +1,4 @@
 version: 2.1
-commands:
-  client-test:
-    parameters:
-      project:
-        type: string
-        default: "Client.Test"
-    steps:
-      - checkout
-      - run:
-          name: Install Dependencies
-          command: |
-            dotnet restore
-            dotnet build --no-restore
-      - run:
-          name: Create a temp directory for artifacts
-          command: |
-            mkdir -p /tmp/artifacts
-            mkdir test-results
-      - run:
-          name: Run tests
-          command: dotnet test << parameters.project >> --collect "Xplat Code Coverage" --logger "junit;LogFilePath=../test-results/test-result.xml"
-      - run:
-          name: Coverage Report
-          command: |
-            dotnet tool install --tool-path="./reportgenerator/" dotnet-reportgenerator-globaltool
-            ./reportgenerator/reportgenerator -reports:"<< parameters.project >>/TestResults/*/coverage.cobertura.xml" -targetdir:"report" -reporttypes:HtmlSummary "-sourcedirs:Client/"
-            mv report/summary.html /tmp/artifacts
-            cp test-results/test-result.xml /tmp/artifacts
-          when: always
-      - run:
-          name: Report test results to codecov
-          command: |
-            apt-get update
-            apt-get install gpg --yes
-            curl -Os https://uploader.codecov.io/latest/linux/codecov
-            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
-            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
-            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
-            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
-            shasum -a 256 -c codecov.SHA256SUM
-            chmod +x ./codecov
-            ./codecov
-      - store_artifacts:
-          path: /tmp/artifacts
-      - store_test_results:
-          path: test-results
-
 
 jobs:
   tests-java:
@@ -53,20 +6,11 @@ jobs:
       maven-image:
         type: string
         default: &default-maven-image "cimg/openjdk:8.0"
+      arg-line:
+        type: string
+        default: ""
     docker:
       - image: << parameters.maven-image >>
-      - image: voltrondata/flight-sql:latest
-        environment:
-          FLIGHT_PASSWORD: "flight_password"
-          PRINT_QUERIES: "1"
-      - image: influxdb:latest
-        environment:
-          DOCKER_INFLUXDB_INIT_MODE: "setup"
-          DOCKER_INFLUXDB_INIT_USERNAME: "my-user"
-          DOCKER_INFLUXDB_INIT_PASSWORD: "my-password"
-          DOCKER_INFLUXDB_INIT_ORG: "my-org"
-          DOCKER_INFLUXDB_INIT_BUCKET: "my-bucket"
-          DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: "my-token"
     steps:
       - checkout
       - restore_cache:
@@ -77,7 +21,7 @@ jobs:
       - run:
           name: "Running tests"
           command: |
-            mvn -B -U clean install -Dbuild.env=CI
+            mvn -B -U clean install -DargLine="@{argLine} << parameters.arg-line >>"
       - save_cache:
           name: Saving Maven Cache
           key: *cache-key
@@ -125,7 +69,7 @@ jobs:
             - maven-cache_v1-<< parameters.maven-image >>-
       - run:
           name: "Check dependency rules"
-          command: mvn enforcer:enforce -Drules=banDuplicatePomDependencyVersions,dependencyConvergence
+          command: mvn enforcer:enforce -Denforcer.rules=banDuplicatePomDependencyVersions,dependencyConvergence
 
   check-licenses:
     parameters:
@@ -151,13 +95,13 @@ workflows:
       - check-dependencies
       - check-licenses
       - tests-java:
-          name: jdk-8
-      - tests-java:
           name: jdk-11
           maven-image: "cimg/openjdk:11.0"
       - tests-java:
           name: jdk-17
           maven-image: "cimg/openjdk:17.0"
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - tests-java:
-          name: jdk-19
-          maven-image: "cimg/openjdk:19.0"
+          name: jdk-20
+          maven-image: "cimg/openjdk:20.0"
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"

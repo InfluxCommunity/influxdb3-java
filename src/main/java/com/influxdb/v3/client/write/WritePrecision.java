@@ -19,16 +19,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.influxdb.v3.client;
+package com.influxdb.v3.client.write;
 
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Test;
+/**
+ * Defines WritePrecision.
+ */
+public enum WritePrecision {
 
-class DummyTest {
-
-    @Test
-    void mappingLinks() {
-
-        Assertions.assertThat(true).isTrue();
-    }
+    /**
+     * Time precision in milliseconds.
+     */
+    MS,
+    /**
+     * Time precision in seconds.
+     */
+    S,
+    /**
+     * Time precision in microseconds.
+     */
+    US,
+    /**
+     * Time precision in nanoseconds.
+     */
+    NS
 }
+
