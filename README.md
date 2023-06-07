@@ -5,17 +5,17 @@
     <a href="https://repo1.maven.org/maven2/com/influxdb3/">
         <img src="https://img.shields.io/maven-central/v/com.influxdb3/influxdb-client" alt="Maven Central Badge">
     </a>
-    <a href="https://github.com/bonitoo-io/influxdb3-java/actions/workflows/codeql-analysis.yml">
-        <img src="https://github.com/bonitoo-io/influxdb3-java/actions/workflows/codeql-analysis.yml/badge.svg?branch=main" alt="CodeQL analysis">
+    <a href="https://github.com/InfluxCommunity/influxdb3-java/actions/workflows/codeql-analysis.yml">
+        <img src="https://github.com/InfluxCommunity/influxdb3-java/actions/workflows/codeql-analysis.yml/badge.svg?branch=main" alt="CodeQL analysis">
     </a>
-    <a href="https://github.com/bonitoo-io/influxdb3-java/actions/workflows/linter.yml">
-        <img src="https://github.com/bonitoo-io/influxdb3-java/actions/workflows/linter.yml/badge.svg" alt="Lint Code Base">
+    <a href="https://github.com/InfluxCommunity/influxdb3-java/actions/workflows/linter.yml">
+        <img src="https://github.com/InfluxCommunity/influxdb3-java/actions/workflows/linter.yml/badge.svg" alt="Lint Code Base">
     </a>
-    <a href="https://dl.circleci.com/status-badge/redirect/gh/bonitoo-io/influxdb3-java/tree/main">
-        <img src="https://dl.circleci.com/status-badge/img/gh/bonitoo-io/influxdb3-java/tree/main.svg?style=svg" alt="CircleCI">
+    <a href="https://dl.circleci.com/status-badge/redirect/gh/InfluxCommunity/influxdb3-java/tree/main">
+        <img src="https://dl.circleci.com/status-badge/img/gh/InfluxCommunity/influxdb3-java/tree/main.svg?style=svg" alt="CircleCI">
     </a>
-    <a href="https://codecov.io/gh/bonitoo-io/influxdb3-java">
-        <img src="https://codecov.io/gh/bonitoo-io/influxdb3-java/branch/main/graph/badge.svg" alt="Code Cov"/>
+    <a href="https://codecov.io/gh/InfluxCommunity/influxdb3-java">
+        <img src="https://codecov.io/gh/InfluxCommunity/influxdb3-java/branch/main/graph/badge.svg" alt="Code Cov"/>
     </a>
     <a href="https://app.slack.com/huddle/TH8RGQX5Z/C02UDUPLQKA">
         <img src="https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social" alt="Community Slack">
@@ -137,7 +137,7 @@ System.out.printf("-----------------------------------------%n");
 If you need help, please use our [Community Slack](https://app.slack.com/huddle/TH8RGQX5Z/C02UDUPLQKA)
 or [Community Page](https://community.influxdata.com/).
 
-New features and bugs can be reported on GitHub: <https://github.com/bonitoo-io/influxdb3-java>
+New features and bugs can be reported on GitHub: <https://github.com/InfluxCommunity/influxdb3-java>
 
 ## Contribution
 

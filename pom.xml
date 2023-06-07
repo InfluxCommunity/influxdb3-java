@@ -38,7 +38,7 @@
         which allows you to execute SQL queries against InfluxDB IOx.
     </description>
 
-    <url>https://github.com/bonitoo-io/influxdb3-java/tree/main</url>
+    <url>https://github.com/InfluxCommunity/influxdb3-java/tree/main</url>
 
     <inceptionYear>2023</inceptionYear>
 
@@ -50,7 +50,7 @@
     <licenses>
         <license>
             <name>The MIT License (MIT)</name>
-            <url>https://raw.githubusercontent.com/bonitoo-io/influxdb3-java/main/LICENSE</url>
+            <url>https://raw.githubusercontent.com/InfluxCommunity/influxdb3-java/main/LICENSE</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
@@ -65,9 +65,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:bonitoo-io/influxdb3-java.git</connection>
-        <developerConnection>scm:git:git@github.com:bonitoo-io/influxdb3-java.git</developerConnection>
-        <url>https://github.com/bonitoo-io/influxdb3-java/tree/main</url>
+        <connection>scm:git:git@github.com:InfluxCommunity/influxdb3-java.git</connection>
+        <developerConnection>scm:git:git@github.com:InfluxCommunity/influxdb3-java.git</developerConnection>
+        <url>https://github.com/InfluxCommunity/influxdb3-java/tree/main</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -82,7 +82,7 @@
         </repository>
         <site>
             <id>GitHubPages</id>
-            <url>https://bonitoo-io.github.io/influxdb3-java/</url>
+            <url>https://InfluxCommunity.github.io/influxdb3-java/</url>
         </site>
     </distributionManagement>
 
