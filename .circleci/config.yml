@@ -149,6 +149,6 @@ workflows:
             - jdk-11
             - jdk-17
             - jdk-20
-#          filters:
-#            branches:
-#              only: main
+          filters:
+            branches:
+              only: main
