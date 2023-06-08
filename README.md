@@ -2,8 +2,8 @@
     <img src="duke_logo.png" alt="Duke" width="100px">
 </p>
 <p align="center">
-    <a href="https://repo1.maven.org/maven2/com/influxdb3/">
-        <img src="https://img.shields.io/maven-central/v/com.influxdb3/influxdb-client" alt="Maven Central Badge">
+    <a href="https://repo1.maven.org/maven2/com/influxdb/influxdb3-java/">
+        <img src="https://img.shields.io/maven-central/v/com.influxdb/influxdb3-java" alt="Maven Central Badge">
     </a>
     <a href="https://InfluxCommunity.github.io/influxdb3-java/">
         <img src="https://img.shields.io/badge/maven-site-blue" alt="Maven Site">
