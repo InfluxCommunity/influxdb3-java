@@ -88,6 +88,44 @@ jobs:
           name: "Check dependency licenses"
           command: mvn license:check -Dlicense.dependencies.enforce=true
 
+  deploy-snapshot:
+    docker:
+      - image: *default-maven-image
+    steps:
+      - run:
+          name: Early return if this build is from a forked repository
+          command: |
+            if [[ $CIRCLE_PROJECT_USERNAME != "InfluxCommunity" ]]; then
+              echo "Nothing to do for forked repositories, so marking this step successful"
+              circleci step halt
+            fi
+      - checkout
+      - run:
+          name: Early return if this build is not a Snapshot version
+          command: |
+            sudo apt-get update
+            sudo apt-get install libxml2-utils
+            export PROJECT_VERSION=$(xmllint --xpath "//*[local-name()='project']/*[local-name()='version']/text()" pom.xml)
+            echo "Project version: $PROJECT_VERSION"
+            if [[ $PROJECT_VERSION != *SNAPSHOT ]]; then
+              echo "Nothing to do for this build, so marking this step successful"
+              circleci step halt
+            fi
+      - restore_cache:
+          name: Restoring Maven Cache
+          keys:
+            - &cache-key-deploy maven-cache-deploy_v1-{{ checksum "pom.xml" }}
+            - maven-cache-deploy_v1-
+      - run:
+          name: Deploying Snapshot
+          command: |
+            mvn -s scripts/deploy-settings.xml -DskipTests=true clean package
+      - save_cache:
+          name: Saving Maven Cache
+          key: *cache-key-deploy
+          paths:
+            - ~/.m2
+
 workflows:
   version: 2
   build:
@@ -105,3 +143,13 @@ workflows:
           name: jdk-20
           maven-image: "cimg/openjdk:20.0"
           arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      - deploy-snapshot:
+          requires:
+            - check-dependencies
+            - check-licenses
+            - jdk-11
+            - jdk-17
+            - jdk-20
+#          filters:
+#            branches:
+#              only: main
