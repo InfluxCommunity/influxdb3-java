@@ -5,7 +5,7 @@ jobs:
     parameters:
       maven-image:
         type: string
-        default: &default-maven-image "cimg/openjdk:8.0"
+        default: &default-maven-image "cimg/openjdk:11.0"
       arg-line:
         type: string
         default: ""
@@ -134,7 +134,6 @@ workflows:
       - check-licenses
       - tests-java:
           name: jdk-11
-          maven-image: "cimg/openjdk:11.0"
       - tests-java:
           name: jdk-17
           maven-image: "cimg/openjdk:17.0"
