@@ -1,0 +1,5 @@
+com.influxdb.v3.client
+com.influxdb.v3.client.config
+com.influxdb.v3.client.internal
+com.influxdb.v3.client.query
+com.influxdb.v3.client.write
