@@ -88,6 +88,23 @@ jobs:
           name: "Check dependency licenses"
           command: mvn license:check -Dlicense.dependencies.enforce=true
 
+  check-generate-site:
+    parameters:
+      maven-image:
+        type: string
+        default: *default-maven-image
+    docker:
+      - image: << parameters.maven-image >>
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restoring Maven Cache
+          keys:
+            - maven-cache_v1-<< parameters.maven-image >>-
+      - run:
+          name: "Check generate site"
+          command: mvn clean site site:stage -DskipTests
+
   deploy-snapshot:
     docker:
       - image: *default-maven-image
@@ -132,6 +149,7 @@ workflows:
     jobs:
       - check-dependencies
       - check-licenses
+      - check-generate-site
       - tests-java:
           name: jdk-11
       - tests-java:
@@ -146,6 +164,7 @@ workflows:
           requires:
             - check-dependencies
             - check-licenses
+            - check-generate-site
             - jdk-11
             - jdk-17
             - jdk-20

@@ -5,6 +5,9 @@
     <a href="https://repo1.maven.org/maven2/com/influxdb3/">
         <img src="https://img.shields.io/maven-central/v/com.influxdb3/influxdb-client" alt="Maven Central Badge">
     </a>
+    <a href="https://InfluxCommunity.github.io/influxdb3-java/">
+        <img src="https://img.shields.io/badge/maven-site-blue" alt="Maven Site">
+    </a>
     <a href="https://github.com/InfluxCommunity/influxdb3-java/actions/workflows/codeql-analysis.yml">
         <img src="https://github.com/InfluxCommunity/influxdb3-java/actions/workflows/codeql-analysis.yml/badge.svg?branch=main" alt="CodeQL analysis">
     </a>
