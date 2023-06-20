@@ -149,4 +149,4 @@ the `main` branch.
 
 ## License
 
-The InfluxDB 3 C# .NET Client is released under the [MIT License](https://opensource.org/licenses/MIT).
+The InfluxDB 3 Java Client is released under the [MIT License](https://opensource.org/licenses/MIT).
