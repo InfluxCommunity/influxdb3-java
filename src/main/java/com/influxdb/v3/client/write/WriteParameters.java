@@ -153,7 +153,7 @@ public final class WriteParameters {
         }
         WriteParameters that = (WriteParameters) o;
         return Objects.equals(database, that.database) && Objects.equals(organization, that.organization)
-                && precision == that.precision && gzipThreshold == that.gzipThreshold;
+                && precision == that.precision && Objects.equals(gzipThreshold, that.gzipThreshold);
     }
 
     @Override
