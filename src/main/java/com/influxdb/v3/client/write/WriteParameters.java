@@ -139,7 +139,8 @@ public final class WriteParameters {
         Arguments.checkNotNull(precision, "precision");
         Arguments.checkNotNull(configs, "configs");
 
-        return new WriteParameters(databaseSafe(configs), organizationSafe(configs), precision, gzipThresholdSafe(configs));
+        return new WriteParameters(databaseSafe(configs), organizationSafe(configs), precision,
+                gzipThresholdSafe(configs));
     }
 
     @Override

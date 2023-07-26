@@ -100,10 +100,12 @@ public final class InfluxDBClientConfigs {
     /**
      * Gets the threshold for compressing request body using GZIP.
      *
-     * @return the threshold (in bytes)
+     * @return the threshold in bytes
      */
     @Nonnull
-    public Integer getGzipThreshold() { return gzipThreshold; }
+    public Integer getGzipThreshold() {
+        return gzipThreshold;
+    }
 
     /**
      * Gets the default response timeout to use for the API calls. Default to '10 seconds'.
@@ -157,7 +159,7 @@ public final class InfluxDBClientConfigs {
                 && Objects.equals(organization, that.organization)
                 && Objects.equals(database, that.database)
                 && writePrecision == that.writePrecision
-                && Objects.equals(gzipThreshold,that.gzipThreshold)
+                && Objects.equals(gzipThreshold, that.gzipThreshold)
                 && Objects.equals(responseTimeout, that.responseTimeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation);
