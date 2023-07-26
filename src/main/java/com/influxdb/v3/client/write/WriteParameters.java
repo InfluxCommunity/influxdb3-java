@@ -125,24 +125,6 @@ public final class WriteParameters {
                 : (configs.getWritePrecision() != null ? configs.getGzipThreshold() : DEFAULT_GZIP_THRESHOLD);
     }
 
-    /**
-     * Copy current parameters with new precision.
-     *
-     * @param precision new precision
-     * @param configs   default values
-     * @return copied parameters
-     */
-    @Nonnull
-    public WriteParameters copy(@Nonnull final WritePrecision precision,
-                                @Nonnull final InfluxDBClientConfigs configs) {
-
-        Arguments.checkNotNull(precision, "precision");
-        Arguments.checkNotNull(configs, "configs");
-
-        return new WriteParameters(databaseSafe(configs), organizationSafe(configs), precision,
-                gzipThresholdSafe(configs));
-    }
-
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
