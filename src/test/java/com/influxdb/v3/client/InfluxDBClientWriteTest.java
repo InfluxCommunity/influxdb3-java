@@ -69,6 +69,24 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     }
 
     @Test
+    void writeNullRecord() {
+        mockServer.enqueue(createResponse(200));
+
+        client.writeRecord(null);
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(0);
+    }
+
+    @Test
+    void writeNullPoint() {
+        mockServer.enqueue(createResponse(200));
+
+        client.writePoint(null);
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(0);
+    }
+
+    @Test
     void databaseParameter() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
