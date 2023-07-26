@@ -21,6 +21,10 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,9 +34,12 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.influxdb.v3.client.InfluxDBApiException;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -207,12 +214,22 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                 .collect(Collectors.joining("\n"));
 
         if (lineProtocol.isEmpty()) {
-
             LOG.warning("No data to write, please check your input data.");
             return;
         }
 
-        restClient.request("api/v2/write", HttpMethod.POST, lineProtocol, "text/plain; charset=utf-8", queryParams);
+        Map<String, String> headers = new HashMap<>(Map.of("Content-Type", "text/plain; charset=utf-8"));
+        byte[] body = lineProtocol.getBytes(StandardCharsets.UTF_8);
+        if (lineProtocol.length() >= parameters.gzipThresholdSafe(configs)) {
+            try {
+                body = gzipData(lineProtocol.getBytes(StandardCharsets.UTF_8));
+                headers.put("Content-Encoding", "gzip");
+            } catch (IOException e) {
+                throw new InfluxDBApiException(e);
+            }
+        }
+
+        restClient.request("api/v2/write", HttpMethod.POST, body, headers, queryParams);
     }
 
     @Nonnull
@@ -232,5 +249,15 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         }
 
         return flightSqlClient.execute(query, database, parameters.queryTypeSafe());
+    }
+
+    @Nonnull
+    private byte[] gzipData(@Nonnull final byte[] data) throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final GZIPOutputStream gzip = new GZIPOutputStream(out);
+        gzip.write(data);
+        gzip.close();
+
+        return out.toByteArray();
     }
 }

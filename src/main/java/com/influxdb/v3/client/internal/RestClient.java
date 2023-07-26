@@ -108,8 +108,8 @@ final class RestClient implements AutoCloseable {
 
     void request(@Nonnull final String path,
                  @Nonnull final HttpMethod method,
-                 @Nullable final String data,
-                 @Nullable final String contentType,
+                 @Nullable final byte[] data,
+                 @Nullable final Map<String, String> headers,
                  @Nullable final Map<String, String> queryParams) {
 
         QueryStringEncoder uriEncoder = new QueryStringEncoder(String.format("%s%s", baseUrl, path));
@@ -132,11 +132,13 @@ final class RestClient implements AutoCloseable {
 
         // method and body
         request.method(method.name(), data == null
-                ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(data));
+                ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(data));
 
         // headers
-        if (contentType != null) {
-            request.header("Content-Type", contentType);
+        if (headers != null) {
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                request.header(entry.getKey(), entry.getValue());
+            }
         }
         request.header("User-Agent", userAgent);
         if (configs.getAuthToken() != null && configs.getAuthToken().length > 0) {

@@ -48,13 +48,18 @@ public final class WriteParameters {
      */
     public static final WritePrecision DEFAULT_WRITE_PRECISION = WritePrecision.NS;
     /**
+     * Default GZIP threshold.
+     */
+    public static final Integer DEFAULT_GZIP_THRESHOLD = 1000;
+    /**
      * Default WriteParameters.
      */
-    public static final WriteParameters DEFAULTS = new WriteParameters(null, null, null);
+    public static final WriteParameters DEFAULTS = new WriteParameters(null, null, null, null);
 
     private final String database;
     private final String organization;
     private final WritePrecision precision;
+    private final Integer gzipThreshold;
 
     /**
      * Construct WriteAPI parameters.
@@ -65,13 +70,17 @@ public final class WriteParameters {
      *                     If it is not specified then use {@link InfluxDBClientConfigs#getOrganization()}.
      * @param precision    The precision to use for the timestamp of points.
      *                     If it is not specified then use {@link WritePrecision#NS}.
+     * @param gzipThreshold The threshold for compressing request body.
+     *                     Default is 1000.
      */
     public WriteParameters(@Nullable final String database,
                            @Nullable final String organization,
-                           @Nullable final WritePrecision precision) {
+                           @Nullable final WritePrecision precision,
+                           @Nullable final Integer gzipThreshold) {
         this.database = database;
         this.organization = organization;
         this.precision = precision;
+        this.gzipThreshold = gzipThreshold;
     }
 
     /**
@@ -106,6 +115,17 @@ public final class WriteParameters {
     }
 
     /**
+     * @param configs with default value
+     * @return Payload size threshold for compressing it.
+     */
+    @Nonnull
+    public Integer gzipThresholdSafe(@Nonnull final InfluxDBClientConfigs configs) {
+        Arguments.checkNotNull(configs, "configs");
+        return gzipThreshold != null ? gzipThreshold
+                : (configs.getWritePrecision() != null ? configs.getGzipThreshold() : DEFAULT_GZIP_THRESHOLD);
+    }
+
+    /**
      * Copy current parameters with new precision.
      *
      * @param precision new precision
@@ -119,7 +139,7 @@ public final class WriteParameters {
         Arguments.checkNotNull(precision, "precision");
         Arguments.checkNotNull(configs, "configs");
 
-        return new WriteParameters(databaseSafe(configs), organizationSafe(configs), precision);
+        return new WriteParameters(databaseSafe(configs), organizationSafe(configs), precision, gzipThresholdSafe(configs));
     }
 
     @Override
@@ -132,12 +152,12 @@ public final class WriteParameters {
         }
         WriteParameters that = (WriteParameters) o;
         return Objects.equals(database, that.database) && Objects.equals(organization, that.organization)
-                && precision == that.precision;
+                && precision == that.precision && gzipThreshold == that.gzipThreshold;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(database, organization, precision);
+        return Objects.hash(database, organization, precision, gzipThreshold);
     }
 
     private boolean isNotDefined(final String option) {
