@@ -32,6 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import com.influxdb.v3.client.config.InfluxDBClientConfigs;
 import com.influxdb.v3.client.query.QueryParameters;
 
 class ITQueryWrite {
@@ -95,6 +96,31 @@ class ITQueryWrite {
             List<VectorSchemaRoot> batchesAsList = batches.collect(Collectors.toList());
 
             Assertions.assertThat(batchesAsList.size()).isGreaterThanOrEqualTo(1);
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    void queryWriteGzip() {
+        client = InfluxDBClient.getInstance(new InfluxDBClientConfigs.Builder()
+                .hostUrl(System.getenv("TESTING_INFLUXDB_URL"))
+                .authToken(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .gzipThreshold(1)
+                .build());
+
+        String measurement = "integration_test";
+        int testId = (int) System.currentTimeMillis();
+        client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
+
+        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
+        try (Stream<Object[]> stream = client.query(sql)) {
+            stream.forEach(row -> {
+                Assertions.assertThat(row).hasSize(1);
+                Assertions.assertThat(row[0]).isEqualTo(123.0);
+            });
         }
     }
 

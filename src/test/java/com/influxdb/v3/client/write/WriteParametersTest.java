@@ -44,29 +44,32 @@ class WriteParametersTest {
                 .database("my-database")
                 .organization("my-org")
                 .writePrecision(WritePrecision.S)
+                .gzipThreshold(512)
                 .build();
 
-        WriteParameters parameters = new WriteParameters(null, null, null);
+        WriteParameters parameters = new WriteParameters(null, null, null, null);
 
         Assertions.assertThat(parameters.databaseSafe(options)).isEqualTo("my-database");
         Assertions.assertThat(parameters.organizationSafe(options)).isEqualTo("my-org");
         Assertions.assertThat(parameters.precisionSafe(options)).isEqualTo(WritePrecision.S);
+        Assertions.assertThat(parameters.gzipThresholdSafe(options)).isEqualTo(512);
     }
 
     @Test
     void nullableParameters() {
         InfluxDBClientConfigs options = optionsBuilder.database("my-database").organization("my-org").build();
 
-        WriteParameters parameters = new WriteParameters(null, null, null);
+        WriteParameters parameters = new WriteParameters(null, null, null, null);
 
         Assertions.assertThat(parameters.precisionSafe(options)).isEqualTo(WritePrecision.NS);
+        Assertions.assertThat(parameters.gzipThresholdSafe(options)).isEqualTo(1000);
     }
 
     @Test
     void npe() {
-        WriteParameters parameters = new WriteParameters(null, null, null);
+        WriteParameters parameters = new WriteParameters(null, null, null, null);
 
         Assertions.assertThat(parameters.hashCode()).isNotNull();
-        Assertions.assertThat(parameters).isEqualTo(new WriteParameters(null, null, null));
+        Assertions.assertThat(parameters).isEqualTo(new WriteParameters(null, null, null, null));
     }
 }

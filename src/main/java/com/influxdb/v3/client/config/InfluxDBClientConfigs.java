@@ -42,6 +42,7 @@ public final class InfluxDBClientConfigs {
     private final String organization;
     private final String database;
     private final WritePrecision writePrecision;
+    private final Integer gzipThreshold;
     private final Duration responseTimeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
@@ -97,6 +98,16 @@ public final class InfluxDBClientConfigs {
     }
 
     /**
+     * Gets the threshold for compressing request body using GZIP.
+     *
+     * @return the threshold in bytes
+     */
+    @Nonnull
+    public Integer getGzipThreshold() {
+        return gzipThreshold;
+    }
+
+    /**
      * Gets the default response timeout to use for the API calls. Default to '10 seconds'.
      *
      * @return the default response timeout to use for the API calls
@@ -148,6 +159,7 @@ public final class InfluxDBClientConfigs {
                 && Objects.equals(organization, that.organization)
                 && Objects.equals(database, that.database)
                 && writePrecision == that.writePrecision
+                && Objects.equals(gzipThreshold, that.gzipThreshold)
                 && Objects.equals(responseTimeout, that.responseTimeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation);
@@ -155,7 +167,7 @@ public final class InfluxDBClientConfigs {
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostUrl, Arrays.hashCode(authToken), organization, database, writePrecision,
+        return Objects.hash(hostUrl, Arrays.hashCode(authToken), organization, database, writePrecision, gzipThreshold,
                 responseTimeout, allowHttpRedirects, disableServerCertificateValidation);
     }
 
@@ -166,6 +178,7 @@ public final class InfluxDBClientConfigs {
                 .add("organization='" + organization + "'")
                 .add("database='" + database + "'")
                 .add("writePrecision=" + writePrecision)
+                .add("gzipThreshold=" + gzipThreshold)
                 .add("responseTimeout=" + responseTimeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
@@ -183,6 +196,7 @@ public final class InfluxDBClientConfigs {
         private String organization;
         private String database;
         private WritePrecision writePrecision;
+        private Integer gzipThreshold;
         private Duration responseTimeout;
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
@@ -255,6 +269,19 @@ public final class InfluxDBClientConfigs {
         }
 
         /**
+         * Sets the threshold for request body to be gzipped.
+         *
+         * @param gzipThreshold threshold in bytes for request body to be gzipped
+         * @return this
+         */
+        @Nonnull
+        public Builder gzipThreshold(@Nullable final Integer gzipThreshold) {
+
+            this.gzipThreshold = gzipThreshold;
+            return this;
+        }
+
+        /**
          * Sets the default response timeout to use for the API calls. Default to '10 seconds'.
          *
          * @param responseTimeout default response timeout to use for the API calls. Default to '10 seconds'.
@@ -310,7 +337,8 @@ public final class InfluxDBClientConfigs {
         authToken = builder.authToken;
         organization = builder.organization;
         database = builder.database;
-        writePrecision = builder.writePrecision;
+        writePrecision = builder.writePrecision != null ? builder.writePrecision : WritePrecision.NS;
+        gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : 1000;
         responseTimeout = builder.responseTimeout != null ? builder.responseTimeout : Duration.ofSeconds(10);
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
