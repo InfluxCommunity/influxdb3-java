@@ -31,8 +31,42 @@ import javax.annotation.Nullable;
 import com.influxdb.v3.client.write.WritePrecision;
 
 /**
- * Configuration properties for an {@code InfluxDBClient}.
+ * The <code>InfluxDBClientConfigs</code> holds the configurations for the
+ * {@link com.influxdb.v3.client.InfluxDBClient} client.
  * <p>
+ * You can configure following properties:
+ * <ul>
+ *     <li><code>hostUrl</code> - hostname or IP address of the InfluxDB server</li>
+ *     <li><code>authToken</code> - authentication token for accessing the InfluxDB server</li>
+ *     <li><code>organization</code> - organization to be used for operations</li>
+ *     <li><code>database</code> - database to be used for InfluxDB operations</li>
+ *     <li><code>writePrecision</code> - precision to use when writing points to InfluxDB</li>
+ *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
+ *     <li><code>responseTimeout</code> - timeout when connecting to InfluxDB</li>
+ *     <li><code>allowHttpRedirects</code> - allow redirects for InfluxDB connections</li>
+ *     <li><code>disableServerCertificateValidation</code> -
+ *          disable server certificate validation for HTTPS connections
+ *     </li>
+ * </ul>
+ * <p>
+ * If you want to create a client with custom configuration, you can use following code:
+ * <pre>
+ * InfluxDBClientConfigs configs = new InfluxDBClientConfigs.Builder()
+ *     .hostUrl("https://us-east-1-1.aws.cloud2.influxdata.com")
+ *     .authToken("my-token".toCharArray())
+ *     .database("my-database")
+ *     .writePrecision(WritePrecision.S)
+ *     .gzipThreshold(4096)
+ *     .build();
+ *
+ * try (InfluxDBClient client = InfluxDBClient.getInstance(configs)) {
+ *     //
+ *     // your code here
+ *     //
+ * } catch (Exception e) {
+ *     throw new RuntimeException(e);
+ * }
+ * </pre>
  * Immutable class.
  */
 public final class InfluxDBClientConfigs {
