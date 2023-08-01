@@ -70,6 +70,7 @@ final class RestClient implements AutoCloseable {
     final HttpClient client;
 
     private final InfluxDBClientConfigs configs;
+    private final Map<String, String> defaultHeaders;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     RestClient(@Nonnull final InfluxDBClientConfigs configs) {
@@ -90,6 +91,17 @@ final class RestClient implements AutoCloseable {
                 .connectTimeout(configs.getResponseTimeout())
                 .followRedirects(configs.getAllowHttpRedirects()
                         ? HttpClient.Redirect.NORMAL : HttpClient.Redirect.NEVER);
+
+        // default headers
+        this.defaultHeaders = configs.getHeaders() != null ? Map.copyOf(configs.getHeaders()) : null;
+
+        // proxy
+        if (configs.getProxy() != null) {
+            builder.proxy(configs.getProxy());
+            if (configs.getAuthenticator() != null) {
+                builder.authenticator(configs.getAuthenticator());
+            }
+        }
 
         if (baseUrl.startsWith("https")) {
             try {
@@ -135,6 +147,11 @@ final class RestClient implements AutoCloseable {
                 ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(data));
 
         // headers
+        if (defaultHeaders != null) {
+            for (Map.Entry<String, String> entry : defaultHeaders.entrySet()) {
+                request.header(entry.getKey(), entry.getValue());
+            }
+        }
         if (headers != null) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 request.header(entry.getKey(), entry.getValue());

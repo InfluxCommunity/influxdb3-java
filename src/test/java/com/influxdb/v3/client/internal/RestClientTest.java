@@ -21,8 +21,14 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
 
 import io.netty.handler.codec.http.HttpMethod;
@@ -135,6 +141,24 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
+    public void customHeader() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
+                .hostUrl(baseURL)
+                .authToken("my-token".toCharArray())
+                .headers(Map.of("X-device", "ab-01"))
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, null);
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        String authorization = recordedRequest.getHeader("X-device");
+        Assertions.assertThat(authorization).isEqualTo("ab-01");
+    }
+
+    @Test
     public void uri() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
@@ -159,6 +183,55 @@ public class RestClientTest extends AbstractMockServerTest {
 
         HttpClient.Redirect redirect = restClient.client.followRedirects();
         Assertions.assertThat(redirect).isEqualTo(HttpClient.Redirect.NORMAL);
+    }
+
+    @Test
+    public void proxy() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
+                .hostUrl("http://foo.com:8086")
+                .proxy(ProxySelector.of((InetSocketAddress) mockServer.toProxyAddress().address()))
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, null);
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
+        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL); // server is used as proxy
+        Assertions.assertThat(recordedRequest.getRequestLine()).isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
+    }
+
+    @Test
+    public void proxyWithAuthentication() throws InterruptedException {
+        mockServer.enqueue(createResponseWithHeaders(407, Map.of("Proxy-Authenticate", "Basic")));
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
+                .hostUrl("http://foo.com:8086")
+                .proxy(ProxySelector.of((InetSocketAddress) mockServer.toProxyAddress().address()))
+                .authenticator(new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication("john", "secret".toCharArray());
+                    }
+                })
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, null);
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+        RecordedRequest proxyAuthRequest = mockServer.takeRequest();
+
+        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
+        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL); // server is used as proxy
+        Assertions.assertThat(recordedRequest.getRequestLine()).isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(2);
+        String proxyAuthorization = proxyAuthRequest.getHeader("Proxy-Authorization");
+        Assertions.assertThat(proxyAuthorization)
+                .isEqualTo("Basic " + Base64.getEncoder().encodeToString("john:secret".getBytes()));
     }
 
     @Test

@@ -21,8 +21,11 @@
  */
 package com.influxdb.v3.client.config;
 
+import java.net.Authenticator;
+import java.net.ProxySelector;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import javax.annotation.Nonnull;
@@ -80,6 +83,9 @@ public final class InfluxDBClientConfigs {
     private final Duration responseTimeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
+    private final ProxySelector proxy;
+    private final Authenticator authenticator;
+    private final Map<String, String> headers;
 
     /**
      * Gets hostname or IP address of the InfluxDB server.
@@ -166,8 +172,39 @@ public final class InfluxDBClientConfigs {
      *
      * @return the disable server SSL certificate validation
      */
+    @Nonnull
     public Boolean getDisableServerCertificateValidation() {
         return disableServerCertificateValidation;
+    }
+
+    /**
+     * Gets the proxy.
+     *
+     * @return the proxy, may be null
+     */
+    @Nullable
+    public ProxySelector getProxy() {
+        return proxy;
+    }
+
+    /**
+     * Gets the (proxy) authenticator.
+     *
+     * @return the (proxy) authenticator
+     */
+    @Nullable
+    public Authenticator getAuthenticator() {
+        return authenticator;
+    }
+
+    /**
+     * Gets custom HTTP headers.
+     *
+     * @return the HTTP headers
+     */
+    @Nullable
+    public Map<String, String> getHeaders() {
+        return headers;
     }
 
     /**
@@ -196,13 +233,16 @@ public final class InfluxDBClientConfigs {
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
                 && Objects.equals(responseTimeout, that.responseTimeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
-                && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation);
+                && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
+                && Objects.equals(proxy, that.proxy)
+                && Objects.equals(authenticator, that.authenticator)
+                && Objects.equals(headers, that.headers);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(hostUrl, Arrays.hashCode(authToken), organization, database, writePrecision, gzipThreshold,
-                responseTimeout, allowHttpRedirects, disableServerCertificateValidation);
+                responseTimeout, allowHttpRedirects, disableServerCertificateValidation, proxy, authenticator, headers);
     }
 
     @Override
@@ -216,6 +256,9 @@ public final class InfluxDBClientConfigs {
                 .add("responseTimeout=" + responseTimeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
+                .add("proxy=" + proxy)
+                .add("authenticator=" + authenticator)
+                .add("headers=" + headers)
                 .toString();
     }
 
@@ -234,6 +277,9 @@ public final class InfluxDBClientConfigs {
         private Duration responseTimeout;
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
+        private ProxySelector proxy;
+        private Authenticator authenticator;
+        private Map<String, String> headers;
 
         /**
          * Sets the hostname or IP address of the InfluxDB server.
@@ -355,6 +401,45 @@ public final class InfluxDBClientConfigs {
         }
 
         /**
+         * Sets the proxy. Default is 'null'.
+         *
+         * @param proxy Proxy selector.
+         * @return this
+         */
+        @Nonnull
+        public Builder proxy(@Nullable final ProxySelector proxy) {
+
+            this.proxy = proxy;
+            return this;
+        }
+
+        /**
+         * Sets the (proxy) authenticator.
+         *
+         * @param authenticator Proxy authenticator. Ignored if 'proxy' is null.
+         * @return this
+         */
+        @Nonnull
+        public Builder authenticator(@Nullable final Authenticator authenticator) {
+
+            this.authenticator = authenticator;
+            return this;
+        }
+
+        /**
+         * Sets the custom HTTP headers that will be included in requests.
+         *
+         * @param headers Set of HTTP headers.
+         * @return this
+         */
+        @Nonnull
+        public Builder headers(@Nullable final Map<String, String> headers) {
+
+            this.headers = headers;
+            return this;
+        }
+
+        /**
          * Build an instance of {@code InfluxDBClientConfigs}.
          *
          * @return the configuration for an {@code InfluxDBClient}.
@@ -377,5 +462,8 @@ public final class InfluxDBClientConfigs {
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
+        proxy = builder.proxy;
+        authenticator = builder.authenticator;
+        headers = builder.headers;
     }
 }

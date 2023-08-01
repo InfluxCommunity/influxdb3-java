@@ -22,6 +22,7 @@
 package com.influxdb.v3.client.config;
 
 import java.time.Duration;
+import java.util.Map;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,8 @@ class InfluxDBClientConfigsTest {
             .writePrecision(WritePrecision.NS)
             .responseTimeout(Duration.ofSeconds(30))
             .allowHttpRedirects(true)
-            .disableServerCertificateValidation(true);
+            .disableServerCertificateValidation(true)
+            .headers(Map.of("X-device", "ab-01"));
 
     @Test
     void equal() {
