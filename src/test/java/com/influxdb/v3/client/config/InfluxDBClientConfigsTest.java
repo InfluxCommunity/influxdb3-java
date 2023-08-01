@@ -43,18 +43,28 @@ class InfluxDBClientConfigsTest {
             .headers(Map.of("X-device", "ab-01"));
 
     @Test
-    void equal() {
+    void equalConfigs() {
         InfluxDBClientConfigs configs = configsBuilder.build();
 
+        Assertions.assertThat(configs).isEqualTo(configs);
         Assertions.assertThat(configs).isEqualTo(configsBuilder.build());
+        Assertions.assertThat(configs).isNotEqualTo(configsBuilder);
         Assertions.assertThat(configs).isNotEqualTo(configsBuilder.database("database").build());
     }
 
     @Test
-    void hash() {
+    void hashConfigs() {
         InfluxDBClientConfigs configs = configsBuilder.build();
 
         Assertions.assertThat(configs.hashCode()).isEqualTo(configsBuilder.build().hashCode());
         Assertions.assertThat(configs.hashCode()).isNotEqualTo(configsBuilder.database("database").build().hashCode());
+    }
+
+    @Test
+    void toStringConfigs() {
+        String configString = configsBuilder.build().toString();
+
+        Assertions.assertThat(configString.contains("database='my-db'")).isEqualTo(true);
+        Assertions.assertThat(configString.contains("gzipThreshold=1000")).isEqualTo(true);
     }
 }
