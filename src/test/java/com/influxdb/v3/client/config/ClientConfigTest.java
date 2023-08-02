@@ -29,40 +29,40 @@ import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.write.WritePrecision;
 
-class InfluxDBClientConfigsTest {
+class ClientConfigTest {
 
-    private final InfluxDBClientConfigs.Builder configsBuilder = new InfluxDBClientConfigs.Builder()
-            .hostUrl("http://localhost:9999")
-            .authToken("my-token".toCharArray())
+    private final ClientConfig.Builder configBuilder = new ClientConfig.Builder()
+            .host("http://localhost:9999")
+            .token("my-token".toCharArray())
             .organization("my-org")
             .database("my-db")
             .writePrecision(WritePrecision.NS)
-            .responseTimeout(Duration.ofSeconds(30))
+            .timeout(Duration.ofSeconds(30))
             .allowHttpRedirects(true)
             .disableServerCertificateValidation(true)
             .headers(Map.of("X-device", "ab-01"));
 
     @Test
-    void equalConfigs() {
-        InfluxDBClientConfigs configs = configsBuilder.build();
+    void equalConfig() {
+        ClientConfig config = configBuilder.build();
 
-        Assertions.assertThat(configs).isEqualTo(configs);
-        Assertions.assertThat(configs).isEqualTo(configsBuilder.build());
-        Assertions.assertThat(configs).isNotEqualTo(configsBuilder);
-        Assertions.assertThat(configs).isNotEqualTo(configsBuilder.database("database").build());
+        Assertions.assertThat(config).isEqualTo(config);
+        Assertions.assertThat(config).isEqualTo(configBuilder.build());
+        Assertions.assertThat(config).isNotEqualTo(configBuilder);
+        Assertions.assertThat(config).isNotEqualTo(configBuilder.database("database").build());
     }
 
     @Test
-    void hashConfigs() {
-        InfluxDBClientConfigs configs = configsBuilder.build();
+    void hashConfig() {
+        ClientConfig config = configBuilder.build();
 
-        Assertions.assertThat(configs.hashCode()).isEqualTo(configsBuilder.build().hashCode());
-        Assertions.assertThat(configs.hashCode()).isNotEqualTo(configsBuilder.database("database").build().hashCode());
+        Assertions.assertThat(config.hashCode()).isEqualTo(configBuilder.build().hashCode());
+        Assertions.assertThat(config.hashCode()).isNotEqualTo(configBuilder.database("database").build().hashCode());
     }
 
     @Test
-    void toStringConfigs() {
-        String configString = configsBuilder.build().toString();
+    void toStringConfig() {
+        String configString = configBuilder.build().toString();
 
         Assertions.assertThat(configString.contains("database='my-db'")).isEqualTo(true);
         Assertions.assertThat(configString.contains("gzipThreshold=1000")).isEqualTo(true);

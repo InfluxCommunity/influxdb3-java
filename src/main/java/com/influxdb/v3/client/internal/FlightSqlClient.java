@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -48,7 +49,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
-import com.influxdb.v3.client.config.InfluxDBClientConfigs;
+import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.query.QueryType;
 
 final class FlightSqlClient implements AutoCloseable {
@@ -58,19 +59,19 @@ final class FlightSqlClient implements AutoCloseable {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    FlightSqlClient(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
+    FlightSqlClient(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
 
         MetadataAdapter metadata = new MetadataAdapter(new Metadata());
-        if (configs.getAuthToken() != null && configs.getAuthToken().length > 0) {
-            metadata.insert("Authorization", "Bearer " + new String(configs.getAuthToken()));
+        if (config.getToken() != null && config.getToken().length > 0) {
+            metadata.insert("Authorization", "Bearer " + new String(config.getToken()));
         }
 
         this.headers = new HeaderCallOption(metadata);
 
         Location location;
         try {
-            URI uri = new URI(configs.getHostUrl());
+            URI uri = new URI(config.getHost());
             if ("https".equals(uri.getScheme())) {
                 location = Location.forGrpcTls(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 443);
             } else {
@@ -83,7 +84,7 @@ final class FlightSqlClient implements AutoCloseable {
         client = FlightClient.builder()
                 .location(location)
                 .allocator(new RootAllocator(Long.MAX_VALUE))
-                .verifyServer(!configs.getDisableServerCertificateValidation())
+                .verifyServer(!config.getDisableServerCertificateValidation())
                 .build();
     }
 
@@ -92,7 +93,7 @@ final class FlightSqlClient implements AutoCloseable {
                                      @Nonnull final String database,
                                      @Nonnull final QueryType queryType) {
 
-        HashMap<String, String> ticketData = new HashMap<String, String>() {{
+        Map<String, String> ticketData = new HashMap<>() {{
             put("database", database);
             put("sql_query", query);
             put("query_type", queryType.name().toLowerCase());

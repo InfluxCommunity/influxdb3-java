@@ -43,10 +43,10 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 
 import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBClient;
-import com.influxdb.v3.client.config.InfluxDBClientConfigs;
-import com.influxdb.v3.client.query.QueryParameters;
+import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.Point;
-import com.influxdb.v3.client.write.WriteParameters;
+import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
 /**
@@ -59,89 +59,89 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     private static final Logger LOG = Logger.getLogger(InfluxDBClientImpl.class.getName());
 
     private static final String DATABASE_REQUIRED_MESSAGE = "Please specify the 'Database' as a method parameter "
-            + "or use default configuration at 'InfluxDBClientConfigs.database'.";
+            + "or use default configuration at 'ClientConfig.database'.";
 
     private boolean closed = false;
-    private final InfluxDBClientConfigs configs;
+    private final ClientConfig config;
 
     private final RestClient restClient;
     private final FlightSqlClient flightSqlClient;
 
     /**
-     * Creates an instance using the specified configs.
+     * Creates an instance using the specified config.
      * <p>
      * Please use {@link InfluxDBClient} to create an instance.
      *
-     * @param configs the client configs.
+     * @param config the client config.
      */
-    public InfluxDBClientImpl(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
+    public InfluxDBClientImpl(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
 
-        configs.validate();
+        config.validate();
 
-        this.configs = configs;
-        this.restClient = new RestClient(configs);
-        this.flightSqlClient = new FlightSqlClient(configs);
+        this.config = config;
+        this.restClient = new RestClient(config);
+        this.flightSqlClient = new FlightSqlClient(config);
     }
 
     @Override
     public void writeRecord(@Nullable final String record) {
-        writeRecord(record, WriteParameters.DEFAULTS);
+        writeRecord(record, WriteOptions.DEFAULTS);
     }
 
     @Override
-    public void writeRecord(@Nullable final String record, @Nonnull final WriteParameters parameters) {
+    public void writeRecord(@Nullable final String record, @Nonnull final WriteOptions options) {
         if (record == null) {
             return;
         }
 
-        writeRecords(Collections.singletonList(record), parameters);
+        writeRecords(Collections.singletonList(record), options);
     }
 
     @Override
     public void writeRecords(@Nonnull final List<String> records) {
-        writeRecords(records, WriteParameters.DEFAULTS);
+        writeRecords(records, WriteOptions.DEFAULTS);
     }
 
     @Override
-    public void writeRecords(@Nonnull final List<String> records, @Nonnull final WriteParameters parameters) {
-        writeData(records, parameters);
+    public void writeRecords(@Nonnull final List<String> records, @Nonnull final WriteOptions options) {
+        writeData(records, options);
     }
 
     @Override
     public void writePoint(@Nullable final Point point) {
-        writePoint(point, WriteParameters.DEFAULTS);
+        writePoint(point, WriteOptions.DEFAULTS);
     }
 
     @Override
-    public void writePoint(@Nullable final Point point, @Nonnull final WriteParameters parameters) {
+    public void writePoint(@Nullable final Point point, @Nonnull final WriteOptions options) {
         if (point == null) {
             return;
         }
 
-        writePoints(Collections.singletonList(point), parameters);
+        writePoints(Collections.singletonList(point), options);
     }
 
     @Override
     public void writePoints(@Nonnull final List<Point> points) {
-        writePoints(points, WriteParameters.DEFAULTS);
+        writePoints(points, WriteOptions.DEFAULTS);
     }
 
     @Override
-    public void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteParameters parameters) {
-        writeData(points, parameters);
+    public void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteOptions options) {
+        writeData(points, options);
     }
 
     @Nonnull
     @Override
     public Stream<Object[]> query(@Nonnull final String query) {
-        return query(query, QueryParameters.DEFAULTS);
+        return query(query, QueryOptions.DEFAULTS);
     }
 
     @Nonnull
     @Override
-    public Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryParameters parameters) {
-        return queryData(query, parameters)
+    public Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryOptions options) {
+        return queryData(query, options)
                 .flatMap(vector -> {
                     List<FieldVector> fieldVectors = vector.getFieldVectors();
                     return IntStream
@@ -160,14 +160,14 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query) {
-        return queryBatches(query, QueryParameters.DEFAULTS);
+        return queryBatches(query, QueryOptions.DEFAULTS);
     }
 
     @Nonnull
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query,
-                                                 @Nonnull final QueryParameters parameters) {
-        return queryData(query, parameters);
+                                                 @Nonnull final QueryOptions options) {
+        return queryData(query, options);
     }
 
     @Override
@@ -177,25 +177,26 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         closed = true;
     }
 
-    private <T> void writeData(@Nonnull final List<T> data, @Nonnull final WriteParameters parameters) {
+    private <T> void writeData(@Nonnull final List<T> data, @Nonnull final WriteOptions options) {
 
         Arguments.checkNotNull(data, "data");
-        Arguments.checkNotNull(parameters, "parameters");
+        Arguments.checkNotNull(options, "options");
 
         if (closed) {
             throw new IllegalStateException("InfluxDBClient has been closed.");
         }
 
-        String database = parameters.databaseSafe(configs);
+        String database = options.databaseSafe(config);
         if (database == null || database.isEmpty()) {
             throw new IllegalStateException("Please specify the 'Database' as a method parameter "
-                    + "or use default configuration at 'InfluxDBClientConfigs.database'.");
+                    + "or use default configuration at 'ClientConfig.database'.");
         }
 
-        WritePrecision precision = parameters.precisionSafe(configs);
+        WritePrecision precision = options.precisionSafe(config);
+
         Map<String, String> queryParams = new HashMap<>() {{
             put("bucket", database);
-            put("org", parameters.organizationSafe(configs));
+            put("org", config.getOrganization());
             put("precision", precision.name().toLowerCase());
         }};
 
@@ -218,7 +219,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
         Map<String, String> headers = new HashMap<>(Map.of("Content-Type", "text/plain; charset=utf-8"));
         byte[] body = lineProtocol.getBytes(StandardCharsets.UTF_8);
-        if (lineProtocol.length() >= parameters.gzipThresholdSafe(configs)) {
+        if (lineProtocol.length() >= options.gzipThresholdSafe(config)) {
             try {
                 body = gzipData(lineProtocol.getBytes(StandardCharsets.UTF_8));
                 headers.put("Content-Encoding", "gzip");
@@ -232,21 +233,21 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Nonnull
     private Stream<VectorSchemaRoot> queryData(@Nonnull final String query,
-                                               @Nonnull final QueryParameters parameters) {
+                                               @Nonnull final QueryOptions options) {
 
         Arguments.checkNonEmpty(query, "query");
-        Arguments.checkNotNull(parameters, "parameters");
+        Arguments.checkNotNull(options, "options");
 
         if (closed) {
             throw new IllegalStateException("InfluxDBClient has been closed.");
         }
 
-        String database = parameters.databaseSafe(configs);
+        String database = options.databaseSafe(config);
         if (database == null || database.isEmpty()) {
             throw new IllegalStateException(DATABASE_REQUIRED_MESSAGE);
         }
 
-        return flightSqlClient.execute(query, database, parameters.queryTypeSafe());
+        return flightSqlClient.execute(query, database, options.queryTypeSafe());
     }
 
     @Nonnull
