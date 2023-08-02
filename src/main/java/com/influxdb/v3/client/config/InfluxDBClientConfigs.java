@@ -50,6 +50,9 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
  *     </li>
+ *     <li><code>proxy</code> - HTTP proxy selector</li>
+ *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
+ *     <li><code>headers</code> - set of HTTP headers to be added to requests</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
@@ -60,6 +63,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     .database("my-database")
  *     .writePrecision(WritePrecision.S)
  *     .gzipThreshold(4096)
+ *     .proxy(ProxySelector.of(new InetSocketAddress("http://proxy.local", 8888)))
  *     .build();
  *
  * try (InfluxDBClient client = InfluxDBClient.getInstance(configs)) {
