@@ -73,11 +73,11 @@ import com.influxdb.v3.client.write.Point;
 
 public class IOxExample {
     public static void main(String[] args) throws Exception {
-        String hostUrl = "https://us-east-1-1.aws.cloud2.influxdata.com";
-        char[] authToken = "my-token".toCharArray();
+        String host = "https://us-east-1-1.aws.cloud2.influxdata.com";
+        char[] token = "my-token".toCharArray();
         String database = "database";
 
-        try (InfluxDBClient client = InfluxDBClient.getInstance(hostUrl, authToken, database)) {
+        try (InfluxDBClient client = InfluxDBClient.getInstance(host, token, database)) {
             // ...
         }
     }
@@ -128,7 +128,7 @@ System.out.printf("| %-16s | %-18s |%n", "time", "mean");
 System.out.printf("-----------------------------------------%n");
 
 String influxQL = "select MEAN(value) from temperature group by time(1d) fill(none) order by time desc limit 10";
-try (Stream<Object[]> stream = client.query(influxQL, QueryParameters.INFLUX_QL)) {
+try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.INFLUX_QL)) {
     stream.forEach(row -> System.out.printf("| %-16s | %-18s |%n", row[1], row[2]));
 }
 
