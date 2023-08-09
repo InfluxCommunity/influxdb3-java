@@ -27,12 +27,11 @@ import org.junit.jupiter.api.Test;
 class InfluxDBClientTest {
 
     @Test
-    void requiredHostUrl() {
+    void requiredHost() {
 
-        //noinspection DataFlowIssue
         Assertions.assertThatThrownBy(() -> InfluxDBClient.getInstance(null, "my-token".toCharArray(), "my-database"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("The hostname or IP address of the InfluxDB server has to be defined.");
+                .hasMessage("The URL of the InfluxDB server has to be defined.");
     }
 
     @Test
