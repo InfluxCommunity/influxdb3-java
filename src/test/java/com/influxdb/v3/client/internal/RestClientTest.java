@@ -21,8 +21,14 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
 
 import io.netty.handler.codec.http.HttpMethod;
@@ -33,7 +39,7 @@ import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.AbstractMockServerTest;
 import com.influxdb.v3.client.InfluxDBApiException;
-import com.influxdb.v3.client.config.InfluxDBClientConfigs;
+import com.influxdb.v3.client.config.ClientConfig;
 
 public class RestClientTest extends AbstractMockServerTest {
 
@@ -48,7 +54,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void baseUrl() {
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder().hostUrl("http://localhost:8086").build());
+        restClient = new RestClient(new ClientConfig.Builder().host("http://localhost:8086").build());
         Assertions
                 .assertThat(restClient.baseUrl)
                 .isEqualTo("http://localhost:8086/");
@@ -56,7 +62,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void baseUrlSlashEnd() {
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder().hostUrl("http://localhost:8086/").build());
+        restClient = new RestClient(new ClientConfig.Builder().host("http://localhost:8086/").build());
         Assertions
                 .assertThat(restClient.baseUrl)
                 .isEqualTo("http://localhost:8086/");
@@ -64,9 +70,9 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void responseTimeout() {
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl("http://localhost:8086")
-                .responseTimeout(Duration.ofSeconds(13))
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host("http://localhost:8086")
+                .timeout(Duration.ofSeconds(13))
                 .build());
 
         Optional<Duration> connectTimeout = restClient.client.connectTimeout();
@@ -77,8 +83,8 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void allowHttpRedirectsDefaults() {
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl("http://localhost:8086")
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host("http://localhost:8086")
                 .build());
 
         HttpClient.Redirect redirect = restClient.client.followRedirects();
@@ -89,9 +95,9 @@ public class RestClientTest extends AbstractMockServerTest {
     public void authenticationHeader() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl(baseURL)
-                .authToken("my-token".toCharArray())
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .token("my-token".toCharArray())
                 .build());
 
         restClient.request("ping", HttpMethod.GET, null, null, null);
@@ -106,8 +112,8 @@ public class RestClientTest extends AbstractMockServerTest {
     public void authenticationHeaderNotDefined() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl(baseURL)
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
                 .build());
 
         restClient.request("ping", HttpMethod.GET, null, null, null);
@@ -122,8 +128,8 @@ public class RestClientTest extends AbstractMockServerTest {
     public void userAgent() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl(baseURL)
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
                 .build());
 
         restClient.request("ping", HttpMethod.GET, null, null, null);
@@ -135,11 +141,29 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
+    public void customHeader() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .token("my-token".toCharArray())
+                .headers(Map.of("X-device", "ab-01"))
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, null);
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        String authorization = recordedRequest.getHeader("X-device");
+        Assertions.assertThat(authorization).isEqualTo("ab-01");
+    }
+
+    @Test
     public void uri() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl(baseURL)
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
                 .build());
 
         restClient.request("ping", HttpMethod.GET, null, null, null);
@@ -152,8 +176,8 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void allowHttpRedirects() {
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl("http://localhost:8086")
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host("http://localhost:8086")
                 .allowHttpRedirects(true)
                 .build());
 
@@ -162,11 +186,60 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
+    public void proxy() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host("http://foo.com:8086")
+                .proxy(ProxySelector.of((InetSocketAddress) mockServer.toProxyAddress().address()))
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, null);
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
+        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL); // server is used as proxy
+        Assertions.assertThat(recordedRequest.getRequestLine()).isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
+    }
+
+    @Test
+    public void proxyWithAuthentication() throws InterruptedException {
+        mockServer.enqueue(createResponseWithHeaders(407, Map.of("Proxy-Authenticate", "Basic")));
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host("http://foo.com:8086")
+                .proxy(ProxySelector.of((InetSocketAddress) mockServer.toProxyAddress().address()))
+                .authenticator(new Authenticator() {
+                    @Override
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication("john", "secret".toCharArray());
+                    }
+                })
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, null);
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+        RecordedRequest proxyAuthRequest = mockServer.takeRequest();
+
+        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
+        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL); // server is used as proxy
+        Assertions.assertThat(recordedRequest.getRequestLine()).isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(2);
+        String proxyAuthorization = proxyAuthRequest.getHeader("Proxy-Authorization");
+        Assertions.assertThat(proxyAuthorization)
+                .isEqualTo("Basic " + Base64.getEncoder().encodeToString("john:secret".getBytes()));
+    }
+
+    @Test
     public void error() {
         mockServer.enqueue(createResponse(404));
 
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl(baseURL)
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
                 .build());
 
         Assertions.assertThatThrownBy(
@@ -179,8 +252,8 @@ public class RestClientTest extends AbstractMockServerTest {
     public void errorFromHeader() {
         mockServer.enqueue(createResponse(500).setHeader("X-Influx-Error", "not used"));
 
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl(baseURL)
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
                 .build());
 
         Assertions.assertThatThrownBy(
@@ -195,8 +268,8 @@ public class RestClientTest extends AbstractMockServerTest {
                 .setHeader("X-Influx-Error", "not used")
                 .setBody("{\"message\":\"token does not have sufficient permissions\"}"));
 
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl(baseURL)
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
                 .build());
 
         Assertions.assertThatThrownBy(
@@ -210,8 +283,8 @@ public class RestClientTest extends AbstractMockServerTest {
         mockServer.enqueue(createResponse(402)
                 .setBody("token is over the limit"));
 
-        restClient = new RestClient(new InfluxDBClientConfigs.Builder()
-                .hostUrl(baseURL)
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
                 .build());
 
         Assertions.assertThatThrownBy(

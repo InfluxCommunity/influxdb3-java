@@ -28,11 +28,11 @@ import javax.annotation.Nullable;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
 
-import com.influxdb.v3.client.config.InfluxDBClientConfigs;
+import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.InfluxDBClientImpl;
-import com.influxdb.v3.client.query.QueryParameters;
+import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.Point;
-import com.influxdb.v3.client.write.WriteParameters;
+import com.influxdb.v3.client.write.WriteOptions;
 
 /**
  * The InfluxDBClient interface provides a client for interact with InfluxDB 3.
@@ -51,10 +51,10 @@ public interface InfluxDBClient extends AutoCloseable {
     /**
      * Write a record specified in the InfluxDB Line Protocol to the InfluxDB server.
      *
-     * @param record     the record specified in the InfluxDB Line Protocol, can be null
-     * @param parameters the parameters for writing data to InfluxDB
+     * @param record    the record specified in the InfluxDB Line Protocol, can be null
+     * @param options  the options for writing data to InfluxDB
      */
-    void writeRecord(@Nullable final String record, @Nonnull final WriteParameters parameters);
+    void writeRecord(@Nullable final String record, @Nonnull final WriteOptions options);
 
     /**
      * Write records specified in the InfluxDB Line Protocol to the InfluxDB server.
@@ -67,9 +67,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Write records specified in the InfluxDB Line Protocol to the InfluxDB server.
      *
      * @param records    the records specified in the InfluxDB Line Protocol, cannot be null
-     * @param parameters the parameters for writing data to InfluxDB
+     * @param options the options for writing data to InfluxDB
      */
-    void writeRecords(@Nonnull final List<String> records, @Nonnull final WriteParameters parameters);
+    void writeRecords(@Nonnull final List<String> records, @Nonnull final WriteOptions options);
 
     /**
      * Write a {@link Point} to the InfluxDB server.
@@ -82,9 +82,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Write a {@link Point} to the InfluxDB server.
      *
      * @param point      the {@link Point} to write, can be null
-     * @param parameters the parameters for writing data to InfluxDB
+     * @param options the options for writing data to InfluxDB
      */
-    void writePoint(@Nullable final Point point, @Nonnull final WriteParameters parameters);
+    void writePoint(@Nullable final Point point, @Nonnull final WriteOptions options);
 
     /**
      * Write a list of {@link Point} to the InfluxDB server.
@@ -97,9 +97,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Write a list of {@link Point} to the InfluxDB server.
      *
      * @param points     the list of {@link Point} to write, cannot be null
-     * @param parameters the parameters for writing data to InfluxDB
+     * @param options the options for writing data to InfluxDB
      */
-    void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteParameters parameters);
+    void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteOptions options);
 
     /**
      * Query data from InfluxDB IOx using FlightSQL.
@@ -124,7 +124,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Object[]&gt; rows = client.query("select * from cpu", parameters)) {
+     * try (Stream&lt;Object[]&gt; rows = client.query("select * from cpu", options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
      *      }
@@ -132,11 +132,11 @@ public interface InfluxDBClient extends AutoCloseable {
      * </pre>
      *
      * @param query      the SQL query string to execute, cannot be null
-     * @param parameters the parameters for querying data from InfluxDB
+     * @param options the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
      */
     @Nonnull
-    Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryParameters parameters);
+    Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryOptions options);
 
     /**
      * Query data from InfluxDB IOx using FlightSQL.
@@ -159,7 +159,7 @@ public interface InfluxDBClient extends AutoCloseable {
     /**
      * Query data from InfluxDB IOx using FlightSQL.
      * <pre>
-     * try (Stream&lt;VectorSchemaRoot&gt; batches = client.queryBatches("select * from cpu", parameters)) {
+     * try (Stream&lt;VectorSchemaRoot&gt; batches = client.queryBatches("select * from cpu", options)) {
      *      batches.forEach(batch -&gt; {
      *          // process batch
      *      }
@@ -167,44 +167,44 @@ public interface InfluxDBClient extends AutoCloseable {
      * </pre>
      *
      * @param query      the SQL query string to execute, cannot be null
-     * @param parameters the parameters for querying data from InfluxDB
+     * @param options the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
      */
     @Nonnull
-    Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query, @Nonnull final QueryParameters parameters);
+    Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query, @Nonnull final QueryOptions options);
 
     /**
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
      * common operations such as writing, querying.
      *
-     * @param hostUrl   the hostname or IP address of the InfluxDB server
-     * @param authToken the authentication token for accessing the InfluxDB server, can be null
+     * @param host the URL of the InfluxDB server
+     * @param token the authentication token for accessing the InfluxDB server, can be null
      * @param database  the database to be used for InfluxDB operations, can be null
      * @return new instance of the {@link InfluxDBClient}
      */
     @Nonnull
-    static InfluxDBClient getInstance(@Nonnull final String hostUrl,
-                                      @Nullable final char[] authToken,
+    static InfluxDBClient getInstance(@Nonnull final String host,
+                                      @Nullable final char[] token,
                                       @Nullable final String database) {
-        InfluxDBClientConfigs configs = new InfluxDBClientConfigs.Builder()
-                .hostUrl(hostUrl)
-                .authToken(authToken)
+        ClientConfig config = new ClientConfig.Builder()
+                .host(host)
+                .token(token)
                 .database(database)
                 .build();
 
-        return getInstance(configs);
+        return getInstance(config);
     }
 
     /**
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
      * common operations such as writing, querying.
-     * For possible configuration options see {@link InfluxDBClientConfigs}.
+     * For possible configuration options see {@link ClientConfig}.
      *
-     * @param configs the configuration for the InfluxDB client
+     * @param config the configuration for the InfluxDB client
      * @return new instance of the {@link InfluxDBClient}
      */
     @Nonnull
-    static InfluxDBClient getInstance(@Nonnull final InfluxDBClientConfigs configs) {
-        return new InfluxDBClientImpl(configs);
+    static InfluxDBClient getInstance(@Nonnull final ClientConfig config) {
+        return new InfluxDBClientImpl(config);
     }
 }

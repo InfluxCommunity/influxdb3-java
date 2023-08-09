@@ -3,6 +3,11 @@
 ### Features
 
 1. [#27](https://github.com/InfluxCommunity/influxdb3-java/pull/27): Add GZIP support
+1. [#30](https://github.com/InfluxCommunity/influxdb3-java/pull/30): Add HTTP proxy and custom headers support
+
+### Breaking Changes
+
+1. [#31](https://github.com/InfluxCommunity/influxdb3-java/pull/31): Renamed config types and some options
 
 ## 0.1.0 [2023-06-08]
 

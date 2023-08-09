@@ -32,8 +32,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import com.influxdb.v3.client.config.InfluxDBClientConfigs;
-import com.influxdb.v3.client.query.QueryParameters;
+import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.query.QueryOptions;
 
 class ITQueryWrite {
 
@@ -76,7 +76,7 @@ class ITQueryWrite {
 
         String influxQL = String.format("SELECT MEAN(value) FROM %s WHERE \"testId\"=%d "
                 + "group by time(1s) fill(none) order by time desc limit 1", measurement, testId);
-        try (Stream<Object[]> stream = client.query(influxQL, QueryParameters.INFLUX_QL)) {
+        try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.INFLUX_QL)) {
 
             List<Object[]> rows = stream.collect(Collectors.toList());
 
@@ -104,9 +104,9 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
     void queryWriteGzip() {
-        client = InfluxDBClient.getInstance(new InfluxDBClientConfigs.Builder()
-                .hostUrl(System.getenv("TESTING_INFLUXDB_URL"))
-                .authToken(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
                 .gzipThreshold(1)
                 .build());

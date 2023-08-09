@@ -22,6 +22,7 @@
 package com.influxdb.v3.client;
 
 import java.io.IOException;
+import java.util.Map;
 import javax.annotation.Nonnull;
 
 import okhttp3.mockwebserver.MockResponse;
@@ -55,9 +56,21 @@ public abstract class AbstractMockServerTest {
     @Nonnull
     protected MockResponse createResponse(final int responseCode) {
 
-        return new MockResponse()
-                .setResponseCode(responseCode)
-                .setHeader("Content-Type", "text/csv; charset=utf-8")
-                .setHeader("Date", "Tue, 26 Jun 2018 13:15:01 GMT");
+        return createResponseWithHeaders(responseCode, Map.of(
+                "Content-Type", "text/csv; charset=utf-8",
+                "Date", "Tue, 26 Jun 2018 13:15:01 GMT"
+        ));
+    }
+
+    @Nonnull
+    protected MockResponse createResponseWithHeaders(final int responseCode, final Map<String, String> headers) {
+
+        final MockResponse response = new MockResponse()
+                .setResponseCode(responseCode);
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            response.addHeader(entry.getKey(), entry.getValue());
+        }
+
+        return response;
     }
 }

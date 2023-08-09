@@ -26,11 +26,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 
-import com.influxdb.v3.client.config.InfluxDBClientConfigs;
+import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.Arguments;
 
 /**
- * Write API parameters.
+ * Write options.
  * <p>
  * Supports to specify:
  * <ul>
@@ -41,7 +41,7 @@ import com.influxdb.v3.client.internal.Arguments;
  */
 @ThreadSafe
 @SuppressWarnings("ConstantConditions")
-public final class WriteParameters {
+public final class WriteOptions {
 
     /**
      * Default WritePrecision.
@@ -52,77 +52,59 @@ public final class WriteParameters {
      */
     public static final Integer DEFAULT_GZIP_THRESHOLD = 1000;
     /**
-     * Default WriteParameters.
+     * Default WriteOptions.
      */
-    public static final WriteParameters DEFAULTS = new WriteParameters(null, null, null, null);
+    public static final WriteOptions DEFAULTS = new WriteOptions(null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD);
 
     private final String database;
-    private final String organization;
     private final WritePrecision precision;
     private final Integer gzipThreshold;
 
     /**
-     * Construct WriteAPI parameters.
+     * Construct WriteAPI options.
      *
      * @param database     The database to be used for InfluxDB operations.
-     *                     If it is not specified then use {@link InfluxDBClientConfigs#getDatabase()}.
-     * @param organization The organization to be used for InfluxDB operations.
-     *                     If it is not specified then use {@link InfluxDBClientConfigs#getOrganization()}.
      * @param precision    The precision to use for the timestamp of points.
-     *                     If it is not specified then use {@link WritePrecision#NS}.
      * @param gzipThreshold The threshold for compressing request body.
-     *                     Default is 1000.
      */
-    public WriteParameters(@Nullable final String database,
-                           @Nullable final String organization,
-                           @Nullable final WritePrecision precision,
-                           @Nullable final Integer gzipThreshold) {
+    public WriteOptions(@Nonnull final String database,
+                        @Nonnull final WritePrecision precision,
+                        @Nonnull final Integer gzipThreshold) {
         this.database = database;
-        this.organization = organization;
         this.precision = precision;
         this.gzipThreshold = gzipThreshold;
     }
 
     /**
-     * @param configs with default value
-     * @return The destination organization for writes.
-     */
-    @Nullable
-    public String organizationSafe(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
-        return isNotDefined(organization) ? configs.getOrganization() : organization;
-    }
-
-    /**
-     * @param configs with default value
+     * @param config with default value
      * @return The destination database for writes.
      */
     @Nullable
-    public String databaseSafe(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
-        return isNotDefined(database) ? configs.getDatabase() : database;
+    public String databaseSafe(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
+        return isNotDefined(database) ? config.getDatabase() : database;
     }
 
     /**
-     * @param configs with default value
+     * @param config with default value
      * @return Precision for unix timestamps in the line protocol of the request payload.
      */
     @Nonnull
-    public WritePrecision precisionSafe(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
+    public WritePrecision precisionSafe(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
         return precision != null ? precision
-                : (configs.getWritePrecision() != null ? configs.getWritePrecision() : DEFAULT_WRITE_PRECISION);
+                : (config.getWritePrecision() != null ? config.getWritePrecision() : DEFAULT_WRITE_PRECISION);
     }
 
     /**
-     * @param configs with default value
+     * @param config with default value
      * @return Payload size threshold for compressing it.
      */
     @Nonnull
-    public Integer gzipThresholdSafe(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
+    public Integer gzipThresholdSafe(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
         return gzipThreshold != null ? gzipThreshold
-                : (configs.getWritePrecision() != null ? configs.getGzipThreshold() : DEFAULT_GZIP_THRESHOLD);
+                : (config.getWritePrecision() != null ? config.getGzipThreshold() : DEFAULT_GZIP_THRESHOLD);
     }
 
     @Override
@@ -133,17 +115,85 @@ public final class WriteParameters {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        WriteParameters that = (WriteParameters) o;
-        return Objects.equals(database, that.database) && Objects.equals(organization, that.organization)
-                && precision == that.precision && Objects.equals(gzipThreshold, that.gzipThreshold);
+        WriteOptions that = (WriteOptions) o;
+        return Objects.equals(database, that.database)
+                && precision == that.precision
+                && Objects.equals(gzipThreshold, that.gzipThreshold);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(database, organization, precision, gzipThreshold);
+        return Objects.hash(database, precision, gzipThreshold);
     }
 
     private boolean isNotDefined(final String option) {
         return option == null || option.isEmpty();
+    }
+
+    /**
+     * A builder for {@code WriteOptions}.
+     * <p>
+     * Mutable.
+     */
+    public static final class Builder {
+        private String database;
+        private WritePrecision precision;
+        private Integer gzipThreshold;
+
+        /**
+         * Sets the database.
+         *
+         * @param database database
+         * @return this
+         */
+        @Nonnull
+        public Builder database(@Nonnull final String database) {
+
+            this.database = database;
+            return this;
+        }
+
+        /**
+         * Sets the precision.
+         *
+         * @param precision precision
+         * @return this
+         */
+        @Nonnull
+        public Builder precision(@Nonnull final WritePrecision precision) {
+
+            this.precision = precision;
+            return this;
+        }
+
+        /**
+         * Sets the GZIp threshold.
+         *
+         * @param gzipThreshold body size threshold for compression using GZIP
+         * @return this
+         */
+        @Nonnull
+        public Builder gzipThreshold(@Nonnull final Integer gzipThreshold) {
+
+            this.gzipThreshold = gzipThreshold;
+            return this;
+        }
+
+        /**
+         * Build an instance of {@code ClientConfig}.
+         *
+         * @return the configuration for an {@code InfluxDBClient}.
+         */
+        @Nonnull
+        public WriteOptions build() {
+            return new WriteOptions(this);
+        }
+
+    }
+
+    private WriteOptions(@Nonnull final Builder builder) {
+        this.database = builder.database;
+        this.precision = builder.precision;
+        this.gzipThreshold = builder.gzipThreshold;
     }
 }

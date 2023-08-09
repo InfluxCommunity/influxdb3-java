@@ -25,11 +25,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 
-import com.influxdb.v3.client.config.InfluxDBClientConfigs;
+import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.Arguments;
 
 /**
- * Query API parameters.
+ * Query API options.
  * <p>
  * Supports to specify:
  * <ul>
@@ -39,50 +39,58 @@ import com.influxdb.v3.client.internal.Arguments;
  */
 @ThreadSafe
 @SuppressWarnings("ConstantConditions")
-public final class QueryParameters {
+public final class QueryOptions {
 
     /**
-     * Default QueryAPI parameters.
+     * Default QueryAPI options.
      */
-    public static final QueryParameters DEFAULTS = new QueryParameters(null);
+    public static final QueryOptions DEFAULTS = new QueryOptions(null, QueryType.SQL);
     /**
-     * Default QueryAPI parameters for InfluxQL.
+     * Default QueryAPI options for InfluxQL.
      */
-    public static final QueryParameters INFLUX_QL = new QueryParameters(null, QueryType.InfluxQL);
+    public static final QueryOptions INFLUX_QL = new QueryOptions(null, QueryType.InfluxQL);
 
     private final String database;
     private final QueryType queryType;
 
     /**
-     * Construct QueryAPI parameters.
+     * Construct QueryAPI options.
      *
      * @param database The database to be used for InfluxDB operations.
-     *                 If it is not specified then use {@link InfluxDBClientConfigs#getDatabase()}.
      */
-    public QueryParameters(@Nullable final String database) {
+    public QueryOptions(@Nonnull final String database) {
         this(database, QueryType.SQL);
     }
 
     /**
-     * Construct QueryAPI parameters.
+     * Construct QueryAPI options.
+     *
+     * @param queryType The type of query sent to InfluxDB.
+     */
+    public QueryOptions(@Nonnull final QueryType queryType) {
+        this(null, queryType);
+    }
+
+    /**
+     * Construct QueryAPI options.
      *
      * @param database  The database to be used for InfluxDB operations.
-     *                  If it is not specified then use {@link InfluxDBClientConfigs#getDatabase()}.
+     *                  If it is not specified then use {@link ClientConfig#getDatabase()}.
      * @param queryType The type of query sent to InfluxDB. If it is not specified then use {@link QueryType#SQL}.
      */
-    public QueryParameters(@Nullable final String database, @Nullable final QueryType queryType) {
+    public QueryOptions(@Nullable final String database, @Nullable final QueryType queryType) {
         this.database = database;
         this.queryType = queryType;
     }
 
     /**
-     * @param configs with default value
+     * @param config with default value
      * @return The destination database for writes.
      */
     @Nullable
-    public String databaseSafe(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
-        return isNotDefined(database) ? configs.getDatabase() : database;
+    public String databaseSafe(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
+        return isNotDefined(database) ? config.getDatabase() : database;
     }
 
     /**

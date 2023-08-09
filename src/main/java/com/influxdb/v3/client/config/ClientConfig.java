@@ -21,8 +21,11 @@
  */
 package com.influxdb.v3.client.config;
 
+import java.net.Authenticator;
+import java.net.ProxySelector;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import javax.annotation.Nonnull;
@@ -31,13 +34,13 @@ import javax.annotation.Nullable;
 import com.influxdb.v3.client.write.WritePrecision;
 
 /**
- * The <code>InfluxDBClientConfigs</code> holds the configurations for the
+ * The <code>ClientConfig</code> holds the configurations for the
  * {@link com.influxdb.v3.client.InfluxDBClient} client.
  * <p>
  * You can configure following properties:
  * <ul>
- *     <li><code>hostUrl</code> - hostname or IP address of the InfluxDB server</li>
- *     <li><code>authToken</code> - authentication token for accessing the InfluxDB server</li>
+ *     <li><code>host</code> - hostname or IP address of the InfluxDB server</li>
+ *     <li><code>token</code> - authentication token for accessing the InfluxDB server</li>
  *     <li><code>organization</code> - organization to be used for operations</li>
  *     <li><code>database</code> - database to be used for InfluxDB operations</li>
  *     <li><code>writePrecision</code> - precision to use when writing points to InfluxDB</li>
@@ -47,19 +50,23 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
  *     </li>
+ *     <li><code>proxy</code> - HTTP proxy selector</li>
+ *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
+ *     <li><code>headers</code> - set of HTTP headers to be added to requests</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
  * <pre>
- * InfluxDBClientConfigs configs = new InfluxDBClientConfigs.Builder()
- *     .hostUrl("https://us-east-1-1.aws.cloud2.influxdata.com")
- *     .authToken("my-token".toCharArray())
+ * ClientConfig config = new Config.Builder()
+ *     .host("https://us-east-1-1.aws.cloud2.influxdata.com")
+ *     .token("my-token".toCharArray())
  *     .database("my-database")
  *     .writePrecision(WritePrecision.S)
  *     .gzipThreshold(4096)
+ *     .proxy(ProxySelector.of(new InetSocketAddress("http://proxy.local", 8888)))
  *     .build();
  *
- * try (InfluxDBClient client = InfluxDBClient.getInstance(configs)) {
+ * try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
  *     //
  *     // your code here
  *     //
@@ -69,26 +76,29 @@ import com.influxdb.v3.client.write.WritePrecision;
  * </pre>
  * Immutable class.
  */
-public final class InfluxDBClientConfigs {
+public final class ClientConfig {
 
-    private final String hostUrl;
-    private final char[] authToken;
+    private final String host;
+    private final char[] token;
     private final String organization;
     private final String database;
     private final WritePrecision writePrecision;
     private final Integer gzipThreshold;
-    private final Duration responseTimeout;
+    private final Duration timeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
+    private final ProxySelector proxy;
+    private final Authenticator authenticator;
+    private final Map<String, String> headers;
 
     /**
-     * Gets hostname or IP address of the InfluxDB server.
+     * Gets URL of the InfluxDB server.
      *
-     * @return hostname or IP address of the InfluxDB server
+     * @return URL of the InfluxDB server
      */
     @Nonnull
-    public String getHostUrl() {
-        return hostUrl;
+    public String getHost() {
+        return host;
     }
 
     /**
@@ -97,8 +107,8 @@ public final class InfluxDBClientConfigs {
      * @return authentication token for accessing the InfluxDB server, may be null
      */
     @Nullable
-    public char[] getAuthToken() {
-        return authToken;
+    public char[] getToken() {
+        return token;
     }
 
     /**
@@ -142,13 +152,13 @@ public final class InfluxDBClientConfigs {
     }
 
     /**
-     * Gets the default response timeout to use for the API calls. Default to '10 seconds'.
+     * Gets the default timeout to use for the API calls. Default to '10 seconds'.
      *
-     * @return the default response timeout to use for the API calls
+     * @return the default timeout to use for the API calls
      */
     @Nonnull
-    public Duration getResponseTimeout() {
-        return responseTimeout;
+    public Duration getTimeout() {
+        return timeout;
     }
 
     /**
@@ -166,16 +176,47 @@ public final class InfluxDBClientConfigs {
      *
      * @return the disable server SSL certificate validation
      */
+    @Nonnull
     public Boolean getDisableServerCertificateValidation() {
         return disableServerCertificateValidation;
+    }
+
+    /**
+     * Gets the proxy.
+     *
+     * @return the proxy, may be null
+     */
+    @Nullable
+    public ProxySelector getProxy() {
+        return proxy;
+    }
+
+    /**
+     * Gets the (proxy) authenticator.
+     *
+     * @return the (proxy) authenticator
+     */
+    @Nullable
+    public Authenticator getAuthenticator() {
+        return authenticator;
+    }
+
+    /**
+     * Gets custom HTTP headers.
+     *
+     * @return the HTTP headers
+     */
+    @Nullable
+    public Map<String, String> getHeaders() {
+        return headers;
     }
 
     /**
      * Validates the configuration properties.
      */
     public void validate() {
-        if (hostUrl == null || hostUrl.isEmpty()) {
-            throw new IllegalArgumentException("The hostname or IP address of the InfluxDB server has to be defined.");
+        if (host == null || host.isBlank()) {
+            throw new IllegalArgumentException("The URL of the InfluxDB server has to be defined.");
         }
     }
 
@@ -187,77 +228,86 @@ public final class InfluxDBClientConfigs {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        InfluxDBClientConfigs that = (InfluxDBClientConfigs) o;
-        return Objects.equals(hostUrl, that.hostUrl)
-                && Arrays.equals(authToken, that.authToken)
+        ClientConfig that = (ClientConfig) o;
+        return Objects.equals(host, that.host)
+                && Arrays.equals(token, that.token)
                 && Objects.equals(organization, that.organization)
                 && Objects.equals(database, that.database)
                 && writePrecision == that.writePrecision
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
-                && Objects.equals(responseTimeout, that.responseTimeout)
+                && Objects.equals(timeout, that.timeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
-                && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation);
+                && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
+                && Objects.equals(proxy, that.proxy)
+                && Objects.equals(authenticator, that.authenticator)
+                && Objects.equals(headers, that.headers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostUrl, Arrays.hashCode(authToken), organization, database, writePrecision, gzipThreshold,
-                responseTimeout, allowHttpRedirects, disableServerCertificateValidation);
+        return Objects.hash(host, Arrays.hashCode(token), organization, database, writePrecision, gzipThreshold,
+                timeout, allowHttpRedirects, disableServerCertificateValidation, proxy, authenticator, headers);
     }
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", InfluxDBClientConfigs.class.getSimpleName() + "InfluxDBClientConfigs[", "]")
-                .add("hostUrl='" + hostUrl + "'")
+        return new StringJoiner(", ", ClientConfig.class.getSimpleName() + "ClientConfig[", "]")
+                .add("host='" + host + "'")
                 .add("organization='" + organization + "'")
                 .add("database='" + database + "'")
                 .add("writePrecision=" + writePrecision)
                 .add("gzipThreshold=" + gzipThreshold)
-                .add("responseTimeout=" + responseTimeout)
+                .add("timeout=" + timeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
+                .add("proxy=" + proxy)
+                .add("authenticator=" + authenticator)
+                .add("headers=" + headers)
                 .toString();
     }
 
     /**
-     * A builder for {@code InfluxDBClientConfigs}.
+     * A builder for {@code ClientConfig}.
      * <p>
      * Mutable.
      */
     public static final class Builder {
-        private String hostUrl;
-        private char[] authToken;
+        private String host;
+        private char[] token;
         private String organization;
         private String database;
         private WritePrecision writePrecision;
         private Integer gzipThreshold;
-        private Duration responseTimeout;
+        private Duration timeout;
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
+        private ProxySelector proxy;
+        private Authenticator authenticator;
+        private Map<String, String> headers;
 
         /**
-         * Sets the hostname or IP address of the InfluxDB server.
+         * Sets the URL of the InfluxDB server.
          *
-         * @param hostUrl hostname or IP address of the InfluxDB server
+         * @param host URL of the InfluxDB server
          * @return this
          */
         @Nonnull
-        public Builder hostUrl(@Nonnull final String hostUrl) {
+        public Builder host(@Nonnull final String host) {
 
-            this.hostUrl = hostUrl;
+            this.host = host;
             return this;
         }
 
         /**
          * Sets the authentication token for accessing the InfluxDB server.
          *
-         * @param authToken authentication token for accessing the InfluxDB server
+         * @param token authentication token for accessing the InfluxDB server
          * @return this
          */
         @Nonnull
-        public Builder authToken(@Nullable final char[] authToken) {
+        public Builder token(@Nullable final char[] token) {
 
-            this.authToken = authToken;
+            this.token = token;
             return this;
         }
 
@@ -316,15 +366,15 @@ public final class InfluxDBClientConfigs {
         }
 
         /**
-         * Sets the default response timeout to use for the API calls. Default to '10 seconds'.
+         * Sets the default timeout to use for the API calls. Default to '10 seconds'.
          *
-         * @param responseTimeout default response timeout to use for the API calls. Default to '10 seconds'.
+         * @param timeout default timeout to use for the API calls. Default to '10 seconds'.
          * @return this
          */
         @Nonnull
-        public Builder responseTimeout(@Nullable final Duration responseTimeout) {
+        public Builder timeout(@Nullable final Duration timeout) {
 
-            this.responseTimeout = responseTimeout;
+            this.timeout = timeout;
             return this;
         }
 
@@ -355,27 +405,69 @@ public final class InfluxDBClientConfigs {
         }
 
         /**
-         * Build an instance of {@code InfluxDBClientConfigs}.
+         * Sets the proxy selector. Default is 'null'.
+         *
+         * @param proxy Proxy selector.
+         * @return this
+         */
+        @Nonnull
+        public Builder proxy(@Nullable final ProxySelector proxy) {
+
+            this.proxy = proxy;
+            return this;
+        }
+
+        /**
+         * Sets the proxy authenticator. Default is 'null'.
+         *
+         * @param authenticator Proxy authenticator. Ignored if 'proxy' is not set.
+         * @return this
+         */
+        @Nonnull
+        public Builder authenticator(@Nullable final Authenticator authenticator) {
+
+            this.authenticator = authenticator;
+            return this;
+        }
+
+        /**
+         * Sets the custom HTTP headers that will be included in requests.
+         *
+         * @param headers Set of HTTP headers.
+         * @return this
+         */
+        @Nonnull
+        public Builder headers(@Nullable final Map<String, String> headers) {
+
+            this.headers = headers;
+            return this;
+        }
+
+        /**
+         * Build an instance of {@code ClientConfig}.
          *
          * @return the configuration for an {@code InfluxDBClient}.
          */
         @Nonnull
-        public InfluxDBClientConfigs build() {
-            return new InfluxDBClientConfigs(this);
+        public ClientConfig build() {
+            return new ClientConfig(this);
         }
     }
 
     @SuppressWarnings("MagicNumber")
-    private InfluxDBClientConfigs(@Nonnull final Builder builder) {
-        hostUrl = builder.hostUrl;
-        authToken = builder.authToken;
+    private ClientConfig(@Nonnull final Builder builder) {
+        host = builder.host;
+        token = builder.token;
         organization = builder.organization;
         database = builder.database;
         writePrecision = builder.writePrecision != null ? builder.writePrecision : WritePrecision.NS;
         gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : 1000;
-        responseTimeout = builder.responseTimeout != null ? builder.responseTimeout : Duration.ofSeconds(10);
+        timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(10);
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
+        proxy = builder.proxy;
+        authenticator = builder.authenticator;
+        headers = builder.headers;
     }
 }

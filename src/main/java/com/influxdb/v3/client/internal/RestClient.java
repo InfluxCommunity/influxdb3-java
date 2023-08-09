@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.influxdb.v3.client.InfluxDBApiException;
-import com.influxdb.v3.client.config.InfluxDBClientConfigs;
+import com.influxdb.v3.client.config.ClientConfig;
 
 final class RestClient implements AutoCloseable {
 
@@ -69,31 +69,44 @@ final class RestClient implements AutoCloseable {
     final String userAgent;
     final HttpClient client;
 
-    private final InfluxDBClientConfigs configs;
+    private final ClientConfig config;
+    private final Map<String, String> defaultHeaders;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    RestClient(@Nonnull final InfluxDBClientConfigs configs) {
-        Arguments.checkNotNull(configs, "configs");
+    RestClient(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
 
-        this.configs = configs;
+        this.config = config;
 
         // user agent version
         Package mainPackage = RestClient.class.getPackage();
         String version = mainPackage != null ? mainPackage.getImplementationVersion() : "unknown";
         this.userAgent = String.format("influxdb3-java/%s", version != null ? version : "unknown");
 
-        this.baseUrl = configs.getHostUrl().endsWith("/")
-                ? configs.getHostUrl() : String.format("%s/", configs.getHostUrl());
+        // URL
+        String host = config.getHost();
+        this.baseUrl = host.endsWith("/") ? host : String.format("%s/", host);
 
         // timeout and redirects
         HttpClient.Builder builder = HttpClient.newBuilder()
-                .connectTimeout(configs.getResponseTimeout())
-                .followRedirects(configs.getAllowHttpRedirects()
+                .connectTimeout(config.getTimeout())
+                .followRedirects(config.getAllowHttpRedirects()
                         ? HttpClient.Redirect.NORMAL : HttpClient.Redirect.NEVER);
+
+        // default headers
+        this.defaultHeaders = config.getHeaders() != null ? Map.copyOf(config.getHeaders()) : null;
+
+        // proxy
+        if (config.getProxy() != null) {
+            builder.proxy(config.getProxy());
+            if (config.getAuthenticator() != null) {
+                builder.authenticator(config.getAuthenticator());
+            }
+        }
 
         if (baseUrl.startsWith("https")) {
             try {
-                if (configs.getDisableServerCertificateValidation()) {
+                if (config.getDisableServerCertificateValidation()) {
                     SSLContext sslContext = SSLContext.getInstance("TLS");
                     sslContext.init(null, TRUST_ALL_CERTS, new SecureRandom());
                     builder.sslContext(sslContext);
@@ -135,14 +148,19 @@ final class RestClient implements AutoCloseable {
                 ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(data));
 
         // headers
+        if (defaultHeaders != null) {
+            for (Map.Entry<String, String> entry : defaultHeaders.entrySet()) {
+                request.header(entry.getKey(), entry.getValue());
+            }
+        }
         if (headers != null) {
             for (Map.Entry<String, String> entry : headers.entrySet()) {
                 request.header(entry.getKey(), entry.getValue());
             }
         }
         request.header("User-Agent", userAgent);
-        if (configs.getAuthToken() != null && configs.getAuthToken().length > 0) {
-            request.header("Authorization", String.format("Token %s", new String(configs.getAuthToken())));
+        if (config.getToken() != null && config.getToken().length > 0) {
+            request.header("Authorization", String.format("Token %s", new String(config.getToken())));
         }
 
         HttpResponse<String> response;

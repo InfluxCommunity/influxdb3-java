@@ -31,7 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.write.Point;
-import com.influxdb.v3.client.write.WriteParameters;
+import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
 class InfluxDBClientWriteTest extends AbstractMockServerTest {
@@ -103,7 +103,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     void databaseParameterSpecified() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
-        client.writeRecord("mem,tag=one value=1.0", new WriteParameters("my-database-2", null, null, null));
+        client.writeRecord("mem,tag=one value=1.0", new WriteOptions.Builder().database("my-database-2").build());
 
         Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
@@ -121,7 +121,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         Assertions.assertThatThrownBy(() -> client.writeRecord("mem,tag=one value=1.0"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Please specify the 'Database' as a method parameter or use "
-                        + "default configuration at 'InfluxDBClientConfigs.database'.");
+                        + "default configuration at 'ClientConfig.database'.");
 
         Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(0);
     }
@@ -144,7 +144,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     void precisionParameterSpecified() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
-        client.writeRecord("mem,tag=one value=1.0", new WriteParameters(null, null, WritePrecision.S, null));
+        client.writeRecord("mem,tag=one value=1.0", new WriteOptions.Builder().precision(WritePrecision.S).build());
 
         Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
@@ -154,46 +154,24 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     }
 
     @Test
-    void orgParameterSpecified() throws InterruptedException {
+    void gzipParameter() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
-        client.writePoint(
-                Point
-                        .measurement("h2o")
-                        .addTag("location", "europe")
-                        .addField("level", 2),
-                new WriteParameters(null, "my-org", null, null)
-        );
+        client.writeRecord("mem,tag=one value=1.0");
 
         Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         Assertions.assertThat(request).isNotNull();
         Assertions.assertThat(request.getRequestUrl()).isNotNull();
-        Assertions.assertThat(request.getRequestUrl().queryParameter("org")).isEqualTo("my-org");
+        Assertions.assertThat(request.getHeader("Content-Type")).isEqualTo("text/plain; charset=utf-8");
+        Assertions.assertThat(request.getHeader("Content-Encoding")).isNotEqualTo("gzip");
     }
 
     @Test
-    void orgParameterNotSpecified() throws InterruptedException {
+    void gzipParameterSpecified() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
-        client.writePoint(Point
-                .measurement("h2o")
-                .addTag("location", "europe")
-                .addField("level", 2)
-        );
-
-        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
-        RecordedRequest request = mockServer.takeRequest();
-        Assertions.assertThat(request).isNotNull();
-        Assertions.assertThat(request.getRequestUrl()).isNotNull();
-        Assertions.assertThat(request.getRequestUrl().queryParameter("org")).isNull();
-    }
-
-    @Test
-    void gzip() throws InterruptedException {
-        mockServer.enqueue(createResponse(200));
-
-        client.writeRecord("mem,tag=one value=1.0", new WriteParameters(null, null, WritePrecision.S, 1));
+        client.writeRecord("mem,tag=one value=1.0", new WriteOptions.Builder().gzipThreshold(1).build());
 
         Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
@@ -201,6 +179,23 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         Assertions.assertThat(request.getRequestUrl()).isNotNull();
         Assertions.assertThat(request.getHeader("Content-Type")).isEqualTo("text/plain; charset=utf-8");
         Assertions.assertThat(request.getHeader("Content-Encoding")).isEqualTo("gzip");
+    }
+
+    @Test
+    void allParameterSpecified() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        client.writeRecord("mem,tag=one value=1.0",
+                new WriteOptions("your-database", WritePrecision.S, 1));
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+        Assertions.assertThat(request).isNotNull();
+        Assertions.assertThat(request.getRequestUrl()).isNotNull();
+        Assertions.assertThat(request.getHeader("Content-Type")).isEqualTo("text/plain; charset=utf-8");
+        Assertions.assertThat(request.getHeader("Content-Encoding")).isEqualTo("gzip");
+        Assertions.assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("s");
+        Assertions.assertThat(request.getRequestUrl().queryParameter("bucket")).isEqualTo("your-database");
     }
 
     @Test
@@ -217,10 +212,26 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     }
 
     @Test
-    void body() throws InterruptedException {
+    void bodyRecord() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
         client.writeRecord("mem,tag=one value=1.0");
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+        Assertions.assertThat(request).isNotNull();
+        Assertions.assertThat(request.getBody().readUtf8()).isEqualTo("mem,tag=one value=1.0");
+    }
+
+    @Test
+    void bodyPoint() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        Point point = new Point("mem");
+        point.addTag("tag", "one");
+        point.addField("value", 1.0);
+
+        client.writePoint(point);
 
         Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
