@@ -73,14 +73,45 @@ class ClientConfigTest {
 
     @Test
     void fromConnectionString() throws MalformedURLException {
-        final ClientConfig cfg = new ClientConfig.Builder()
+        ClientConfig cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
-                        + "?token=my-token&org=my-org&database=my-database&precision=ms&gzipThreshold=128");
+                        + "?token=my-token&org=my-org&database=my-db&gzipThreshold=128");
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
         Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
         Assertions.assertThat(cfg.getOrganization()).isEqualTo("my-org");
-        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
+        Assertions.assertThat(cfg.getDatabase()).isEqualTo("my-db");
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS); // default
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(128);
+
+        cfg = new ClientConfig.Builder()
+                .build("http://localhost:9999/"
+                        + "?token=my-token&precision=us");
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getOrganization()).isEqualTo(null);
+        Assertions.assertThat(cfg.getDatabase()).isEqualTo(null);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.US);
+        Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000); // default
+
+        cfg = new ClientConfig.Builder()
+                .build("http://localhost:9999/"
+                        + "?token=my-token&precision=ms");
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getOrganization()).isEqualTo(null);
+        Assertions.assertThat(cfg.getDatabase()).isEqualTo(null);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
+        Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000); // default
+
+        cfg = new ClientConfig.Builder()
+                .build("http://localhost:9999/"
+                        + "?token=my-token&precision=s");
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getOrganization()).isEqualTo(null);
+        Assertions.assertThat(cfg.getDatabase()).isEqualTo(null);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.S);
+        Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000); // default
     }
 
     @Test
@@ -91,7 +122,7 @@ class ClientConfigTest {
                 "INFLUX_ORG", "my-org",
                 "INFLUX_DATABASE", "my-db"
         );
-        final ClientConfig cfg = new ClientConfig.Builder()
+        ClientConfig cfg = new ClientConfig.Builder()
                 .build(env, null);
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
         Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
@@ -109,7 +140,7 @@ class ClientConfigTest {
         properties.put("influx.token", "my-token");
         properties.put("influx.org", "my-org");
         properties.put("influx.database", "my-db");
-        final ClientConfig cfg = new ClientConfig.Builder()
+        ClientConfig cfg = new ClientConfig.Builder()
                 .build(new HashMap<>(), properties);
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
         Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
