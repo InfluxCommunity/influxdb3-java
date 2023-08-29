@@ -214,7 +214,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * Example:
      * <pre>
-     * client = InfluxDBClient.getInstance("https://us-east-1-1.aws.cloud2.influxdata.com/?token=my-token&amp;database=my-database");
+     * client = InfluxDBClient.getInstance("https://us-east-1-1.aws.cloud2.influxdata.com/"
+     *         + "?token=my-token&amp;database=my-database");
      * </pre>
      * <p>
      * Supported parameters:

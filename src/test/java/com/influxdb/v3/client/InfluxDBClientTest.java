@@ -64,7 +64,8 @@ class InfluxDBClientTest {
     @Test
     void fromConnectionString() throws Exception {
 
-        try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086?token=my-token&database=my-db")) {
+        try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086"
+                + "?token=my-token&database=my-db")) {
             Assertions.assertThat(client).isNotNull();
         }
     }

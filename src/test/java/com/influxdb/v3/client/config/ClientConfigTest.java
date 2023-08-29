@@ -74,7 +74,8 @@ class ClientConfigTest {
     @Test
     void fromConnectionString() throws MalformedURLException {
         final ClientConfig cfg = new ClientConfig.Builder()
-                .build("http://localhost:9999/?token=my-token&org=my-org&database=my-database&precision=ms&gzipThreshold=128");
+                .build("http://localhost:9999/"
+                        + "?token=my-token&org=my-org&database=my-database&precision=ms&gzipThreshold=128");
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
         Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
         Assertions.assertThat(cfg.getOrganization()).isEqualTo("my-org");
