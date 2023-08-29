@@ -217,6 +217,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * client = InfluxDBClient.getInstance("https://us-east-1-1.aws.cloud2.influxdata.com/?token=my-token&database=my-database");
      * </pre>
      * </p>
+     * <p>
      * Supported parameters:
      * <ul>
      *   <li>token (required)</li>
@@ -231,8 +232,12 @@ public interface InfluxDBClient extends AutoCloseable {
      * @return instance of {@link InfluxDBClient}
      */
     @Nonnull
-    static InfluxDBClient getInstance(@Nonnull final String connectionString) throws MalformedURLException {
-        return getInstance(new ClientConfig.Builder().build(connectionString));
+    static InfluxDBClient getInstance(@Nonnull final String connectionString) {
+        try {
+            return getInstance(new ClientConfig.Builder().build(connectionString));
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e); // same exception as ClientConfig.validate()
+        }
     }
 
     /**
@@ -244,6 +249,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * client = InfluxDBClient.getInstance();
      * </pre>
      * </p>
+     * <p>
      * Supported environment variables:
      * <ul>
      *   <li>INFLUX_HOST <i>required</i></li>

@@ -462,7 +462,8 @@ public final class ClientConfig {
          * Build an instance of {@code ClientConfig} from connection string.
          *
          * @param connectionString connection string in URL format
-         * @return the configuration for an {@code InfluxDBClient}.
+         * @return the configuration for an {@code InfluxDBClient}
+         * @throws MalformedURLException when argument is not valid URL
          */
         @Nonnull
         public ClientConfig build(@Nonnull final String connectionString) throws MalformedURLException {

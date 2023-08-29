@@ -21,11 +21,10 @@
  */
 package com.influxdb.v3.client;
 
+import java.util.Properties;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.net.MalformedURLException;
-import java.util.Properties;
 
 class InfluxDBClientTest {
 
@@ -41,7 +40,7 @@ class InfluxDBClientTest {
     void requiredHostConnectionString() {
 
         Assertions.assertThatThrownBy(() -> InfluxDBClient.getInstance("?token=my-token&database=my-database"))
-                .isInstanceOf(MalformedURLException.class)
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("no protocol");
     }
 
