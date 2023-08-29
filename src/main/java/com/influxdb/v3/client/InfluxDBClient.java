@@ -216,7 +216,6 @@ public interface InfluxDBClient extends AutoCloseable {
      * <pre>
      * client = InfluxDBClient.getInstance("https://us-east-1-1.aws.cloud2.influxdata.com/?token=my-token&database=my-database");
      * </pre>
-     * </p>
      * <p>
      * Supported parameters:
      * <ul>
@@ -226,7 +225,6 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>precision</li>
      *   <li>gzipThreshold</li>
      * </ul>
-     * </p>
      *
      * @param connectionString connection string
      * @return instance of {@link InfluxDBClient}
@@ -248,7 +246,6 @@ public interface InfluxDBClient extends AutoCloseable {
      * <pre>
      * client = InfluxDBClient.getInstance();
      * </pre>
-     * </p>
      * <p>
      * Supported environment variables:
      * <ul>
@@ -264,7 +261,6 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>influx.org</li>
      *   <li>influx.database</li>
      * </ul>
-     * </p>
      *
      * @return instance of {@link InfluxDBClient}
      */
