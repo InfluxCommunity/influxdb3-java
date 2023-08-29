@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client;
 
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -206,5 +207,63 @@ public interface InfluxDBClient extends AutoCloseable {
     @Nonnull
     static InfluxDBClient getInstance(@Nonnull final ClientConfig config) {
         return new InfluxDBClientImpl(config);
+    }
+
+    /**
+     * Creates a new instance of the {@link InfluxDBClient} from the connection string in URL format.
+     * <p>
+     * Example:
+     * <pre>
+     * client = InfluxDBClient.getInstance("https://us-east-1-1.aws.cloud2.influxdata.com/?token=my-token&database=my-database");
+     * </pre>
+     * </p>
+     * Supported parameters:
+     * <ul>
+     *   <li>token (required)</li>
+     *   <li>org</li>
+     *   <li>database</li>
+     *   <li>precision</li>
+     *   <li>gzipThreshold</li>
+     * </ul>
+     * </p>
+     *
+     * @param connectionString connection string
+     * @return instance of {@link InfluxDBClient}
+     */
+    @Nonnull
+    static InfluxDBClient getInstance(@Nonnull final String connectionString) throws MalformedURLException {
+        return getInstance(new ClientConfig.Builder().build(connectionString));
+    }
+
+    /**
+     * Creates a new instance of the {@link InfluxDBClient} from environment variables and/or system properties.
+     * Environment variables take precedence over system properties.
+     * <p>
+     * Example:
+     * <pre>
+     * client = InfluxDBClient.getInstance();
+     * </pre>
+     * </p>
+     * Supported environment variables:
+     * <ul>
+     *   <li>INFLUX_HOST <i>required</i></li>
+     *   <li>INFLUX_TOKEN <i>required</i></li>
+     *   <li>INFLUX_ORG</li>
+     *   <li>INFLUX_DATABASE</li>
+     * </ul>
+     * Supported system properties:
+     * <ul>
+     *   <li>influx.host <i>required</i></li>
+     *   <li>influx.token <i>required</i></li>
+     *   <li>influx.org</li>
+     *   <li>influx.database</li>
+     * </ul>
+     * </p>
+     *
+     * @return instance of {@link InfluxDBClient}
+     */
+    @Nonnull
+    static InfluxDBClient getInstance() {
+        return getInstance(new ClientConfig.Builder().build(System.getenv(), System.getProperties()));
     }
 }

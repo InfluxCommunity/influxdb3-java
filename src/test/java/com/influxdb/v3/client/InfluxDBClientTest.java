@@ -24,6 +24,9 @@ package com.influxdb.v3.client;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.net.MalformedURLException;
+import java.util.Properties;
+
 class InfluxDBClientTest {
 
     @Test
@@ -35,12 +38,52 @@ class InfluxDBClientTest {
     }
 
     @Test
-    public void autoCloseable() throws Exception {
+    void requiredHostConnectionString() {
+
+        Assertions.assertThatThrownBy(() -> InfluxDBClient.getInstance("?token=my-token&database=my-database"))
+                .isInstanceOf(MalformedURLException.class)
+                .hasMessageContaining("no protocol");
+    }
+
+    @Test
+    void requiredHostEnvOrProperties() {
+
+        Assertions.assertThatThrownBy(InfluxDBClient::getInstance)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("The URL of the InfluxDB server has to be defined.");
+    }
+
+    @Test
+    void fromParameters() throws Exception {
 
         try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086",
                 "my-token".toCharArray(), "my-database")) {
-
             Assertions.assertThat(client).isNotNull();
+        }
+    }
+
+    @Test
+    void fromConnectionString() throws Exception {
+
+        try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086?token=my-token&database=my-db")) {
+            Assertions.assertThat(client).isNotNull();
+        }
+    }
+
+    @Test
+    void fromEnvOrProperties() throws Exception {
+
+        final Properties old = System.getProperties();
+        final Properties p = new Properties();
+        p.put("influx.host", "http://localhost:8086");
+        p.put("influx.token", "my-token");
+        p.put("influx.database", "my-db");
+        System.setProperties(p);
+
+        try (InfluxDBClient client = InfluxDBClient.getInstance()) {
+            Assertions.assertThat(client).isNotNull();
+        } finally {
+            System.setProperties(old);
         }
     }
 }

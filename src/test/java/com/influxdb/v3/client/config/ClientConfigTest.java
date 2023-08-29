@@ -21,8 +21,11 @@
  */
 package com.influxdb.v3.client.config;
 
+import java.net.MalformedURLException;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -66,5 +69,53 @@ class ClientConfigTest {
 
         Assertions.assertThat(configString.contains("database='my-db'")).isEqualTo(true);
         Assertions.assertThat(configString.contains("gzipThreshold=1000")).isEqualTo(true);
+    }
+
+    @Test
+    void fromConnectionString() throws MalformedURLException {
+        final ClientConfig cfg = new ClientConfig.Builder()
+                .build("http://localhost:9999/?token=my-token&org=my-org&database=my-database&precision=ms&gzipThreshold=128");
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getOrganization()).isEqualTo("my-org");
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
+        Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(128);
+    }
+
+    @Test
+    void fromEnv() {
+        final Map<String, String> env = Map.of(
+                "INFLUX_HOST", "http://localhost:9999/",
+                "INFLUX_TOKEN", "my-token",
+                "INFLUX_ORG", "my-org",
+                "INFLUX_DATABASE", "my-db"
+        );
+        final ClientConfig cfg = new ClientConfig.Builder()
+                .build(env, null);
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getOrganization()).isEqualTo("my-org");
+        Assertions.assertThat(cfg.getDatabase()).isEqualTo("my-db");
+        // these are defaults
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
+        Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000);
+    }
+
+    @Test
+    void fromSystemProperties() {
+        final Properties properties = new Properties();
+        properties.put("influx.host", "http://localhost:9999/");
+        properties.put("influx.token", "my-token");
+        properties.put("influx.org", "my-org");
+        properties.put("influx.database", "my-db");
+        final ClientConfig cfg = new ClientConfig.Builder()
+                .build(new HashMap<>(), properties);
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getOrganization()).isEqualTo("my-org");
+        Assertions.assertThat(cfg.getDatabase()).isEqualTo("my-db");
+        // these are defaults
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
+        Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000);
     }
 }
