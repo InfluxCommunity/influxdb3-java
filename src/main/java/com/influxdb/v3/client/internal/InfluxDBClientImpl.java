@@ -24,11 +24,13 @@ package com.influxdb.v3.client.internal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -153,6 +155,61 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                     row.add(fieldVector.getObject(rowNumber));
                                 }
                                 return row.toArray();
+                            });
+                });
+    }
+
+    @Nonnull
+    @Override
+    public Stream<Point> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options) {
+        return queryData(query, options)
+                .flatMap(vector -> {
+                    List<FieldVector> fieldVectors = vector.getFieldVectors();
+                    return IntStream
+                            .range(0, vector.getRowCount())
+                            .mapToObj(rowNumber -> {
+                                Point p = Point.measurement("__empty__");
+
+
+                                ArrayList<Object> row = new ArrayList<>();
+                                for (int i = 0; i < fieldVectors.size(); i++) {
+                                    var schema = vector.getSchema().getFields().get(i);
+                                    var value = fieldVectors.get(i).getObject(rowNumber);
+                                    var name = schema.getName();
+                                    var meta = schema.getMetadata();
+
+                                    if ((Objects.equals(name, "measurement")
+                                            || Objects.equals(name, "iox::measurement"))
+                                        && value instanceof String) {
+                                        p.setMeasurement((String) value);
+                                        continue;
+                                    }
+
+                                    if (!meta.isEmpty()) {
+                                        if (Objects.equals(name, "time") && value instanceof Instant) {
+                                            p.setTimestamp((Instant) value);
+                                        } else {
+                                            // just push as field If you don't know what type is it
+                                            p.addField(name, value);
+                                        }
+
+                                        continue;
+                                    }
+
+                                    String type = schema.getMetadata().get("iox::column::type");
+                                    String[] parts = type.split(":");
+                                    String valueType = parts[2];
+
+                                    if ("field".equals(valueType)) {
+                                        p.addField(name, value);
+                                    } else if ("tag".equals(valueType) && value instanceof String) {
+                                        p.addTag(name, (String) value);
+                                    } else if ("timestamp".equals(valueType) && value instanceof Instant) {
+                                        p.setTimestamp((Instant) value);
+                                    }
+                                }
+
+                                return p;
                             });
                 });
     }

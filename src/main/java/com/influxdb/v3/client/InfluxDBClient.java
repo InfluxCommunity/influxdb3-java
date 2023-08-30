@@ -139,6 +139,25 @@ public interface InfluxDBClient extends AutoCloseable {
     Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryOptions options);
 
     /**
+     * Query data from InfluxDB IOx into Point structure using FlightSQL.
+     * <p>
+     * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
+     * <pre>
+     * try (Stream&lt;Object[]&gt; rows = client.queryPoints("select * from cpu", options)) {
+     *      rows.forEach(row -&gt; {
+     *          // process row
+     *      }
+     * });
+     * </pre>
+     *
+     * @param query      the SQL query string to execute, cannot be null
+     * @param options the options for querying data from InfluxDB
+     * @return Batches of Points returned by the query
+     */
+    @Nonnull
+    Stream<Point> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options);
+
+    /**
      * Query data from InfluxDB IOx using FlightSQL.
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:

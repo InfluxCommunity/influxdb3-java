@@ -57,7 +57,7 @@ public final class Point {
             });
 
 
-    private final String name;
+    private String name;
     private final Map<String, String> tags = new TreeMap<>();
     private final Map<String, Object> fields = new TreeMap<>();
     private Number time;
@@ -196,6 +196,12 @@ public final class Point {
         return this;
     }
 
+    // TODO: comment
+    @Nonnull
+    public Point addField(@Nonnull final String field, @Nullable final Object value) {
+        return putField(field, value);
+    }
+
     /**
      * Updates the timestamp for the point.
      *
@@ -212,6 +218,22 @@ public final class Point {
         BigInteger convertedTime = NanosecondConverter.convert(time, WritePrecision.NS);
 
         return setTimestamp(convertedTime, WritePrecision.NS);
+    }
+
+    /**
+     * Updates the measurement for the point.
+     *
+     * @param measurement the measurement
+     * @return this
+     */
+    @Nonnull
+    public Point setMeasurement(@Nonnull final String measurement) {
+
+        Arguments.checkNotNull(measurement, "precision");
+
+        this.name = measurement;
+
+        return this;
     }
 
     /**

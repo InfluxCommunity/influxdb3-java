@@ -86,6 +86,10 @@ public final class IOxExample {
             }
 
             System.out.printf("-----------------------------------------%n");
+
+            try (Stream<Point> stream = client.queryPoints(sql, QueryOptions.DEFAULTS)) {
+                stream.forEach(row -> System.out.printf("| %s |%n", ((Point) row).toLineProtocol()));
+            }
         }
     }
 }
