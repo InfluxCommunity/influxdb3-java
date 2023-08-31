@@ -254,6 +254,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>INFLUX_TOKEN <i>required</i></li>
      *   <li>INFLUX_ORG</li>
      *   <li>INFLUX_DATABASE</li>
+     *   <li>INFLUX_PRECISION</li>
+     *   <li>INFLUX_GZIP_THRESHOLD</li>
      * </ul>
      * Supported system properties:
      * <ul>
@@ -261,6 +263,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>influx.token <i>required</i></li>
      *   <li>influx.org</li>
      *   <li>influx.database</li>
+     *   <li>influx.precision</li>
+     *   <li>influx.gzipThreshold</li>
      * </ul>
      *
      * @return instance of {@link InfluxDBClient}

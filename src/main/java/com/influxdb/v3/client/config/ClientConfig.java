@@ -485,25 +485,7 @@ public final class ClientConfig {
                 this.database(parameters.get("database"));
             }
             if (parameters.containsKey("precision")) {
-                String value = parameters.get("precision");
-                WritePrecision precision;
-                switch (value) {
-                    case "ns":
-                        precision = WritePrecision.NS;
-                        break;
-                    case "us":
-                        precision = WritePrecision.US;
-                        break;
-                    case "ms":
-                        precision = WritePrecision.MS;
-                        break;
-                    case "s":
-                        precision = WritePrecision.S;
-                        break;
-                    default:
-                        throw new IllegalArgumentException(String.format("unsupported precision %s", value));
-                }
-                this.writePrecision(precision);
+                this.writePrecision(parsePrecision(parameters.get("precision")));
             }
             if (parameters.containsKey("gzipThreshold")) {
                 this.gzipThreshold(Integer.parseInt(parameters.get("gzipThreshold")));
@@ -544,8 +526,38 @@ public final class ClientConfig {
             if (database != null) {
                 this.database(database);
             }
+            final String precision = get.apply("INFLUX_PRECISION", "influx.precision");
+            if (precision != null) {
+                this.writePrecision(parsePrecision(precision));
+            }
+            final String gzipThreshold = get.apply("INFLUX_GZIP_THRESHOLD", "influx.gzipThreshold");
+            if (gzipThreshold != null) {
+                this.gzipThreshold(Integer.parseInt(gzipThreshold));
+            }
 
             return new ClientConfig(this);
+        }
+
+        private WritePrecision parsePrecision(@Nonnull final String precision) {
+            WritePrecision writePrecision;
+            switch (precision) {
+                case "ns":
+                    writePrecision = WritePrecision.NS;
+                    break;
+                case "us":
+                    writePrecision = WritePrecision.US;
+                    break;
+                case "ms":
+                    writePrecision = WritePrecision.MS;
+                    break;
+                case "s":
+                    writePrecision = WritePrecision.S;
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.format("unsupported precision '%s'", precision));
+            }
+
+            return writePrecision;
         }
     }
 
