@@ -42,6 +42,7 @@ import javax.annotation.Nullable;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.util.Text;
 
 import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBClient;
@@ -177,6 +178,10 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                     var value = fieldVectors.get(i).getObject(rowNumber);
                                     var name = schema.getName();
                                     var meta = schema.getMetadata();
+
+                                    if (value instanceof Text) {
+                                        value = value.toString();
+                                    }
 
                                     if ((Objects.equals(name, "measurement")
                                             || Objects.equals(name, "iox::measurement"))

@@ -22,6 +22,7 @@
 package com.influxdb.v3;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
@@ -85,11 +86,28 @@ public final class IOxExample {
                 stream.forEach(row -> System.out.printf("| %-16s | %-18s |%n", row[1], row[2]));
             }
 
-            System.out.printf("-----------------------------------------%n");
+            System.out.printf("-----------------------------------------%n%n");
 
+
+            System.out.printf("--------------------------------------------------------%n");
+            System.out.printf("| %-8s | %-8s | %-30s |%n", "location", "value", "time");
+            System.out.printf("--------------------------------------------------------%n");
+
+            //
+            // Query by SQL into Points
+            //
             try (Stream<Point> stream = client.queryPoints(sql, QueryOptions.DEFAULTS)) {
-                stream.forEach(row -> System.out.printf("| %s |%n", ((Point) row).toLineProtocol()));
+                stream.forEach(
+                    (Point p) -> {
+                        var time = p.getField("time", LocalDateTime.class);
+                        var location = p.getField("location", String.class);
+                        var value = p.getField("value", Double.class);
+
+                        System.out.printf("| %-8s | %-8s | %-30s |%n", location, value, time);
+                });
             }
+
+            System.out.printf("--------------------------------------------------------%n%n");
         }
     }
 }

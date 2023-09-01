@@ -196,7 +196,6 @@ public final class Point {
         return this;
     }
 
-    // TODO: comment
     @Nonnull
     public Point addField(@Nonnull final String field, @Nullable final Object value) {
         return putField(field, value);
@@ -273,6 +272,28 @@ public final class Point {
      */
     public boolean hasFields() {
         return !fields.isEmpty();
+    }
+
+    public String getMeasurement() {
+        return name;
+    }
+
+    @Nullable
+    public Number getTimestamp() {
+        return time;
+    }
+
+    @Nullable
+    public Object getField(final String name) {
+        return  fields.get(name);
+    }
+
+    public <T> T getField(final String name, final Class<T> type) {
+        Object field = getField(name);
+        if (field == null) {
+            return null;
+        }
+        return type.cast(field);
     }
 
     /**
