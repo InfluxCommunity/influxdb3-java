@@ -220,11 +220,11 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * Supported parameters:
      * <ul>
-     *   <li>token (required)</li>
-     *   <li>org</li>
-     *   <li>database</li>
-     *   <li>precision</li>
-     *   <li>gzipThreshold</li>
+     *   <li>token - authentication token <i>(required)</i></li>
+     *   <li>org - organization name</li>
+     *   <li>database - database (bucket) name</li>
+     *   <li>precision - timestamp precision when writing data</li>
+     *   <li>gzipThreshold - payload size size for gzipping data</li>
      * </ul>
      *
      * @param connectionString connection string
@@ -250,21 +250,21 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * Supported environment variables:
      * <ul>
-     *   <li>INFLUX_HOST <i>required</i></li>
-     *   <li>INFLUX_TOKEN <i>required</i></li>
-     *   <li>INFLUX_ORG</li>
-     *   <li>INFLUX_DATABASE</li>
-     *   <li>INFLUX_PRECISION</li>
-     *   <li>INFLUX_GZIP_THRESHOLD</li>
+     *   <li>INFLUX_HOST - cloud/server URL <i>required</i></li>
+     *   <li>INFLUX_TOKEN - authentication token <i>required</i></li>
+     *   <li>INFLUX_ORG - organization name</li>
+     *   <li>INFLUX_DATABASE - database (bucket) name</li>
+     *   <li>INFLUX_PRECISION - timestamp precision when writing data</li>
+     *   <li>INFLUX_GZIP_THRESHOLD - payload size size for gzipping data</li>
      * </ul>
      * Supported system properties:
      * <ul>
-     *   <li>influx.host <i>required</i></li>
-     *   <li>influx.token <i>required</i></li>
-     *   <li>influx.org</li>
-     *   <li>influx.database</li>
-     *   <li>influx.precision</li>
-     *   <li>influx.gzipThreshold</li>
+     *   <li>influx.host - cloud/server URL <i>required</i></li>
+     *   <li>influx.token - authentication token <i>required</i></li>
+     *   <li>influx.org - organization name</li>
+     *   <li>influx.database - database (bucket) name</li>
+     *   <li>influx.precision - timestamp precision when writing data</li>
+     *   <li>influx.gzipThreshold - payload size size for gzipping data</li>
      * </ul>
      *
      * @return instance of {@link InfluxDBClient}
