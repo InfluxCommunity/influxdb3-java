@@ -1,5 +1,10 @@
 ## 0.3.0 [unreleased]
 
+### Features
+
+1. [#40](https://github.com/InfluxCommunity/influxdb3-java/pull/40): Add client creation from connection string,
+environment variables or system properties.
+
 ## 0.2.0 [2023-08-11]
 
 ### Features

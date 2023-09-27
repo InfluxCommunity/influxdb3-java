@@ -22,12 +22,17 @@
 package com.influxdb.v3.client.config;
 
 import java.net.Authenticator;
+import java.net.MalformedURLException;
 import java.net.ProxySelector;
+import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.StringJoiner;
+import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -451,6 +456,108 @@ public final class ClientConfig {
         @Nonnull
         public ClientConfig build() {
             return new ClientConfig(this);
+        }
+
+        /**
+         * Build an instance of {@code ClientConfig} from connection string.
+         *
+         * @param connectionString connection string in URL format
+         * @return the configuration for an {@code InfluxDBClient}
+         * @throws MalformedURLException when argument is not valid URL
+         */
+        @Nonnull
+        public ClientConfig build(@Nonnull final String connectionString) throws MalformedURLException {
+            final URL url = new URL(connectionString);
+            final Map<String, String> parameters = new HashMap<>();
+            final String[] pairs = url.getQuery().split("&");
+            for (String pair : pairs) {
+                int idx = pair.indexOf("=");
+                parameters.put(pair.substring(0, idx), pair.substring(idx + 1));
+            }
+            this.host(new URL(url.getProtocol(), url.getHost(), url.getPort(), url.getPath()).toString());
+            if (parameters.containsKey("token")) {
+                this.token(parameters.get("token").toCharArray());
+            }
+            if (parameters.containsKey("org")) {
+                this.organization(parameters.get("org"));
+            }
+            if (parameters.containsKey("database")) {
+                this.database(parameters.get("database"));
+            }
+            if (parameters.containsKey("precision")) {
+                this.writePrecision(parsePrecision(parameters.get("precision")));
+            }
+            if (parameters.containsKey("gzipThreshold")) {
+                this.gzipThreshold(Integer.parseInt(parameters.get("gzipThreshold")));
+            }
+
+            return new ClientConfig(this);
+        }
+
+        /**
+         * Build an instance of {@code ClientConfig} from environment variables and/or system properties.
+         *
+         * @param env environment variables
+         * @param properties system properties
+         * @return the configuration for an {@code InfluxDBClient}.
+         */
+        @Nonnull
+        public ClientConfig build(@Nonnull final Map<String, String> env, final Properties properties) {
+            final BiFunction<String, String, String> get = (String name, String key) -> {
+                String envVar = env.get(name);
+                if (envVar != null) {
+                    return envVar;
+                }
+                if (properties != null) {
+                    return properties.getProperty(key);
+                }
+                return null;
+            };
+            this.host(get.apply("INFLUX_HOST", "influx.host"));
+            final String token = get.apply("INFLUX_TOKEN", "influx.token");
+            if (token != null) {
+                this.token(token.toCharArray());
+            }
+            final String org = get.apply("INFLUX_ORG", "influx.org");
+            if (org != null) {
+                this.organization(org);
+            }
+            final String database = get.apply("INFLUX_DATABASE", "influx.database");
+            if (database != null) {
+                this.database(database);
+            }
+            final String precision = get.apply("INFLUX_PRECISION", "influx.precision");
+            if (precision != null) {
+                this.writePrecision(parsePrecision(precision));
+            }
+            final String gzipThreshold = get.apply("INFLUX_GZIP_THRESHOLD", "influx.gzipThreshold");
+            if (gzipThreshold != null) {
+                this.gzipThreshold(Integer.parseInt(gzipThreshold));
+            }
+
+            return new ClientConfig(this);
+        }
+
+        private WritePrecision parsePrecision(@Nonnull final String precision) {
+            WritePrecision writePrecision;
+            switch (precision) {
+                case "ns":
+                    writePrecision = WritePrecision.NS;
+                    break;
+                case "us":
+                    writePrecision = WritePrecision.US;
+                    break;
+                case "ms":
+                    writePrecision = WritePrecision.MS;
+                    break;
+                case "s":
+                    writePrecision = WritePrecision.S;
+                    break;
+                default:
+                    throw new IllegalArgumentException(String.format("unsupported precision '%s'", precision));
+            }
+
+            return writePrecision;
         }
     }
 
