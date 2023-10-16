@@ -124,28 +124,25 @@ final class FlightSqlClient implements AutoCloseable {
         private final List<AutoCloseable> autoCloseable = new ArrayList<>();
 
         private final FlightStream flightStream;
-        private VectorSchemaRoot currentVectorSchemaRoot = null;
 
         private FlightSqlIterator(@Nonnull final FlightStream flightStream) {
             this.flightStream = flightStream;
-            loadNext();
         }
 
         @Override
         public boolean hasNext() {
-            return currentVectorSchemaRoot != null;
+            return flightStream.next();
         }
 
         @Override
         public VectorSchemaRoot next() {
-            if (currentVectorSchemaRoot == null) {
+            if (flightStream.getRoot() == null) {
                 throw new NoSuchElementException();
             }
 
-            VectorSchemaRoot oldVectorSchemaRoot = currentVectorSchemaRoot;
-            loadNext();
+            autoCloseable.add(flightStream.getRoot());
 
-            return oldVectorSchemaRoot;
+            return flightStream.getRoot();
         }
 
         @Override
@@ -154,17 +151,6 @@ final class FlightSqlClient implements AutoCloseable {
                 AutoCloseables.close(autoCloseable);
             } catch (Exception e) {
                 throw new RuntimeException(e);
-            }
-        }
-
-        private void loadNext() {
-
-            if (flightStream != null && flightStream.next()) {
-                currentVectorSchemaRoot = flightStream.getRoot();
-                autoCloseable.add(currentVectorSchemaRoot);
-
-            }  else {
-                currentVectorSchemaRoot = null;
             }
         }
     }

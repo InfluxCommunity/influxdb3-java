@@ -1,5 +1,9 @@
 ## 0.4.0 [unreleased]
 
+### Bug Fixes
+
+1. [#55](https://github.com/InfluxCommunity/influxdb3-java/pull/55): Iteration over more Arrow streams
+
 ## 0.3.0 [2023-10-02]
 
 ### Features
