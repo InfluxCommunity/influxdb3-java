@@ -28,7 +28,7 @@
     <groupId>com.influxdb</groupId>
     <artifactId>influxdb3-java</artifactId>
     <packaging>jar</packaging>
-    <version>0.3.1</version>
+    <version>0.4.0-SNAPSHOT</version>
 
     <name>InfluxDB 3 Java Client</name>
     <description>
@@ -67,7 +67,7 @@
         <connection>scm:git:git@github.com:InfluxCommunity/influxdb3-java.git</connection>
         <developerConnection>scm:git:git@github.com:InfluxCommunity/influxdb3-java.git</developerConnection>
         <url>https://github.com/InfluxCommunity/influxdb3-java/tree/main</url>
-        <tag>v0.3.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
