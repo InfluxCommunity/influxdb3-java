@@ -1,7 +1,5 @@
 ## 0.4.0 [unreleased]
 
-Fixed Java 11 compatibility issues.
-
 ## 0.3.1 [2023-10-17]
 
 ### Bug Fixes
