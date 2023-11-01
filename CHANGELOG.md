@@ -1,4 +1,17 @@
-## 0.3.0 [unreleased]
+## 0.4.0 [unreleased]
+
+## 0.3.1 [2023-10-17]
+
+### Bug Fixes
+
+1. [#55](https://github.com/InfluxCommunity/influxdb3-java/pull/55): Iteration over more Arrow streams
+
+## 0.3.0 [2023-10-02]
+
+### Features
+
+1. [#40](https://github.com/InfluxCommunity/influxdb3-java/pull/40): Add client creation from connection string,
+environment variables or system properties.
 
 ## 0.2.0 [2023-08-11]
 

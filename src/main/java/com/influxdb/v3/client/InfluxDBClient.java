@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client;
 
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -225,5 +226,70 @@ public interface InfluxDBClient extends AutoCloseable {
     @Nonnull
     static InfluxDBClient getInstance(@Nonnull final ClientConfig config) {
         return new InfluxDBClientImpl(config);
+    }
+
+    /**
+     * Creates a new instance of the {@link InfluxDBClient} from the connection string in URL format.
+     * <p>
+     * Example:
+     * <pre>
+     * client = InfluxDBClient.getInstance("https://us-east-1-1.aws.cloud2.influxdata.com/"
+     *         + "?token=my-token&amp;database=my-database");
+     * </pre>
+     * <p>
+     * Supported parameters:
+     * <ul>
+     *   <li>token - authentication token <i>(required)</i></li>
+     *   <li>org - organization name</li>
+     *   <li>database - database (bucket) name</li>
+     *   <li>precision - timestamp precision when writing data</li>
+     *   <li>gzipThreshold - payload size size for gzipping data</li>
+     * </ul>
+     *
+     * @param connectionString connection string
+     * @return instance of {@link InfluxDBClient}
+     */
+    @Nonnull
+    static InfluxDBClient getInstance(@Nonnull final String connectionString) {
+        try {
+            return getInstance(new ClientConfig.Builder().build(connectionString));
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e); // same exception as ClientConfig.validate()
+        }
+    }
+
+    /**
+     * Creates a new instance of the {@link InfluxDBClient} from environment variables and/or system properties.
+     * Environment variables take precedence over system properties.
+     * <p>
+     * Example:
+     * <pre>
+     * client = InfluxDBClient.getInstance();
+     * </pre>
+     * <p>
+     * Supported environment variables:
+     * <ul>
+     *   <li>INFLUX_HOST - cloud/server URL <i>required</i></li>
+     *   <li>INFLUX_TOKEN - authentication token <i>required</i></li>
+     *   <li>INFLUX_ORG - organization name</li>
+     *   <li>INFLUX_DATABASE - database (bucket) name</li>
+     *   <li>INFLUX_PRECISION - timestamp precision when writing data</li>
+     *   <li>INFLUX_GZIP_THRESHOLD - payload size size for gzipping data</li>
+     * </ul>
+     * Supported system properties:
+     * <ul>
+     *   <li>influx.host - cloud/server URL <i>required</i></li>
+     *   <li>influx.token - authentication token <i>required</i></li>
+     *   <li>influx.org - organization name</li>
+     *   <li>influx.database - database (bucket) name</li>
+     *   <li>influx.precision - timestamp precision when writing data</li>
+     *   <li>influx.gzipThreshold - payload size size for gzipping data</li>
+     * </ul>
+     *
+     * @return instance of {@link InfluxDBClient}
+     */
+    @Nonnull
+    static InfluxDBClient getInstance() {
+        return getInstance(new ClientConfig.Builder().build(System.getenv(), System.getProperties()));
     }
 }

@@ -124,6 +124,27 @@ class ITQueryWrite {
         }
     }
 
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    void iteratingMoreVectorSchemaRoots() {
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .gzipThreshold(1)
+                .build());
+
+        String query = "SELECT name FROM (VALUES ('Alice', 4.56), ('Bob', 8.1)) AS data(name, value) group by name";
+        try (Stream<Object[]> stream = client.query(query)) {
+            Object[] names = stream.map(row -> row[0].toString()).toArray();
+
+            Assertions.assertThat(names).contains("Alice");
+            Assertions.assertThat(names).contains("Bob");
+        }
+    }
+
     @NotNull
     private static InfluxDBClient getInstance() {
         return InfluxDBClient.getInstance(
