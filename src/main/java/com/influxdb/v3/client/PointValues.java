@@ -41,48 +41,48 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 
 
 /**
- * Point defines the values that will be written to the database.
+ * PointValues defines the values that will be written to the database.
  * <a href="http://bit.ly/influxdata-point">See Go Implementation</a>.
  *
  * @author Jakub Bednar (bednar@github) (11/10/2018 11:40)
  */
 @NotThreadSafe
-public final class Point {
+public final class PointValues {
 
-	private static final int MAX_FRACTION_DIGITS = 340;
-	private static final ThreadLocal<NumberFormat> NUMBER_FORMATTER =
-			ThreadLocal.withInitial(() -> {
-				NumberFormat numberFormat = NumberFormat.getInstance(Locale.ENGLISH);
-				numberFormat.setMaximumFractionDigits(MAX_FRACTION_DIGITS);
-				numberFormat.setGroupingUsed(false);
-				numberFormat.setMinimumFractionDigits(1);
-				return numberFormat;
-			});
+    private static final int MAX_FRACTION_DIGITS = 340;
+    private static final ThreadLocal<NumberFormat> NUMBER_FORMATTER =
+            ThreadLocal.withInitial(() -> {
+                NumberFormat numberFormat = NumberFormat.getInstance(Locale.ENGLISH);
+                numberFormat.setMaximumFractionDigits(MAX_FRACTION_DIGITS);
+                numberFormat.setGroupingUsed(false);
+                numberFormat.setMinimumFractionDigits(1);
+                return numberFormat;
+            });
 
 
-	private String name;
-	private final Map<String, String> tags = new TreeMap<>();
-	private final Map<String, Object> fields = new TreeMap<>();
-	private Number time;
+    private String name;
+    private final Map<String, String> tags = new TreeMap<>();
+    private final Map<String, Object> fields = new TreeMap<>();
+    private Number time;
 
-	/**
-	 * Create a new Point.
-	 */
-	public Point() { }
+    /**
+     * Create a new PointValues.
+     */
+    public PointValues() { }
 
-	/**
-	 * Create a new Point withe specified a measurement name.
-	 *
-	 * @param measurementName the measurement name
-	 * @return new instance of {@link Point}
-	 */
-	@Nonnull
-	public static Point measurement(@Nonnull final String measurementName) {
+    /**
+     * Create a new PointValues withe specified a measurement name.
+     *
+     * @param measurementName the measurement name
+     * @return new instance of {@link PointValues}
+     */
+    @Nonnull
+    public static PointValues measurement(@Nonnull final String measurementName) {
 
-		Arguments.checkNotNull(measurementName, "measurement");
+        Arguments.checkNotNull(measurementName, "measurement");
 
-		return new Point().setMeasurement(measurementName);
-	}
+        return new PointValues().setMeasurement(measurementName);
+    }
 
 	/**
 	 *  Get measurement name.
@@ -101,7 +101,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setMeasurement(@Nonnull final String measurement) {
+	public PointValues setMeasurement(@Nonnull final String measurement) {
 
 		Arguments.checkNotNull(measurement, "precision");
 
@@ -127,7 +127,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setTimestamp(@Nullable final Instant time) {
+	public PointValues setTimestamp(@Nullable final Instant time) {
 
 		if (time == null) {
 			return setTimestamp(null, WritePrecision.NS);
@@ -147,7 +147,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setTimestamp(@Nullable final Number time, @Nonnull final WritePrecision precision) {
+	public PointValues setTimestamp(@Nullable final Number time, @Nonnull final WritePrecision precision) {
 
 		Arguments.checkNotNull(precision, "precision");
 
@@ -164,7 +164,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setTimestamp(@Nullable final Long time, @Nonnull final WritePrecision precision) {
+	public PointValues setTimestamp(@Nullable final Long time, @Nonnull final WritePrecision precision) {
 
 		return setTimestamp((Number) time, precision);
 	}
@@ -191,7 +191,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setTag(@Nonnull final String key, @Nullable final String value) {
+	public PointValues setTag(@Nonnull final String key, @Nullable final String value) {
 
 		Arguments.checkNotNull(key, "tagName");
 
@@ -207,7 +207,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setTags(@Nonnull final Map<String, String> tagsToAdd) {
+	public PointValues setTags(@Nonnull final Map<String, String> tagsToAdd) {
 
 		Arguments.checkNotNull(tagsToAdd, "tagsToAdd");
 
@@ -223,7 +223,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point removeTag(@Nonnull final String name) {
+	public PointValues removeTag(@Nonnull final String name) {
 
 		Arguments.checkNotNull(name, "tagName");
 
@@ -238,7 +238,7 @@ public final class Point {
 	 * @return An array of tag names
 	 */
 	@Nonnull
-	public String[] getTagNames() {
+    public String[] getTagNames() {
 		return tags.keySet().toArray(new String[tags.size()]);
 	}
 
@@ -262,7 +262,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setFloatField(@Nonnull final String name, final double value) {
+	public PointValues setFloatField(@Nonnull final String name, final double value) {
 		return putField(name, value);
 	}
 
@@ -285,7 +285,7 @@ public final class Point {
 	 * @param value the field value
 	 * @return this
 	 */
-	public Point setIntegerField(@Nonnull final String name, final long value) {
+	public PointValues setIntegerField(@Nonnull final String name, final long value) {
 		return putField(name, value);
 	}
 
@@ -308,7 +308,7 @@ public final class Point {
 	 * @param value the field value
 	 * @return this
 	 */
-	public Point setStringField(@Nonnull final String name, final String value) {
+	public PointValues setStringField(@Nonnull final String name, final String value) {
 		return putField(name, value);
 	}
 
@@ -331,7 +331,7 @@ public final class Point {
 	 * @param value the field value
 	 * @return this
 	 */
-	public Point setBooleanField(@Nonnull final String name, final boolean value) {
+	public PointValues setBooleanField(@Nonnull final String name, final boolean value) {
 		return putField(name, value);
 	}
 
@@ -385,7 +385,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setField(@Nonnull final String field, final double value) {
+	public PointValues setField(@Nonnull final String field, final double value) {
 		return putField(field, value);
 	}
 
@@ -396,7 +396,7 @@ public final class Point {
 	 * @param value the field value
 	 * @return this
 	 */
-	public Point setField(@Nonnull final String field, final long value) {
+	public PointValues setField(@Nonnull final String field, final long value) {
 		return putField(field, value);
 	}
 
@@ -408,7 +408,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setField(@Nonnull final String field, @Nullable final Number value) {
+	public PointValues setField(@Nonnull final String field, @Nullable final Number value) {
 		return putField(field, value);
 	}
 
@@ -420,7 +420,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setField(@Nonnull final String field, @Nullable final String value) {
+	public PointValues setField(@Nonnull final String field, @Nullable final String value) {
 		return putField(field, value);
 	}
 
@@ -432,7 +432,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setField(@Nonnull final String field, final boolean value) {
+	public PointValues setField(@Nonnull final String field, final boolean value) {
 		return putField(field, value);
 	}
 
@@ -444,7 +444,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setField(@Nonnull final String field, @Nullable final Object value) {
+	public PointValues setField(@Nonnull final String field, @Nullable final Object value) {
 		return putField(field, value);
 	}
 
@@ -455,7 +455,7 @@ public final class Point {
 	 * @return this
 	 */
 	@Nonnull
-	public Point setFields(@Nonnull final Map<String, Object> fieldsToAdd) {
+	public PointValues setFields(@Nonnull final Map<String, Object> fieldsToAdd) {
 
 		Arguments.checkNotNull(fieldsToAdd, "fieldsToAdd");
 
@@ -467,11 +467,11 @@ public final class Point {
 	/**
 	 * Removes a field with the specified name if it exists; otherwise, it does nothing.
 	 *
-	 * @param name the field name
+ 	 * @param name the field name
 	 * @return this
 	 */
 	@Nonnull
-	public Point removeField(@NonNull final String name) {
+	public PointValues removeField(@NonNull final String name) {
 		fields.remove(name);
 
 		return  this;
@@ -502,8 +502,8 @@ public final class Point {
 	 * @return A new instance with same values.
 	 */
 	@Nonnull
-	public Point copy() {
-		Point copy = new Point();
+	public PointValues copy() {
+		PointValues copy = new PointValues();
 
 		copy.name = this.name;
 		copy.tags.putAll(this.tags);
@@ -536,199 +536,199 @@ public final class Point {
 	}
 
 
-	/**
-	 * Transform to Line Protocol with nanosecond precision.
-	 *
-	 * @return Line Protocol
-	 */
-	@Nonnull
-	public String toLineProtocol() {
-		return toLineProtocol(null);
-	}
+    /**
+     * Transform to Line Protocol with nanosecond precision.
+     *
+     * @return Line Protocol
+     */
+    @Nonnull
+    public String toLineProtocol() {
+        return toLineProtocol(null);
+    }
 
-	/**
-	 * Transform to Line Protocol.
-	 *
-	 * @param precision required precision
-	 * @return Line Protocol
-	 */
-	@Nonnull
-	public String toLineProtocol(@Nullable final WritePrecision precision) {
+    /**
+     * Transform to Line Protocol.
+     *
+     * @param precision required precision
+     * @return Line Protocol
+     */
+    @Nonnull
+    public String toLineProtocol(@Nullable final WritePrecision precision) {
 
-		StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
 
-		escapeKey(sb, name, false);
-		appendTags(sb);
-		boolean appendedFields = appendFields(sb);
-		if (!appendedFields) {
-			return "";
-		}
-		appendTime(sb, precision);
+        escapeKey(sb, name, false);
+        appendTags(sb);
+        boolean appendedFields = appendFields(sb);
+        if (!appendedFields) {
+            return "";
+        }
+        appendTime(sb, precision);
 
-		return sb.toString();
-	}
+        return sb.toString();
+    }
 
-	@Nonnull
-	private Point putField(@Nonnull final String field, @Nullable final Object value) {
+    @Nonnull
+    private PointValues putField(@Nonnull final String field, @Nullable final Object value) {
 
-		Arguments.checkNonEmpty(field, "fieldName");
+        Arguments.checkNonEmpty(field, "fieldName");
 
-		fields.put(field, value);
-		return this;
-	}
+        fields.put(field, value);
+        return this;
+    }
 
-	private void appendTags(@Nonnull final StringBuilder sb) {
+    private void appendTags(@Nonnull final StringBuilder sb) {
 
-		for (Map.Entry<String, String> tag : this.tags.entrySet()) {
+        for (Map.Entry<String, String> tag : this.tags.entrySet()) {
 
-			String key = tag.getKey();
-			String value = tag.getValue();
+            String key = tag.getKey();
+            String value = tag.getValue();
 
-			if (key.isEmpty() || value == null || value.isEmpty()) {
-				continue;
-			}
+            if (key.isEmpty() || value == null || value.isEmpty()) {
+                continue;
+            }
 
-			sb.append(',');
-			escapeKey(sb, key);
-			sb.append('=');
-			escapeKey(sb, value);
-		}
-		sb.append(' ');
-	}
+            sb.append(',');
+            escapeKey(sb, key);
+            sb.append('=');
+            escapeKey(sb, value);
+        }
+        sb.append(' ');
+    }
 
-	private boolean appendFields(@Nonnull final StringBuilder sb) {
+    private boolean appendFields(@Nonnull final StringBuilder sb) {
 
-		boolean appended = false;
-		for (Map.Entry<String, Object> field : this.fields.entrySet()) {
-			Object value = field.getValue();
-			if (isNotDefined(value)) {
-				continue;
-			}
-			escapeKey(sb, field.getKey());
-			sb.append('=');
-			if (value instanceof Number) {
-				if (value instanceof Double || value instanceof Float || value instanceof BigDecimal) {
-					sb.append(NUMBER_FORMATTER.get().format(value));
-				} else {
-					sb.append(value).append('i');
-				}
-			} else if (value instanceof String) {
-				String stringValue = (String) value;
-				sb.append('"');
-				escapeValue(sb, stringValue);
-				sb.append('"');
-			} else {
-				sb.append(value);
-			}
+        boolean appended = false;
+        for (Map.Entry<String, Object> field : this.fields.entrySet()) {
+            Object value = field.getValue();
+            if (isNotDefined(value)) {
+                continue;
+            }
+            escapeKey(sb, field.getKey());
+            sb.append('=');
+            if (value instanceof Number) {
+                if (value instanceof Double || value instanceof Float || value instanceof BigDecimal) {
+                    sb.append(NUMBER_FORMATTER.get().format(value));
+                } else {
+                    sb.append(value).append('i');
+                }
+            } else if (value instanceof String) {
+                String stringValue = (String) value;
+                sb.append('"');
+                escapeValue(sb, stringValue);
+                sb.append('"');
+            } else {
+                sb.append(value);
+            }
 
-			sb.append(',');
+            sb.append(',');
 
-			appended = true;
-		}
+            appended = true;
+        }
 
-		// efficiently chop off the trailing comma
-		int lengthMinusOne = sb.length() - 1;
-		if (sb.charAt(lengthMinusOne) == ',') {
-			sb.setLength(lengthMinusOne);
-		}
+        // efficiently chop off the trailing comma
+        int lengthMinusOne = sb.length() - 1;
+        if (sb.charAt(lengthMinusOne) == ',') {
+            sb.setLength(lengthMinusOne);
+        }
 
-		return appended;
-	}
+        return appended;
+    }
 
-	private void appendTime(@Nonnull final StringBuilder sb, @Nullable final WritePrecision precision) {
+    private void appendTime(@Nonnull final StringBuilder sb, @Nullable final WritePrecision precision) {
 
-		if (this.time == null) {
-			return;
-		}
+        if (this.time == null) {
+            return;
+        }
 
-		sb.append(" ");
+        sb.append(" ");
 
-		WritePrecision precisionNotNull = precision != null ? precision : WriteOptions.DEFAULT_WRITE_PRECISION;
+        WritePrecision precisionNotNull = precision != null ? precision : WriteOptions.DEFAULT_WRITE_PRECISION;
 
-		if (WritePrecision.NS.equals(precisionNotNull)) {
-			if (this.time instanceof BigDecimal) {
-				sb.append(((BigDecimal) this.time).toBigInteger());
-			} else if (this.time instanceof BigInteger) {
-				sb.append(this.time);
-			} else {
-				sb.append(this.time.longValue());
-			}
-		} else {
-			long time;
-			if (this.time instanceof BigDecimal) {
-				time = ((BigDecimal) this.time).longValueExact();
-			} else if (this.time instanceof BigInteger) {
-				time = ((BigInteger) this.time).longValueExact();
-			} else {
-				time = this.time.longValue();
-			}
-			sb.append(toTimeUnit(precisionNotNull).convert(time, toTimeUnit(WritePrecision.NS)));
-		}
-	}
+        if (WritePrecision.NS.equals(precisionNotNull)) {
+            if (this.time instanceof BigDecimal) {
+                sb.append(((BigDecimal) this.time).toBigInteger());
+            } else if (this.time instanceof BigInteger) {
+                sb.append(this.time);
+            } else {
+                sb.append(this.time.longValue());
+            }
+        } else {
+            long time;
+            if (this.time instanceof BigDecimal) {
+                time = ((BigDecimal) this.time).longValueExact();
+            } else if (this.time instanceof BigInteger) {
+                time = ((BigInteger) this.time).longValueExact();
+            } else {
+                time = this.time.longValue();
+            }
+            sb.append(toTimeUnit(precisionNotNull).convert(time, toTimeUnit(WritePrecision.NS)));
+        }
+    }
 
-	private void escapeKey(@Nonnull final StringBuilder sb, @Nonnull final String key) {
-		escapeKey(sb, key, true);
-	}
+    private void escapeKey(@Nonnull final StringBuilder sb, @Nonnull final String key) {
+        escapeKey(sb, key, true);
+    }
 
-	private void escapeKey(@Nonnull final StringBuilder sb, @Nonnull final String key, final boolean escapeEqual) {
-		for (int i = 0; i < key.length(); i++) {
-			switch (key.charAt(i)) {
-				case '\n':
-					sb.append("\\n");
-					continue;
-				case '\r':
-					sb.append("\\r");
-					continue;
-				case '\t':
-					sb.append("\\t");
-					continue;
-				case ' ':
-				case ',':
-					sb.append('\\');
-					break;
-				case '=':
-					if (escapeEqual) {
-						sb.append('\\');
-					}
-					break;
-				default:
-			}
+    private void escapeKey(@Nonnull final StringBuilder sb, @Nonnull final String key, final boolean escapeEqual) {
+        for (int i = 0; i < key.length(); i++) {
+            switch (key.charAt(i)) {
+                case '\n':
+                    sb.append("\\n");
+                    continue;
+                case '\r':
+                    sb.append("\\r");
+                    continue;
+                case '\t':
+                    sb.append("\\t");
+                    continue;
+                case ' ':
+                case ',':
+                    sb.append('\\');
+                    break;
+                case '=':
+                    if (escapeEqual) {
+                        sb.append('\\');
+                    }
+                    break;
+                default:
+            }
 
-			sb.append(key.charAt(i));
-		}
-	}
+            sb.append(key.charAt(i));
+        }
+    }
 
-	private void escapeValue(@Nonnull final StringBuilder sb, @Nonnull final String value) {
-		for (int i = 0; i < value.length(); i++) {
-			switch (value.charAt(i)) {
-				case '\\':
-				case '\"':
-					sb.append('\\');
-				default:
-					sb.append(value.charAt(i));
-			}
-		}
-	}
+    private void escapeValue(@Nonnull final StringBuilder sb, @Nonnull final String value) {
+        for (int i = 0; i < value.length(); i++) {
+            switch (value.charAt(i)) {
+                case '\\':
+                case '\"':
+                    sb.append('\\');
+                default:
+                    sb.append(value.charAt(i));
+            }
+        }
+    }
 
-	private boolean isNotDefined(final Object value) {
-		return value == null
-				|| (value instanceof Double && !Double.isFinite((Double) value))
-				|| (value instanceof Float && !Float.isFinite((Float) value));
-	}
+    private boolean isNotDefined(final Object value) {
+        return value == null
+                || (value instanceof Double && !Double.isFinite((Double) value))
+                || (value instanceof Float && !Float.isFinite((Float) value));
+    }
 
-	@Nonnull
-	private TimeUnit toTimeUnit(@Nonnull final WritePrecision precision) {
-		switch (precision) {
-			case MS:
-				return TimeUnit.MILLISECONDS;
-			case S:
-				return TimeUnit.SECONDS;
-			case US:
-				return TimeUnit.MICROSECONDS;
-			case NS:
-				return TimeUnit.NANOSECONDS;
-			default:
-				throw new IllegalStateException("Unexpected value: " + precision);
-		}
-	}
+    @Nonnull
+    private TimeUnit toTimeUnit(@Nonnull final WritePrecision precision) {
+        switch (precision) {
+            case MS:
+                return TimeUnit.MILLISECONDS;
+            case S:
+                return TimeUnit.SECONDS;
+            case US:
+                return TimeUnit.MICROSECONDS;
+            case NS:
+                return TimeUnit.NANOSECONDS;
+            default:
+                throw new IllegalStateException("Unexpected value: " + precision);
+        }
+    }
 }
