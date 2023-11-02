@@ -153,10 +153,10 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param query      the SQL query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
-     * @return Batches of Points returned by the query
+     * @return Batches of PointValues returned by the query
      */
     @Nonnull
-    Stream<Point> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options);
+    Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options);
 
     /**
      * Query data from InfluxDB IOx using FlightSQL.

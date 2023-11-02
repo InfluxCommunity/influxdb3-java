@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.Point;
+import com.influxdb.v3.client.PointValues;
 
 /**
  * The example depends on the "influxdb3-java" module and this module should be built first
@@ -96,7 +97,7 @@ public final class IOxExample {
             //
             // Query by SQL into Points
             //
-            try (Stream<Point> stream = client.queryPoints(sql, QueryOptions.DEFAULTS)) {
+            try (Stream<PointValues> stream = client.queryPoints(sql, QueryOptions.DEFAULTS)) {
                 stream.forEach(
                     (Point p) -> {
                         var time = p.getField("time", LocalDateTime.class);

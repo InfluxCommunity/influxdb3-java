@@ -39,6 +39,7 @@ import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.influxdb.v3.client.PointValues;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -162,14 +163,14 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Nonnull
     @Override
-    public Stream<Point> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options) {
+    public Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options) {
         return queryData(query, options)
                 .flatMap(vector -> {
                     List<FieldVector> fieldVectors = vector.getFieldVectors();
                     return IntStream
                             .range(0, vector.getRowCount())
                             .mapToObj(rowNumber -> {
-                                Point p = Point.measurement("__empty__");
+	                            PointValues p = new PointValues();
 
 
                                 ArrayList<Object> row = new ArrayList<>();
