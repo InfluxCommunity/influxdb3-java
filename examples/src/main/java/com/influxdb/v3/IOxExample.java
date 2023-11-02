@@ -48,8 +48,8 @@ public final class IOxExample {
             // Write by Point
             //
             Point point = Point.measurement("temperature")
-                    .addTag("location", "west")
-                    .addField("value", 55.15)
+                    .setTag("location", "west")
+                    .setField("value", 55.15)
                     .setTimestamp(Instant.now().minusSeconds(-10));
             client.writePoint(point);
 

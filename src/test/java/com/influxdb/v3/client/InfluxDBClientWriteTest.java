@@ -228,8 +228,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         mockServer.enqueue(createResponse(200));
 
         Point point = new Point("mem");
-        point.addTag("tag", "one");
-        point.addField("value", 1.0);
+        point.setTag("tag", "one");
+        point.setField("value", 1.0);
 
         client.writePoint(point);
 
@@ -244,12 +244,12 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         mockServer.enqueue(createResponse(200));
 
         Point point1 = Point.measurement("mem")
-                .addTag("tag", "one")
-                .addField("value", 1.0);
+                .setTag("tag", "one")
+                .setField("value", 1.0);
 
         Point point2 = Point.measurement("cpu")
-                .addTag("tag", "two")
-                .addField("value", 2.0);
+                .setTag("tag", "two")
+                .setField("value", 2.0);
 
         client.writePoints(Arrays.asList(point1, point2));
 

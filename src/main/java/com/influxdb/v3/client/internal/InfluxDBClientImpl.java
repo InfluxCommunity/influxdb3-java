@@ -195,7 +195,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                             p.setTimestamp((Instant) value);
                                         } else {
                                             // just push as field If you don't know what type is it
-                                            p.addField(name, value);
+                                            p.setField(name, value);
                                         }
 
                                         continue;
@@ -206,9 +206,9 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                     String valueType = parts[2];
 
                                     if ("field".equals(valueType)) {
-                                        p.addField(name, value);
+                                        p.setField(name, value);
                                     } else if ("tag".equals(valueType) && value instanceof String) {
-                                        p.addTag(name, (String) value);
+                                        p.setTag(name, (String) value);
                                     } else if ("timestamp".equals(valueType) && value instanceof Instant) {
                                         p.setTimestamp((Instant) value);
                                     }
