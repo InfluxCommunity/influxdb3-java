@@ -48,7 +48,7 @@ import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.query.QueryOptions;
-import com.influxdb.v3.client.write.Point;
+import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 

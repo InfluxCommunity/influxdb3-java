@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.query.QueryOptions;
-import com.influxdb.v3.client.write.Point;
+import com.influxdb.v3.client.Point;
 
 /**
  * The example depends on the "influxdb3-java" module and this module should be built first

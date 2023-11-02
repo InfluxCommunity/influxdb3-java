@@ -69,7 +69,7 @@ import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.query.QueryOptions;
-import com.influxdb.v3.client.write.Point;
+import com.influxdb.v3.client.Point;
 
 public class IOxExample {
     public static void main(String[] args) throws Exception {
