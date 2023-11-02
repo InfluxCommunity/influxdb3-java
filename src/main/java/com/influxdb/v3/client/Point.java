@@ -27,14 +27,12 @@ import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import com.influxdb.v3.client.internal.Arguments;
-import com.influxdb.v3.client.internal.NanosecondConverter;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -59,16 +57,21 @@ public final class Point {
 				return numberFormat;
 			});
 
+	private final PointValues values;
 
-	private String name;
-	private final Map<String, String> tags = new TreeMap<>();
-	private final Map<String, Object> fields = new TreeMap<>();
-	private Number time;
+	private Point(PointValues values) {
+		this.values = values;
+	}
 
 	/**
 	 * Create a new Point.
 	 */
-	public Point() { }
+	public Point(@Nonnull final String measurementName) {
+		Arguments.checkNotNull(measurementName, "measurement");
+
+		values = new PointValues();
+		values.setMeasurement(measurementName);
+	}
 
 	/**
 	 * Create a new Point withe specified a measurement name.
@@ -81,7 +84,21 @@ public final class Point {
 
 		Arguments.checkNotNull(measurementName, "measurement");
 
-		return new Point().setMeasurement(measurementName);
+		return new Point(new PointValues()).setMeasurement(measurementName);
+	}
+
+	/**
+	 * Create a new Point with given values.
+	 *
+	 * @param values the point values
+	 * @return the new Point
+	 * @throws Exception if measurement is missing
+	 */
+	public static Point fromValues(PointValues values) throws Exception {
+		if (values.getMeasurement() == null) {
+			throw new Exception("Missing measurement!");
+		}
+		return new Point(values);
 	}
 
 	/**
@@ -89,9 +106,11 @@ public final class Point {
 	 *
 	 * @return Measurement name
 	 */
-	@Nullable
+	@Nonnull
 	public String getMeasurement() {
-		return name;
+		assert values.getMeasurement() != null;
+
+		return values.getMeasurement();
 	}
 
 	/**
@@ -105,7 +124,7 @@ public final class Point {
 
 		Arguments.checkNotNull(measurement, "precision");
 
-		this.name = measurement;
+		values.setMeasurement(measurement);
 
 		return this;
 	}
@@ -117,7 +136,7 @@ public final class Point {
 	 */
 	@Nullable
 	public Number getTimestamp() {
-		return time;
+		return values.getTimestamp();
 	}
 
 	/**
@@ -128,14 +147,9 @@ public final class Point {
 	 */
 	@Nonnull
 	public Point setTimestamp(@Nullable final Instant time) {
+		values.setTimestamp(time);
 
-		if (time == null) {
-			return setTimestamp(null, WritePrecision.NS);
-		}
-
-		BigInteger convertedTime = NanosecondConverter.convert(time, WritePrecision.NS);
-
-		return setTimestamp(convertedTime, WritePrecision.NS);
+		return this;
 	}
 
 
@@ -151,7 +165,7 @@ public final class Point {
 
 		Arguments.checkNotNull(precision, "precision");
 
-		this.time = NanosecondConverter.convertToNanos(time, precision);
+		values.setTimestamp(time, precision);
 
 		return this;
 	}
@@ -180,7 +194,7 @@ public final class Point {
 	{
 		Arguments.checkNotNull(name, "tagName");
 
-		return tags.get(name);
+		return values.getTag(name);
 	}
 
 	/**
@@ -195,7 +209,7 @@ public final class Point {
 
 		Arguments.checkNotNull(key, "tagName");
 
-		tags.put(key, value);
+		values.setTag(key, value);
 
 		return this;
 	}
@@ -211,7 +225,7 @@ public final class Point {
 
 		Arguments.checkNotNull(tagsToAdd, "tagsToAdd");
 
-		tagsToAdd.forEach(this::setTag);
+		values.setTags(tagsToAdd);
 
 		return this;
 	}
@@ -227,7 +241,7 @@ public final class Point {
 
 		Arguments.checkNotNull(name, "tagName");
 
-		tags.remove(name);
+		values.removeTag(name);
 
 		return this;
 	}
@@ -239,7 +253,7 @@ public final class Point {
 	 */
 	@Nonnull
 	public String[] getTagNames() {
-		return tags.keySet().toArray(new String[tags.size()]);
+		return values.getTagNames();
 	}
 
 	/**
@@ -343,7 +357,7 @@ public final class Point {
 	 */
 	@Nullable
 	public Object getField(@Nonnull final String name) {
-		return  fields.get(name);
+		return values.getField(name);
 	}
 
 	/**
@@ -472,7 +486,7 @@ public final class Point {
 	 */
 	@Nonnull
 	public Point removeField(@NonNull final String name) {
-		fields.remove(name);
+		values.removeField(name);
 
 		return  this;
 	}
@@ -484,7 +498,7 @@ public final class Point {
 	 */
 	@Nonnull
 	public String[] getFieldNames() {
-		return fields.keySet().toArray(new String[tags.size()]);
+		return values.getFieldNames();
 	}
 
 	/**
@@ -493,7 +507,7 @@ public final class Point {
 	 * @return true, if the point contains any fields, false otherwise.
 	 */
 	public boolean hasFields() {
-		return !fields.isEmpty();
+		return values.hasFields();
 	}
 
 	/**
@@ -503,38 +517,8 @@ public final class Point {
 	 */
 	@Nonnull
 	public Point copy() {
-		Point copy = new Point();
-
-		copy.name = this.name;
-		copy.tags.putAll(this.tags);
-		copy.fields.putAll(this.fields);
-		copy.time = this.time;
-
-		return copy;
+		return new Point(values.copy());
 	}
-
-	/**
-	 * Creates new Point with this as values with given measurement.
-	 *
-	 * @param measurement the point measurement
-	 * @return Point from this values with given measurement.
-	 */
-	@Nonnull
-	public Point asPoint(@Nonnull final String measurement) {
-		setMeasurement(measurement);
-		return asPoint();
-	}
-
-	/**
-	 * Creates new Point with this as values.
-	 *
-	 * @return Point from this values with given measurement.
-	 */
-	@Nonnull
-	public Point asPoint() {
-		return Point.fromValues(this);
-	}
-
 
 	/**
 	 * Transform to Line Protocol with nanosecond precision.
@@ -557,7 +541,7 @@ public final class Point {
 
 		StringBuilder sb = new StringBuilder();
 
-		escapeKey(sb, name, false);
+		escapeKey(sb, getMeasurement(), false);
 		appendTags(sb);
 		boolean appendedFields = appendFields(sb);
 		if (!appendedFields) {
@@ -573,23 +557,22 @@ public final class Point {
 
 		Arguments.checkNonEmpty(field, "fieldName");
 
-		fields.put(field, value);
+		values.setField(field, value);
 		return this;
 	}
 
 	private void appendTags(@Nonnull final StringBuilder sb) {
 
-		for (Map.Entry<String, String> tag : this.tags.entrySet()) {
+		for (String name : values.getTagNames()) {
 
-			String key = tag.getKey();
-			String value = tag.getValue();
+			String value = values.getTag(name);
 
-			if (key.isEmpty() || value == null || value.isEmpty()) {
+			if (name.isEmpty() || value == null || value.isEmpty()) {
 				continue;
 			}
 
 			sb.append(',');
-			escapeKey(sb, key);
+			escapeKey(sb, name);
 			sb.append('=');
 			escapeKey(sb, value);
 		}
@@ -599,12 +582,13 @@ public final class Point {
 	private boolean appendFields(@Nonnull final StringBuilder sb) {
 
 		boolean appended = false;
-		for (Map.Entry<String, Object> field : this.fields.entrySet()) {
-			Object value = field.getValue();
+
+		for (String field : values.getFieldNames()) {
+			Object value = values.getField(field);
 			if (isNotDefined(value)) {
 				continue;
 			}
-			escapeKey(sb, field.getKey());
+			escapeKey(sb, field);
 			sb.append('=');
 			if (value instanceof Number) {
 				if (value instanceof Double || value instanceof Float || value instanceof BigDecimal) {
@@ -637,7 +621,8 @@ public final class Point {
 
 	private void appendTime(@Nonnull final StringBuilder sb, @Nullable final WritePrecision precision) {
 
-		if (this.time == null) {
+		var time = getTimestamp();
+		if (time == null) {
 			return;
 		}
 
@@ -646,23 +631,23 @@ public final class Point {
 		WritePrecision precisionNotNull = precision != null ? precision : WriteOptions.DEFAULT_WRITE_PRECISION;
 
 		if (WritePrecision.NS.equals(precisionNotNull)) {
-			if (this.time instanceof BigDecimal) {
-				sb.append(((BigDecimal) this.time).toBigInteger());
-			} else if (this.time instanceof BigInteger) {
-				sb.append(this.time);
+			if (time instanceof BigDecimal) {
+				sb.append(((BigDecimal) time).toBigInteger());
+			} else if (time instanceof BigInteger) {
+				sb.append(time);
 			} else {
-				sb.append(this.time.longValue());
+				sb.append(time.longValue());
 			}
 		} else {
-			long time;
-			if (this.time instanceof BigDecimal) {
-				time = ((BigDecimal) this.time).longValueExact();
-			} else if (this.time instanceof BigInteger) {
-				time = ((BigInteger) this.time).longValueExact();
+			long timeLong;
+			if (time instanceof BigDecimal) {
+				timeLong = ((BigDecimal) time).longValueExact();
+			} else if (time instanceof BigInteger) {
+				timeLong = ((BigInteger) time).longValueExact();
 			} else {
-				time = this.time.longValue();
+				timeLong = time.longValue();
 			}
-			sb.append(toTimeUnit(precisionNotNull).convert(time, toTimeUnit(WritePrecision.NS)));
+			sb.append(toTimeUnit(precisionNotNull).convert(timeLong, toTimeUnit(WritePrecision.NS)));
 		}
 	}
 

@@ -21,21 +21,18 @@
  */
 package com.influxdb.v3.client;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import com.influxdb.v3.client.internal.Arguments;
 import com.influxdb.v3.client.internal.NanosecondConverter;
-import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
@@ -48,17 +45,6 @@ import org.checkerframework.checker.nullness.qual.NonNull;
  */
 @NotThreadSafe
 public final class PointValues {
-
-    private static final int MAX_FRACTION_DIGITS = 340;
-    private static final ThreadLocal<NumberFormat> NUMBER_FORMATTER =
-            ThreadLocal.withInitial(() -> {
-                NumberFormat numberFormat = NumberFormat.getInstance(Locale.ENGLISH);
-                numberFormat.setMaximumFractionDigits(MAX_FRACTION_DIGITS);
-                numberFormat.setGroupingUsed(false);
-                numberFormat.setMinimumFractionDigits(1);
-                return numberFormat;
-            });
-
 
     private String name;
     private final Map<String, String> tags = new TreeMap<>();
@@ -522,51 +508,24 @@ public final class PointValues {
 	@Nonnull
 	public Point asPoint(@Nonnull final String measurement) {
 		setMeasurement(measurement);
-		return asPoint();
+		try {
+			return asPoint();
+		} catch (Exception e) {
+			// never
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
 	 * Creates new Point with this as values.
 	 *
 	 * @return Point from this values with given measurement.
+	 * @throws Exception if measurement is missing
 	 */
 	@Nonnull
-	public Point asPoint() {
+	public Point asPoint() throws Exception {
 		return Point.fromValues(this);
 	}
-
-
-    /**
-     * Transform to Line Protocol with nanosecond precision.
-     *
-     * @return Line Protocol
-     */
-    @Nonnull
-    public String toLineProtocol() {
-        return toLineProtocol(null);
-    }
-
-    /**
-     * Transform to Line Protocol.
-     *
-     * @param precision required precision
-     * @return Line Protocol
-     */
-    @Nonnull
-    public String toLineProtocol(@Nullable final WritePrecision precision) {
-
-        StringBuilder sb = new StringBuilder();
-
-        escapeKey(sb, name, false);
-        appendTags(sb);
-        boolean appendedFields = appendFields(sb);
-        if (!appendedFields) {
-            return "";
-        }
-        appendTime(sb, precision);
-
-        return sb.toString();
-    }
 
     @Nonnull
     private PointValues putField(@Nonnull final String field, @Nullable final Object value) {
@@ -577,158 +536,4 @@ public final class PointValues {
         return this;
     }
 
-    private void appendTags(@Nonnull final StringBuilder sb) {
-
-        for (Map.Entry<String, String> tag : this.tags.entrySet()) {
-
-            String key = tag.getKey();
-            String value = tag.getValue();
-
-            if (key.isEmpty() || value == null || value.isEmpty()) {
-                continue;
-            }
-
-            sb.append(',');
-            escapeKey(sb, key);
-            sb.append('=');
-            escapeKey(sb, value);
-        }
-        sb.append(' ');
-    }
-
-    private boolean appendFields(@Nonnull final StringBuilder sb) {
-
-        boolean appended = false;
-        for (Map.Entry<String, Object> field : this.fields.entrySet()) {
-            Object value = field.getValue();
-            if (isNotDefined(value)) {
-                continue;
-            }
-            escapeKey(sb, field.getKey());
-            sb.append('=');
-            if (value instanceof Number) {
-                if (value instanceof Double || value instanceof Float || value instanceof BigDecimal) {
-                    sb.append(NUMBER_FORMATTER.get().format(value));
-                } else {
-                    sb.append(value).append('i');
-                }
-            } else if (value instanceof String) {
-                String stringValue = (String) value;
-                sb.append('"');
-                escapeValue(sb, stringValue);
-                sb.append('"');
-            } else {
-                sb.append(value);
-            }
-
-            sb.append(',');
-
-            appended = true;
-        }
-
-        // efficiently chop off the trailing comma
-        int lengthMinusOne = sb.length() - 1;
-        if (sb.charAt(lengthMinusOne) == ',') {
-            sb.setLength(lengthMinusOne);
-        }
-
-        return appended;
-    }
-
-    private void appendTime(@Nonnull final StringBuilder sb, @Nullable final WritePrecision precision) {
-
-        if (this.time == null) {
-            return;
-        }
-
-        sb.append(" ");
-
-        WritePrecision precisionNotNull = precision != null ? precision : WriteOptions.DEFAULT_WRITE_PRECISION;
-
-        if (WritePrecision.NS.equals(precisionNotNull)) {
-            if (this.time instanceof BigDecimal) {
-                sb.append(((BigDecimal) this.time).toBigInteger());
-            } else if (this.time instanceof BigInteger) {
-                sb.append(this.time);
-            } else {
-                sb.append(this.time.longValue());
-            }
-        } else {
-            long time;
-            if (this.time instanceof BigDecimal) {
-                time = ((BigDecimal) this.time).longValueExact();
-            } else if (this.time instanceof BigInteger) {
-                time = ((BigInteger) this.time).longValueExact();
-            } else {
-                time = this.time.longValue();
-            }
-            sb.append(toTimeUnit(precisionNotNull).convert(time, toTimeUnit(WritePrecision.NS)));
-        }
-    }
-
-    private void escapeKey(@Nonnull final StringBuilder sb, @Nonnull final String key) {
-        escapeKey(sb, key, true);
-    }
-
-    private void escapeKey(@Nonnull final StringBuilder sb, @Nonnull final String key, final boolean escapeEqual) {
-        for (int i = 0; i < key.length(); i++) {
-            switch (key.charAt(i)) {
-                case '\n':
-                    sb.append("\\n");
-                    continue;
-                case '\r':
-                    sb.append("\\r");
-                    continue;
-                case '\t':
-                    sb.append("\\t");
-                    continue;
-                case ' ':
-                case ',':
-                    sb.append('\\');
-                    break;
-                case '=':
-                    if (escapeEqual) {
-                        sb.append('\\');
-                    }
-                    break;
-                default:
-            }
-
-            sb.append(key.charAt(i));
-        }
-    }
-
-    private void escapeValue(@Nonnull final StringBuilder sb, @Nonnull final String value) {
-        for (int i = 0; i < value.length(); i++) {
-            switch (value.charAt(i)) {
-                case '\\':
-                case '\"':
-                    sb.append('\\');
-                default:
-                    sb.append(value.charAt(i));
-            }
-        }
-    }
-
-    private boolean isNotDefined(final Object value) {
-        return value == null
-                || (value instanceof Double && !Double.isFinite((Double) value))
-                || (value instanceof Float && !Float.isFinite((Float) value));
-    }
-
-    @Nonnull
-    private TimeUnit toTimeUnit(@Nonnull final WritePrecision precision) {
-        switch (precision) {
-            case MS:
-                return TimeUnit.MILLISECONDS;
-            case S:
-                return TimeUnit.SECONDS;
-            case US:
-                return TimeUnit.MICROSECONDS;
-            case NS:
-                return TimeUnit.NANOSECONDS;
-            default:
-                throw new IllegalStateException("Unexpected value: " + precision);
-        }
-    }
 }
