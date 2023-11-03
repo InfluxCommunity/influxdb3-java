@@ -1,5 +1,9 @@
 ## 0.4.0 [unreleased]
 
+### Features
+
+1. [#41](https://github.com/InfluxCommunity/influxdb3-java/pull/41): Add structured query support
+
 ## 0.3.1 [2023-10-17]
 
 ### Bug Fixes
