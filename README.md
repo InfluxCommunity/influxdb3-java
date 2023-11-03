@@ -135,6 +135,32 @@ try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.INFLUX_QL)) {
 System.out.printf("-----------------------------------------%n");
 ```
 
+or use `PointValues` structure with `client.queryPoints`:
+
+```java
+System.out.printf("--------------------------------------------------------%n");
+System.out.printf("| %-8s | %-8s | %-30s |%n", "location", "value", "time");
+System.out.printf("--------------------------------------------------------%n");
+
+//
+// Query by SQL into Points
+//
+String sql1 = "select time,location,value from temperature order by time desc limit 10";
+try (Stream<PointValues> stream = client.queryPoints(sql1, QueryOptions.DEFAULTS)) {
+    stream.forEach(
+        (Point p) -> {
+            var time = p.getField("time", LocalDateTime.class);
+            var location = p.getField("location", String.class);
+            var value = p.getField("value", Double.class);
+
+            System.out.printf("| %-8s | %-8s | %-30s |%n", location, value, time);
+    });
+}
+
+System.out.printf("--------------------------------------------------------%n%n");
+```
+
+
 ## Feedback
 
 If you need help, please use our [Community Slack](https://app.slack.com/huddle/TH8RGQX5Z/C02UDUPLQKA)
