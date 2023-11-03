@@ -224,7 +224,7 @@ public final class PointValues {
    */
   @Nonnull
     public String[] getTagNames() {
-    return tags.keySet().toArray(new String[tags.size()]);
+    return tags.keySet().toArray(new String[0]);
   }
 
   /**
@@ -469,7 +469,7 @@ public final class PointValues {
    */
   @Nonnull
   public String[] getFieldNames() {
-    return fields.keySet().toArray(new String[tags.size()]);
+    return fields.keySet().toArray(new String[0]);
   }
 
   /**
