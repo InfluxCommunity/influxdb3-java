@@ -160,7 +160,6 @@ try (Stream<PointValues> stream = client.queryPoints(sql1, QueryOptions.DEFAULTS
 System.out.printf("--------------------------------------------------------%n%n");
 ```
 
-
 ## Feedback
 
 If you need help, please use our [Community Slack](https://app.slack.com/huddle/TH8RGQX5Z/C02UDUPLQKA)

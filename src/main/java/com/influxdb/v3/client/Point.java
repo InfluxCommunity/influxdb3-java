@@ -60,7 +60,7 @@ public final class Point {
 
   private final PointValues values;
 
-  private Point(PointValues values) {
+  private Point(final PointValues values) {
     this.values = values;
   }
 
@@ -95,7 +95,7 @@ public final class Point {
    * @return the new Point
    * @throws Exception if measurement is missing
    */
-  public static Point fromValues(PointValues values) throws Exception {
+  public static Point fromValues(final PointValues values) throws Exception {
     if (values.getMeasurement() == null) {
       throw new Exception("Missing measurement!");
     }
@@ -191,8 +191,7 @@ public final class Point {
    * @return tag value or null
    */
   @Nullable
-  public String getTag(@Nonnull final String name)
-  {
+  public String getTag(@Nonnull final String name) {
     Arguments.checkNotNull(name, "tagName");
 
     return values.getTag(name);
