@@ -22,19 +22,18 @@
 package com.influxdb.v3.client;
 
 import java.math.BigInteger;
-import java.text.NumberFormat;
 import java.time.Instant;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import com.influxdb.v3.client.internal.Arguments;
 import com.influxdb.v3.client.internal.NanosecondConverter;
 import com.influxdb.v3.client.write.WritePrecision;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 
 /**
@@ -70,462 +69,462 @@ public final class PointValues {
         return new PointValues().setMeasurement(measurementName);
     }
 
-	/**
-	 *  Get measurement name.
-	 *
-	 * @return Measurement name
-	 */
-	@Nullable
-	public String getMeasurement() {
-		return name;
-	}
+  /**
+   *  Get measurement name.
+   *
+   * @return Measurement name
+   */
+  @Nullable
+  public String getMeasurement() {
+    return name;
+  }
 
-	/**
-	 * Updates the measurement for the point.
-	 *
-	 * @param measurement the measurement
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setMeasurement(@Nonnull final String measurement) {
+  /**
+   * Updates the measurement for the point.
+   *
+   * @param measurement the measurement
+   * @return this
+   */
+  @Nonnull
+  public PointValues setMeasurement(@Nonnull final String measurement) {
 
-		Arguments.checkNotNull(measurement, "precision");
+    Arguments.checkNotNull(measurement, "precision");
 
-		this.name = measurement;
+    this.name = measurement;
 
-		return this;
-	}
+    return this;
+  }
 
-	/**
-	 * Get timestamp. Can be null if not set.
-	 *
-	 * @return timestamp or null
-	 */
-	@Nullable
-	public Number getTimestamp() {
-		return time;
-	}
+  /**
+   * Get timestamp. Can be null if not set.
+   *
+   * @return timestamp or null
+   */
+  @Nullable
+  public Number getTimestamp() {
+    return time;
+  }
 
-	/**
-	 * Updates the timestamp for the point.
-	 *
-	 * @param time the timestamp
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setTimestamp(@Nullable final Instant time) {
+  /**
+   * Updates the timestamp for the point.
+   *
+   * @param time the timestamp
+   * @return this
+   */
+  @Nonnull
+  public PointValues setTimestamp(@Nullable final Instant time) {
 
-		if (time == null) {
-			return setTimestamp(null, WritePrecision.NS);
-		}
+    if (time == null) {
+      return setTimestamp(null, WritePrecision.NS);
+    }
 
-		BigInteger convertedTime = NanosecondConverter.convert(time, WritePrecision.NS);
+    BigInteger convertedTime = NanosecondConverter.convert(time, WritePrecision.NS);
 
-		return setTimestamp(convertedTime, WritePrecision.NS);
-	}
+    return setTimestamp(convertedTime, WritePrecision.NS);
+  }
 
 
-	/**
-	 * Updates the timestamp for the point.
-	 *
-	 * @param time      the timestamp
-	 * @param precision the timestamp precision
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setTimestamp(@Nullable final Number time, @Nonnull final WritePrecision precision) {
+  /**
+   * Updates the timestamp for the point.
+   *
+   * @param time      the timestamp
+   * @param precision the timestamp precision
+   * @return this
+   */
+  @Nonnull
+  public PointValues setTimestamp(@Nullable final Number time, @Nonnull final WritePrecision precision) {
 
-		Arguments.checkNotNull(precision, "precision");
+    Arguments.checkNotNull(precision, "precision");
 
-		this.time = NanosecondConverter.convertToNanos(time, precision);
+    this.time = NanosecondConverter.convertToNanos(time, precision);
 
-		return this;
-	}
+    return this;
+  }
 
-	/**
-	 * Updates the timestamp for the point.
-	 *
-	 * @param time      the timestamp
-	 * @param precision the timestamp precision
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setTimestamp(@Nullable final Long time, @Nonnull final WritePrecision precision) {
+  /**
+   * Updates the timestamp for the point.
+   *
+   * @param time      the timestamp
+   * @param precision the timestamp precision
+   * @return this
+   */
+  @Nonnull
+  public PointValues setTimestamp(@Nullable final Long time, @Nonnull final WritePrecision precision) {
 
-		return setTimestamp((Number) time, precision);
-	}
+    return setTimestamp((Number) time, precision);
+  }
 
-	/**
-	 * Gets value of tag with given name. Returns null if tag not found.
-	 *
-	 * @param name   the tag name
-	 * @return tag value or null
-	 */
-	@Nullable
-	public String getTag(@Nonnull final String name)
-	{
-		Arguments.checkNotNull(name, "tagName");
+  /**
+   * Gets value of tag with given name. Returns null if tag not found.
+   *
+   * @param name   the tag name
+   * @return tag value or null
+   */
+  @Nullable
+  public String getTag(@Nonnull final String name) {
 
-		return tags.get(name);
-	}
+    Arguments.checkNotNull(name, "tagName");
 
-	/**
-	 * Adds or replaces a tag value for this point.
-	 *
-	 * @param key   the tag name
-	 * @param value the tag value
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setTag(@Nonnull final String key, @Nullable final String value) {
+    return tags.get(name);
+  }
 
-		Arguments.checkNotNull(key, "tagName");
+  /**
+   * Adds or replaces a tag value for this point.
+   *
+   * @param key   the tag name
+   * @param value the tag value
+   * @return this
+   */
+  @Nonnull
+  public PointValues setTag(@Nonnull final String key, @Nullable final String value) {
 
-		tags.put(key, value);
+    Arguments.checkNotNull(key, "tagName");
 
-		return this;
-	}
+    tags.put(key, value);
 
-	/**
-	 * Adds or replaces tags for this point.
-	 *
-	 * @param tagsToAdd the Map of tags to add
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setTags(@Nonnull final Map<String, String> tagsToAdd) {
+    return this;
+  }
 
-		Arguments.checkNotNull(tagsToAdd, "tagsToAdd");
+  /**
+   * Adds or replaces tags for this point.
+   *
+   * @param tagsToAdd the Map of tags to add
+   * @return this
+   */
+  @Nonnull
+  public PointValues setTags(@Nonnull final Map<String, String> tagsToAdd) {
 
-		tagsToAdd.forEach(this::setTag);
+    Arguments.checkNotNull(tagsToAdd, "tagsToAdd");
 
-		return this;
-	}
+    tagsToAdd.forEach(this::setTag);
 
-	/**
-	 * Removes a tag with the specified name if it exists; otherwise, it does nothing.
-	 *
-	 * @param name   the tag name
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues removeTag(@Nonnull final String name) {
+    return this;
+  }
 
-		Arguments.checkNotNull(name, "tagName");
+  /**
+   * Removes a tag with the specified name if it exists; otherwise, it does nothing.
+   *
+   * @param name   the tag name
+   * @return this
+   */
+  @Nonnull
+  public PointValues removeTag(@Nonnull final String name) {
 
-		tags.remove(name);
+    Arguments.checkNotNull(name, "tagName");
 
-		return this;
-	}
+    tags.remove(name);
 
-	/**
-	 * Gets an array of tag names.
-	 *
-	 * @return An array of tag names
-	 */
-	@Nonnull
+    return this;
+  }
+
+  /**
+   * Gets an array of tag names.
+   *
+   * @return An array of tag names
+   */
+  @Nonnull
     public String[] getTagNames() {
-		return tags.keySet().toArray(new String[tags.size()]);
-	}
+    return tags.keySet().toArray(new String[tags.size()]);
+  }
 
-	/**
-	 * Gets the float field value associated with the specified name.
-	 * If the field is not present, returns null.
-	 *
-	 * @param name the field name
-	 * @return The float field value or null
-	 */
-	@Nullable
-	public Double getFloatField(@Nonnull String name) throws ClassCastException {
-		return getField(name, Double.class);
-	}
+  /**
+   * Gets the float field value associated with the specified name.
+   * If the field is not present, returns null.
+   *
+   * @param name the field name
+   * @return The float field value or null
+   */
+  @Nullable
+  public Double getFloatField(@Nonnull final String name) throws ClassCastException {
+    return getField(name, Double.class);
+  }
 
-	/**
-	 * Adds or replaces a float field.
-	 *
-	 * @param name  the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setFloatField(@Nonnull final String name, final double value) {
-		return putField(name, value);
-	}
+  /**
+   * Adds or replaces a float field.
+   *
+   * @param name  the field name
+   * @param value the field value
+   * @return this
+   */
+  @Nonnull
+  public PointValues setFloatField(@Nonnull final String name, final double value) {
+    return putField(name, value);
+  }
 
-	/**
-	 * Gets the integer field value associated with the specified name.
-	 * If the field is not present, returns null.
-	 *
-	 * @param name the field name
-	 * @return The integer field value or null
-	 */
-	@Nullable
-	public Long getIntegerField(@Nonnull String name) throws ClassCastException {
-		return getField(name, Long.class);
-	}
+  /**
+   * Gets the integer field value associated with the specified name.
+   * If the field is not present, returns null.
+   *
+   * @param name the field name
+   * @return The integer field value or null
+   */
+  @Nullable
+  public Long getIntegerField(@Nonnull final String name) throws ClassCastException {
+    return getField(name, Long.class);
+  }
 
-	/**
-	 * Adds or replaces a integer field.
-	 *
-	 * @param name  the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	public PointValues setIntegerField(@Nonnull final String name, final long value) {
-		return putField(name, value);
-	}
+  /**
+   * Adds or replaces a integer field.
+   *
+   * @param name  the field name
+   * @param value the field value
+   * @return this
+   */
+  public PointValues setIntegerField(@Nonnull final String name, final long value) {
+    return putField(name, value);
+  }
 
-	/**
-	 * Gets the string field value associated with the specified name.
-	 * If the field is not present, returns null.
-	 *
-	 * @param name the field name
-	 * @return The string field value or null
-	 */
-	@Nullable
-	public String getStringField(@Nonnull String name) throws ClassCastException {
-		return getField(name, String.class);
-	}
+  /**
+   * Gets the string field value associated with the specified name.
+   * If the field is not present, returns null.
+   *
+   * @param name the field name
+   * @return The string field value or null
+   */
+  @Nullable
+  public String getStringField(@Nonnull final String name) throws ClassCastException {
+    return getField(name, String.class);
+  }
 
-	/**
-	 * Adds or replaces a string field.
-	 *
-	 * @param name  the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	public PointValues setStringField(@Nonnull final String name, final String value) {
-		return putField(name, value);
-	}
+  /**
+   * Adds or replaces a string field.
+   *
+   * @param name  the field name
+   * @param value the field value
+   * @return this
+   */
+  public PointValues setStringField(@Nonnull final String name, final String value) {
+    return putField(name, value);
+  }
 
-	/**
-	 * Gets the boolean field value associated with the specified name.
-	 * If the field is not present, returns null.
-	 *
-	 * @param name the field name
-	 * @return The boolean field value or null
-	 */
-	@Nullable
-	public Boolean getBooleanField(@Nonnull String name) throws ClassCastException {
-		return getField(name, Boolean.class);
-	}
+  /**
+   * Gets the boolean field value associated with the specified name.
+   * If the field is not present, returns null.
+   *
+   * @param name the field name
+   * @return The boolean field value or null
+   */
+  @Nullable
+  public Boolean getBooleanField(@Nonnull final String name) throws ClassCastException {
+    return getField(name, Boolean.class);
+  }
 
-	/**
-	 * Adds or replaces a boolean field.
-	 *
-	 * @param name  the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	public PointValues setBooleanField(@Nonnull final String name, final boolean value) {
-		return putField(name, value);
-	}
+  /**
+   * Adds or replaces a boolean field.
+   *
+   * @param name  the field name
+   * @param value the field value
+   * @return this
+   */
+  public PointValues setBooleanField(@Nonnull final String name, final boolean value) {
+    return putField(name, value);
+  }
 
-	/**
-	 * Get field of given name. Can be null if field doesn't exist.
-	 *
-	 * @param name  the field name
-	 * @return Field as object
-	 */
-	@Nullable
-	public Object getField(@Nonnull final String name) {
-		return  fields.get(name);
-	}
+  /**
+   * Get field of given name. Can be null if field doesn't exist.
+   *
+   * @param name  the field name
+   * @return Field as object
+   */
+  @Nullable
+  public Object getField(@Nonnull final String name) {
+    return  fields.get(name);
+  }
 
-	/**
-	 * Get field of given name as type. Can be null if field doesn't exist.
-	 *
-	 * @param name  the field name
-	 * @return Field as given type
-	 */
-	@Nullable
-	public <T> T getField(final String name, final Class<T> type) throws ClassCastException {
-		Object field = getField(name);
-		if (field == null) {
-			return null;
-		}
-		return type.cast(field);
-	}
+  /**
+   * Get field of given name as type. Can be null if field doesn't exist.
+   *
+   * @param name  the field name
+   * @return Field as given type
+   */
+  @Nullable
+  public <T> T getField(final String name, final Class<T> type) throws ClassCastException {
+    Object field = getField(name);
+    if (field == null) {
+      return null;
+    }
+    return type.cast(field);
+  }
 
-	/**
-	 * Gets the type of field with given name, if it exists.
-	 * If the field is not present, returns null.
-	 *
-	 * @param name  the field name
-	 * @return The field type or null.
-	 */
-	@Nullable
-	public Class<?> getFieldType(@Nonnull final String name) {
-		Object field = getField(name);
-		if (field == null) {
-			return null;
-		}
-		return field.getClass();
-	}
+  /**
+   * Gets the type of field with given name, if it exists.
+   * If the field is not present, returns null.
+   *
+   * @param name  the field name
+   * @return The field type or null.
+   */
+  @Nullable
+  public Class<?> getFieldType(@Nonnull final String name) {
+    Object field = getField(name);
+    if (field == null) {
+      return null;
+    }
+    return field.getClass();
+  }
 
-	/**
-	 * Add {@link Double} field.
-	 *
-	 * @param field the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setField(@Nonnull final String field, final double value) {
-		return putField(field, value);
-	}
+  /**
+   * Add {@link Double} field.
+   *
+   * @param field the field name
+   * @param value the field value
+   * @return this
+   */
+  @Nonnull
+  public PointValues setField(@Nonnull final String field, final double value) {
+    return putField(field, value);
+  }
 
-	/**
-	 * Add {@link Long} field.
-	 *
-	 * @param field the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	public PointValues setField(@Nonnull final String field, final long value) {
-		return putField(field, value);
-	}
+  /**
+   * Add {@link Long} field.
+   *
+   * @param field the field name
+   * @param value the field value
+   * @return this
+   */
+  public PointValues setField(@Nonnull final String field, final long value) {
+    return putField(field, value);
+  }
 
-	/**
-	 * Add {@link Number} field.
-	 *
-	 * @param field the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setField(@Nonnull final String field, @Nullable final Number value) {
-		return putField(field, value);
-	}
+  /**
+   * Add {@link Number} field.
+   *
+   * @param field the field name
+   * @param value the field value
+   * @return this
+   */
+  @Nonnull
+  public PointValues setField(@Nonnull final String field, @Nullable final Number value) {
+    return putField(field, value);
+  }
 
-	/**
-	 * Add {@link String} field.
-	 *
-	 * @param field the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setField(@Nonnull final String field, @Nullable final String value) {
-		return putField(field, value);
-	}
+  /**
+   * Add {@link String} field.
+   *
+   * @param field the field name
+   * @param value the field value
+   * @return this
+   */
+  @Nonnull
+  public PointValues setField(@Nonnull final String field, @Nullable final String value) {
+    return putField(field, value);
+  }
 
-	/**
-	 * Add {@link Boolean} field.
-	 *
-	 * @param field the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setField(@Nonnull final String field, final boolean value) {
-		return putField(field, value);
-	}
+  /**
+   * Add {@link Boolean} field.
+   *
+   * @param field the field name
+   * @param value the field value
+   * @return this
+   */
+  @Nonnull
+  public PointValues setField(@Nonnull final String field, final boolean value) {
+    return putField(field, value);
+  }
 
-	/**
-	 * Add {@link Object} field.
-	 *
-	 * @param field the field name
-	 * @param value the field value
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setField(@Nonnull final String field, @Nullable final Object value) {
-		return putField(field, value);
-	}
+  /**
+   * Add {@link Object} field.
+   *
+   * @param field the field name
+   * @param value the field value
+   * @return this
+   */
+  @Nonnull
+  public PointValues setField(@Nonnull final String field, @Nullable final Object value) {
+    return putField(field, value);
+  }
 
-	/**
-	 * Adds or replaces fields for this point.
-	 *
-	 * @param fieldsToAdd the Map of fields to add
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues setFields(@Nonnull final Map<String, Object> fieldsToAdd) {
+  /**
+   * Adds or replaces fields for this point.
+   *
+   * @param fieldsToAdd the Map of fields to add
+   * @return this
+   */
+  @Nonnull
+  public PointValues setFields(@Nonnull final Map<String, Object> fieldsToAdd) {
 
-		Arguments.checkNotNull(fieldsToAdd, "fieldsToAdd");
+    Arguments.checkNotNull(fieldsToAdd, "fieldsToAdd");
 
-		fieldsToAdd.forEach(this::putField);
+    fieldsToAdd.forEach(this::putField);
 
-		return this;
-	}
+    return this;
+  }
 
-	/**
-	 * Removes a field with the specified name if it exists; otherwise, it does nothing.
-	 *
- 	 * @param name the field name
-	 * @return this
-	 */
-	@Nonnull
-	public PointValues removeField(@NonNull final String name) {
-		fields.remove(name);
+  /**
+   * Removes a field with the specified name if it exists; otherwise, it does nothing.
+   *
+    * @param name the field name
+   * @return this
+   */
+  @Nonnull
+  public PointValues removeField(@NonNull final String name) {
+    fields.remove(name);
 
-		return  this;
-	}
+    return  this;
+  }
 
-	/**
-	 * Gets an array of field names.
-	 *
-	 * @return An array of field names
-	 */
-	@Nonnull
-	public String[] getFieldNames() {
-		return fields.keySet().toArray(new String[tags.size()]);
-	}
+  /**
+   * Gets an array of field names.
+   *
+   * @return An array of field names
+   */
+  @Nonnull
+  public String[] getFieldNames() {
+    return fields.keySet().toArray(new String[tags.size()]);
+  }
 
-	/**
-	 * Has point any fields?
-	 *
-	 * @return true, if the point contains any fields, false otherwise.
-	 */
-	public boolean hasFields() {
-		return !fields.isEmpty();
-	}
+  /**
+   * Has point any fields?
+   *
+   * @return true, if the point contains any fields, false otherwise.
+   */
+  public boolean hasFields() {
+    return !fields.isEmpty();
+  }
 
-	/**
-	 * Creates a copy of this object.
-	 *
-	 * @return A new instance with same values.
-	 */
-	@Nonnull
-	public PointValues copy() {
-		PointValues copy = new PointValues();
+  /**
+   * Creates a copy of this object.
+   *
+   * @return A new instance with same values.
+   */
+  @Nonnull
+  public PointValues copy() {
+    PointValues copy = new PointValues();
 
-		copy.name = this.name;
-		copy.tags.putAll(this.tags);
-		copy.fields.putAll(this.fields);
-		copy.time = this.time;
+    copy.name = this.name;
+    copy.tags.putAll(this.tags);
+    copy.fields.putAll(this.fields);
+    copy.time = this.time;
 
-		return copy;
-	}
+    return copy;
+  }
 
-	/**
-	 * Creates new Point with this as values with given measurement.
-	 *
-	 * @param measurement the point measurement
-	 * @return Point from this values with given measurement.
-	 */
-	@Nonnull
-	public Point asPoint(@Nonnull final String measurement) {
-		setMeasurement(measurement);
-		try {
-			return asPoint();
-		} catch (Exception e) {
-			// never
-			throw new RuntimeException(e);
-		}
-	}
+  /**
+   * Creates new Point with this as values with given measurement.
+   *
+   * @param measurement the point measurement
+   * @return Point from this values with given measurement.
+   */
+  @Nonnull
+  public Point asPoint(@Nonnull final String measurement) {
+    setMeasurement(measurement);
+    try {
+      return asPoint();
+    } catch (Exception e) {
+      // never
+      throw new RuntimeException(e);
+    }
+  }
 
-	/**
-	 * Creates new Point with this as values.
-	 *
-	 * @return Point from this values with given measurement.
-	 * @throws Exception if measurement is missing
-	 */
-	@Nonnull
-	public Point asPoint() throws Exception {
-		return Point.fromValues(this);
-	}
+  /**
+   * Creates new Point with this as values.
+   *
+   * @return Point from this values with given measurement.
+   * @throws Exception if measurement is missing
+   */
+  @Nonnull
+  public Point asPoint() throws Exception {
+    return Point.fromValues(this);
+  }
 
     @Nonnull
     private PointValues putField(@Nonnull final String field, @Nullable final Object value) {

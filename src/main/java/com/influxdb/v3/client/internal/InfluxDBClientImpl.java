@@ -39,7 +39,6 @@ import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.influxdb.v3.client.PointValues;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -48,8 +47,9 @@ import org.apache.arrow.vector.util.Text;
 import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.config.ClientConfig;
-import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.Point;
+import com.influxdb.v3.client.PointValues;
+import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
@@ -170,7 +170,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                     return IntStream
                             .range(0, vector.getRowCount())
                             .mapToObj(rowNumber -> {
-	                            PointValues p = new PointValues();
+                                PointValues p = new PointValues();
 
 
                                 ArrayList<Object> row = new ArrayList<>();

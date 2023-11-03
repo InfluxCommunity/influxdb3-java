@@ -26,9 +26,9 @@ import java.time.LocalDateTime;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
-import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.PointValues;
+import com.influxdb.v3.client.query.QueryOptions;
 
 /**
  * The example depends on the "influxdb3-java" module and this module should be built first

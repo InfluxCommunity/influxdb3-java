@@ -31,8 +31,8 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.InfluxDBClientImpl;
-import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.Point;
+import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.WriteOptions;
 
 /**

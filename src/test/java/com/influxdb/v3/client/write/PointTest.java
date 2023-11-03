@@ -26,9 +26,10 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.HashMap;
 
-import com.influxdb.v3.client.Point;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import com.influxdb.v3.client.Point;
 
 /**
  * @author Jakub Bednar (bednar@github) (11/10/2018 12:57)
