@@ -97,9 +97,9 @@ public final class IOxExample {
             //
             // Query by SQL into Points
             //
-            try (Stream<PointValues> stream = client.queryPoints(sql, QueryOptions.DEFAULTS)) {
+            try (Stream<PointValues> stream = client.queryPoints(sql)) {
                 stream.forEach(
-                    (Point p) -> {
+                    (PointValues p) -> {
                         var time = p.getField("time", LocalDateTime.class);
                         var location = p.getField("location", String.class);
                         var value = p.getField("value", Double.class);

@@ -25,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -198,10 +197,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                         continue;
                                     }
 
-                                    if (metaType == null)
-                                    {
-                                        if (Objects.equals(name, "time") && value instanceof Instant)
-                                        {
+                                    if (metaType == null) {
+                                        if (Objects.equals(name, "time") && value instanceof Instant) {
                                             p.setTimestamp((Instant) value);
                                         } else {
                                             // just push as field If you don't know what type is it
