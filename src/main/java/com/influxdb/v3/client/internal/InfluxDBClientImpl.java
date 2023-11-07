@@ -161,7 +161,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                 });
     }
 
-    @Nonnull
+	@Nonnull
+	@Override
+	public Stream<PointValues> queryPoints(@Nonnull final String query)  {
+		return queryPoints(query, QueryOptions.DEFAULTS);
+	}
+
+	@Nonnull
     @Override
     public Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options) {
         return queryData(query, options)
