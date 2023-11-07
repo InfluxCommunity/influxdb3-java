@@ -66,7 +66,7 @@ public final class Point {
 
   /**
    * Create a new Point.
-   * 
+   *
    * @param measurementName the measurement name
    */
   public Point(@Nonnull final String measurementName) {
