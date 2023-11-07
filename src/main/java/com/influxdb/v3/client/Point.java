@@ -66,6 +66,8 @@ public final class Point {
 
   /**
    * Create a new Point.
+   * 
+   * @param measurementName the measurement name
    */
   public Point(@Nonnull final String measurementName) {
     Arguments.checkNotNull(measurementName, "measurement");
@@ -364,6 +366,8 @@ public final class Point {
    * Get field of given name as type. Can be null if field doesn't exist.
    *
    * @param name  the field name
+   * @param type  the field type Class
+   * @param <T>   the field type
    * @return Field as given type
    */
   @Nullable

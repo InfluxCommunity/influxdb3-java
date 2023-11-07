@@ -335,6 +335,8 @@ public final class PointValues {
    * Get field of given name as type. Can be null if field doesn't exist.
    *
    * @param name  the field name
+   * @param type  the field type Class
+   * @param <T>   the field type
    * @return Field as given type
    */
   @Nullable
