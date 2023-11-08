@@ -30,8 +30,15 @@ import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.PointValues;
 
+/**
+ * The example depends on the "influxdb3-java" module and this module should be built first
+ * by running "mvn install" in the root directory.
+ */
 public final class DownsamplingExample {
-    public static void main(String[] args) throws Exception {
+    private DownsamplingExample() {
+    }
+
+    public static void main(final String[] args) throws Exception {
         String host = "https://us-east-1-1.aws.cloud2.influxdata.com";
         String token = "my-token";
         String database = "my-database";
@@ -44,14 +51,14 @@ public final class DownsamplingExample {
                     .setTag("unit", "temperature")
                     .setField("avg", 24.5)
                     .setField("max", 45.0)
-                    .setTimestamp(Instant.now().minusSeconds(-20*60));
+                    .setTimestamp(Instant.now().minusSeconds(-20 * 60));
             client.writePoint(point1);
 
             Point point2 = Point.measurement("stat")
                     .setTag("unit", "temperature")
                     .setField("avg", 28.0)
                     .setField("max", 40.3)
-                    .setTimestamp(Instant.now().minusSeconds(-10*60));
+                    .setTimestamp(Instant.now().minusSeconds(-10 * 60));
             client.writePoint(point2);
 
             Point point3 = Point.measurement("stat")
@@ -72,8 +79,7 @@ public final class DownsamplingExample {
                 + " WHERE\n"
                 + "       \"time\" >= now() - interval '1 hour'\n"
                 + " GROUP BY window_start\n"
-                + "     ORDER BY window_start ASC;\n"
-                    ;
+                + "     ORDER BY window_start ASC;\n";
 
 
             //
@@ -88,7 +94,8 @@ public final class DownsamplingExample {
                             return;
                         }
 
-                        System.out.println(timestamp.toString()+": avg is "+row.getFloatField("avg")+", max is "+row.getFloatField("max"));
+                        System.out.println(timestamp.toString() + ": avg is "
+                            + row.getFloatField("avg") + ", max is " + row.getFloatField("max"));
 
                         //
                         // write back downsampled date to 'stat_downsampled' measurement
