@@ -69,7 +69,7 @@ import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.query.QueryOptions;
-import com.influxdb.v3.client.write.Point;
+import com.influxdb.v3.client.Point;
 
 public class IOxExample {
     public static void main(String[] args) throws Exception {
@@ -91,8 +91,8 @@ to insert data, you can use code like this:
 // Write by Point
 //
 Point point = Point.measurement("temperature")
-        .addTag("location", "west")
-        .addField("value", 55.15)
+        .setTag("location", "west")
+        .setField("value", 55.15)
         .setTimestamp(Instant.now().minusSeconds(-10));
 client.writePoint(point);
 
@@ -133,6 +133,31 @@ try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.INFLUX_QL)) {
 }
 
 System.out.printf("-----------------------------------------%n");
+```
+
+or use `PointValues` structure with `client.queryPoints`:
+
+```java
+System.out.printf("--------------------------------------------------------%n");
+System.out.printf("| %-8s | %-8s | %-30s |%n", "location", "value", "time");
+System.out.printf("--------------------------------------------------------%n");
+
+//
+// Query by SQL into Points
+//
+String sql1 = "select time,location,value from temperature order by time desc limit 10";
+try (Stream<PointValues> stream = client.queryPoints(sql1, QueryOptions.DEFAULTS)) {
+    stream.forEach(
+        (PointValues p) -> {
+            var time = p.getField("time", LocalDateTime.class);
+            var location = p.getField("location", String.class);
+            var value = p.getField("value", Double.class);
+
+            System.out.printf("| %-8s | %-8s | %-30s |%n", location, value, time);
+    });
+}
+
+System.out.printf("--------------------------------------------------------%n%n");
 ```
 
 ## Feedback

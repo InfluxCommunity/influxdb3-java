@@ -74,6 +74,13 @@ class ITQueryWrite {
             Assertions.assertThat(rows).hasSize(1);
         }
 
+        try (Stream<PointValues> stream = client.queryPoints(sql)) {
+
+            List<PointValues> rows = stream.collect(Collectors.toList());
+
+            Assertions.assertThat(rows).hasSize(1);
+        }
+
         String influxQL = String.format("SELECT MEAN(value) FROM %s WHERE \"testId\"=%d "
                 + "group by time(1s) fill(none) order by time desc limit 1", measurement, testId);
         try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.INFLUX_QL)) {

@@ -22,11 +22,13 @@
 package com.influxdb.v3;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.Point;
+import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.query.QueryOptions;
-import com.influxdb.v3.client.write.Point;
 
 /**
  * The example depends on the "influxdb3-java" module and this module should be built first
@@ -47,8 +49,8 @@ public final class IOxExample {
             // Write by Point
             //
             Point point = Point.measurement("temperature")
-                    .addTag("location", "west")
-                    .addField("value", 55.15)
+                    .setTag("location", "west")
+                    .setField("value", 55.15)
                     .setTimestamp(Instant.now().minusSeconds(-10));
             client.writePoint(point);
 
@@ -85,7 +87,28 @@ public final class IOxExample {
                 stream.forEach(row -> System.out.printf("| %-16s | %-18s |%n", row[1], row[2]));
             }
 
-            System.out.printf("-----------------------------------------%n");
+            System.out.printf("-----------------------------------------%n%n");
+
+
+            System.out.printf("--------------------------------------------------------%n");
+            System.out.printf("| %-8s | %-8s | %-30s |%n", "location", "value", "time");
+            System.out.printf("--------------------------------------------------------%n");
+
+            //
+            // Query by SQL into Points
+            //
+            try (Stream<PointValues> stream = client.queryPoints(sql)) {
+                stream.forEach(
+                    (PointValues p) -> {
+                        var time = p.getField("time", LocalDateTime.class);
+                        var location = p.getField("location", String.class);
+                        var value = p.getField("value", Double.class);
+
+                        System.out.printf("| %-8s | %-8s | %-30s |%n", location, value, time);
+                });
+            }
+
+            System.out.printf("--------------------------------------------------------%n%n");
         }
     }
 }
