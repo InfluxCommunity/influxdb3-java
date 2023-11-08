@@ -143,7 +143,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Object[]&gt; rows = client.queryPoints("select * from cpu", options)) {
+     * try (Stream&lt;PointValues&gt; rows = client.queryPoints("select * from cpu", options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
      *      }
@@ -161,7 +161,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Object[]&gt; rows = client.queryPoints("select * from cpu", options)) {
+     * try (Stream&lt;PointValues&gt; rows = client.queryPoints("select * from cpu", options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
      *      }
