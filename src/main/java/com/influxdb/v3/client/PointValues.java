@@ -38,7 +38,7 @@ import com.influxdb.v3.client.write.WritePrecision;
 
 /**
  * PointValues defines the values that will be written to the database.
- * <a href="https://github.com/InfluxCommunity/influxdb3-java/blob/main/src/main/java/com/influxdb/v3/client/PointValues.java">See Go Implementation</a>.
+ * <a href="https://bit.ly/influxdb3-java-pointvalues">See Go Implementation</a>.
  *
  * @author Jakub Bednar (bednar@github) (11/10/2018 11:40)
  */
