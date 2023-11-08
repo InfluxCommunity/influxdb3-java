@@ -148,7 +148,7 @@ System.out.printf("--------------------------------------------------------%n");
 String sql1 = "select time,location,value from temperature order by time desc limit 10";
 try (Stream<PointValues> stream = client.queryPoints(sql1, QueryOptions.DEFAULTS)) {
     stream.forEach(
-        (Point p) -> {
+        (PointValues p) -> {
             var time = p.getField("time", LocalDateTime.class);
             var location = p.getField("location", String.class);
             var value = p.getField("value", Double.class);
