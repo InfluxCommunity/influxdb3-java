@@ -24,6 +24,7 @@ package com.influxdb.v3;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
@@ -108,8 +109,6 @@ public final class DownsamplingExample {
                         client.writePoint(downsampledPoint);
                 });
             }
-
-
         }
     }
 }
