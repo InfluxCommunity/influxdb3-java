@@ -29,79 +29,67 @@ import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.influxdb.v3.client.write.WritePrecision;
-
-public class PointTest {
+public class PointValuesTest {
     @Test
     void setMeasurement() {
-        Point point = Point.measurement("measurement");
-        Assertions.assertThat("measurement").isEqualTo(point.getMeasurement());
+        PointValues pointValues = PointValues.measurement("measurement");
+        Assertions.assertThat("measurement").isEqualTo(pointValues.getMeasurement());
 
-        point.setMeasurement("newMeasurement");
-        Assertions.assertThat("newMeasurement").isEqualTo(point.getMeasurement());
+        pointValues.setMeasurement("newMeasurement");
+        Assertions.assertThat("newMeasurement").isEqualTo(pointValues.getMeasurement());
     }
 
     @Test
     void setTimestamp() {
-        Point point = Point.measurement("measurement");
+        PointValues pointValues = PointValues.measurement("measurement");
 
         Instant timestamp = Instant.parse("2023-11-08T12:00:00Z");
-        point.setTimestamp(timestamp);
+        pointValues.setTimestamp(timestamp);
         Assertions.assertThat(BigInteger.valueOf(timestamp.getEpochSecond())
                 .multiply(BigInteger.valueOf(1_000_000_000)))
-            .isEqualTo(point.getTimestamp());
+            .isEqualTo(pointValues.getTimestamp());
     }
 
     @Test
     void setTags() {
-        Point point = Point.measurement("measurement");
+        PointValues pointValues = PointValues.measurement("measurement");
 
         Map<String, String> tags = new HashMap<>();
         tags.put("tag1", "value1");
         tags.put("tag2", "value2");
 
-        point.setTags(tags);
+        pointValues.setTags(tags);
 
-        Assertions.assertThat("value1").isEqualTo(point.getTag("tag1"));
-        Assertions.assertThat("value2").isEqualTo(point.getTag("tag2"));
+        Assertions.assertThat("value1").isEqualTo(pointValues.getTag("tag1"));
+        Assertions.assertThat("value2").isEqualTo(pointValues.getTag("tag2"));
     }
 
     @Test
     void setFields() {
-        Point point = Point.measurement("measurement");
+        PointValues pointValues = PointValues.measurement("measurement");
 
-        point.setField("field1", 42);
-        point.setField("field2", "value");
-        point.setField("field3", 3.14);
+        pointValues.setField("field1", 42);
+        pointValues.setField("field2", "value");
+        pointValues.setField("field3", 3.14);
 
-        Assertions.assertThat(42L).isEqualTo(point.getField("field1"));
-        Assertions.assertThat("value").isEqualTo(point.getField("field2"));
-        Assertions.assertThat(3.14).isEqualTo(point.getField("field3"));
-    }
-
-    @Test
-    void toLineProtocol() {
-        Point point = Point.measurement("measurement")
-                .setTag("tag1", "value1")
-                .setField("field1", 42);
-
-        String lineProtocol = point.toLineProtocol(WritePrecision.NS);
-        Assertions.assertThat("measurement,tag1=value1 field1=42i").isEqualTo(lineProtocol);
+        Assertions.assertThat(42L).isEqualTo(pointValues.getField("field1"));
+        Assertions.assertThat("value").isEqualTo(pointValues.getField("field2"));
+        Assertions.assertThat(3.14).isEqualTo(pointValues.getField("field3"));
     }
 
     @Test
     void copy() {
-        Point point = Point.measurement("measurement")
+        PointValues pointValues = PointValues.measurement("measurement")
                 .setTag("tag1", "value1")
                 .setField("field1", 42);
 
-        Point copy = point.copy();
+        PointValues copy = pointValues.copy();
 
         // Ensure the copy is not the same object
-        Assertions.assertThat(point).isNotSameAs(copy);
+        Assertions.assertThat(pointValues).isNotSameAs(copy);
         // Ensure the values are equal
-        Assertions.assertThat(point.getMeasurement()).isEqualTo(copy.getMeasurement());
-        Assertions.assertThat(point.getTag("tag1")).isEqualTo(copy.getTag("tag1"));
-        Assertions.assertThat(point.getField("field1")).isEqualTo(copy.getField("field1"));
+        Assertions.assertThat(pointValues.getMeasurement()).isEqualTo(copy.getMeasurement());
+        Assertions.assertThat(pointValues.getTag("tag1")).isEqualTo(copy.getTag("tag1"));
+        Assertions.assertThat(pointValues.getField("field1")).isEqualTo(copy.getField("field1"));
     }
 }
