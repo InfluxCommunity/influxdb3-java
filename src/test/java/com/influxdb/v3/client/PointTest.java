@@ -33,6 +33,20 @@ import com.influxdb.v3.client.write.WritePrecision;
 
 public class PointTest {
     @Test
+    void fromValues() throws Exception {
+        PointValues pointValues = PointValues.measurement("measurement")
+            .setField("field1", 42);
+        Point point = Point.fromValues(pointValues);
+
+        Assertions.assertThat("measurement").isEqualTo(point.getMeasurement());
+
+        Assertions.assertThat(42L).isEqualTo(point.getField("field1"));
+        point.setMeasurement("newMeasurement");
+        Assertions.assertThat("newMeasurement").isEqualTo(point.getMeasurement());
+        Assertions.assertThat("newMeasurement").isEqualTo(pointValues.getMeasurement());
+    }
+
+    @Test
     void setMeasurement() {
         Point point = Point.measurement("measurement");
         Assertions.assertThat("measurement").isEqualTo(point.getMeasurement());
@@ -62,8 +76,78 @@ public class PointTest {
 
         point.setTags(tags);
 
-        Assertions.assertThat("value1").isEqualTo(point.getTag("tag1"));
-        Assertions.assertThat("value2").isEqualTo(point.getTag("tag2"));
+        Assertions.assertThat(point.getTag("tag1")).isEqualTo("value1");
+        Assertions.assertThat(point.getTag("tag2")).isEqualTo("value2");
+
+
+    }
+
+    @Test
+    void removeTag() {
+        Point point = Point.measurement("measurement")
+            .setTag("tag1", "value1")
+            .setTag("tag2", "value2");
+
+        point.removeTag("tag1");
+        point.removeTag("tagNonExistent");
+
+        Assertions.assertThat(point.getTag("tag1")).isNull();
+        Assertions.assertThat(point.getTag("tag2")).isEqualTo("value2");
+    }
+
+    @Test
+    void getTagNames() {
+        Point point = Point.measurement("measurement")
+            .setTag("tag1", "value1")
+            .setTag("tag2", "value2");
+
+        Assertions.assertThat(point.getTagNames()).isEqualTo(new String[]{"tag1", "tag2"});
+    }
+
+    @Test
+    void setGetTypeField() {
+        Point point = Point.measurement("measurement");
+
+        double floatValue = 2.71;
+        long integerValue = 64L;
+        boolean booleanValue = true;
+        String stringValue = "text";
+
+        point.setFloatField("floatField", floatValue);
+        point.setIntegerField("integerField", integerValue);
+        point.setBooleanField("booleanField", booleanValue);
+        point.setStringField("stringField", stringValue);
+
+        Assertions.assertThat(point.getFloatField("floatField")).isEqualTo(floatValue);
+        Assertions.assertThat(point.getIntegerField("integerField")).isEqualTo(integerValue);
+        Assertions.assertThat(point.getBooleanField("booleanField")).isEqualTo(booleanValue);
+        Assertions.assertThat(point.getStringField("stringField")).isEqualTo(stringValue);
+    }
+
+    @Test
+    void fieldGenerics() {
+        Point point = Point.measurement("measurement");
+
+        double floatValue = 2.71;
+        long integerValue = 64L;
+        boolean booleanValue = true;
+        String stringValue = "text";
+
+        point.setField("floatField", floatValue);
+        point.setField("integerField", integerValue);
+        point.setField("booleanField", booleanValue);
+        point.setField("stringField", stringValue);
+
+        Assertions.assertThat(point.getField("floatField", Double.class)).isEqualTo(floatValue);
+        Assertions.assertThat(point.getFieldType("floatField")).isEqualTo(Double.class);
+        Assertions.assertThat(point.getField("integerField", Long.class)).isEqualTo(integerValue);
+        Assertions.assertThat(point.getFieldType("integerField")).isEqualTo(Long.class);
+        Assertions.assertThat(point.getField("booleanField", Boolean.class)).isEqualTo(booleanValue);
+        Assertions.assertThat(point.getFieldType("booleanField")).isEqualTo(Boolean.class);
+        Assertions.assertThat(point.getField("stringField", String.class)).isEqualTo(stringValue);
+        Assertions.assertThat(point.getFieldType("stringField")).isEqualTo(String.class);
+        Assertions.assertThat(point.getField("Missing", String.class)).isNull();
+        Assertions.assertThat(point.getFieldType("Missing")).isNull();
     }
 
     @Test
