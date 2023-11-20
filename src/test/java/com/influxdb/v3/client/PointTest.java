@@ -1,13 +1,10 @@
 package com.influxdb.v3.client;
 
-import com.influxdb.v3.client.Point;
-import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
