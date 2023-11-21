@@ -78,8 +78,6 @@ public class PointTest {
 
         Assertions.assertThat(point.getTag("tag1")).isEqualTo("value1");
         Assertions.assertThat(point.getTag("tag2")).isEqualTo("value2");
-
-
     }
 
     @Test
@@ -161,6 +159,32 @@ public class PointTest {
         Assertions.assertThat(42L).isEqualTo(point.getField("field1"));
         Assertions.assertThat("value").isEqualTo(point.getField("field2"));
         Assertions.assertThat(3.14).isEqualTo(point.getField("field3"));
+    }
+
+    @Test
+    void removeField() {
+        Point point = Point.measurement("measurement")
+            .setField("field1", 42)
+            .setField("field2", "value")
+            .setField("field3", 3.14);
+
+        point.removeField("field1")
+            .removeField("field2");
+
+        Assertions.assertThat(point.getField("field1")).isNull();
+        Assertions.assertThat(point.getField("field2")).isNull();
+        Assertions.assertThat(3.14).isEqualTo(point.getField("field3"));
+    }
+
+    @Test
+    void getFieldNames() {
+        Point point = Point.measurement("measurement")
+            .setField("field", 42)
+            .setField("123", "value")
+            .setField("some_name", 3.14);
+
+        Assertions.assertThat(point.getFieldNames())
+            .isEqualTo(new String[]{"123", "field", "some_name"});
     }
 
     @Test

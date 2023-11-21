@@ -31,6 +31,19 @@ import org.junit.jupiter.api.Test;
 
 public class PointValuesTest {
     @Test
+    void asPoint() {
+        PointValues pointValues = new PointValues()
+                .setTag("tag1", "value1")
+                .setField("field1", 42);
+
+        Point point = pointValues.asPoint("measurement");
+
+        Assertions.assertThat(pointValues.getMeasurement()).isEqualTo(point.getMeasurement());
+        Assertions.assertThat(pointValues.getTag("tag1")).isEqualTo(point.getTag("tag1"));
+        Assertions.assertThat(pointValues.getField("field1")).isEqualTo(point.getField("field1"));
+    }
+
+    @Test
     void setMeasurement() {
         PointValues pointValues = PointValues.measurement("measurement");
         Assertions.assertThat("measurement").isEqualTo(pointValues.getMeasurement());
@@ -65,6 +78,74 @@ public class PointValuesTest {
     }
 
     @Test
+    void removeTag() {
+        PointValues pointValues = PointValues.measurement("measurement")
+            .setTag("tag1", "value1")
+            .setTag("tag2", "value2");
+
+        pointValues.removeTag("tag1");
+        pointValues.removeTag("tagNonExistent");
+
+        Assertions.assertThat(pointValues.getTag("tag1")).isNull();
+        Assertions.assertThat(pointValues.getTag("tag2")).isEqualTo("value2");
+    }
+
+    @Test
+    void getTagNames() {
+        PointValues pointValues = PointValues.measurement("measurement")
+            .setTag("tag1", "value1")
+            .setTag("tag2", "value2");
+
+        Assertions.assertThat(pointValues.getTagNames()).isEqualTo(new String[]{"tag1", "tag2"});
+    }
+
+    @Test
+    void setGetTypeField() {
+        PointValues pointValues = PointValues.measurement("measurement");
+
+        double floatValue = 2.71;
+        long integerValue = 64L;
+        boolean booleanValue = true;
+        String stringValue = "text";
+
+        pointValues.setFloatField("floatField", floatValue);
+        pointValues.setIntegerField("integerField", integerValue);
+        pointValues.setBooleanField("booleanField", booleanValue);
+        pointValues.setStringField("stringField", stringValue);
+
+        Assertions.assertThat(pointValues.getFloatField("floatField")).isEqualTo(floatValue);
+        Assertions.assertThat(pointValues.getIntegerField("integerField")).isEqualTo(integerValue);
+        Assertions.assertThat(pointValues.getBooleanField("booleanField")).isEqualTo(booleanValue);
+        Assertions.assertThat(pointValues.getStringField("stringField")).isEqualTo(stringValue);
+    }
+
+    @Test
+    void fieldGenerics() {
+        PointValues pointValues = PointValues.measurement("measurement");
+
+        double floatValue = 2.71;
+        long integerValue = 64L;
+        boolean booleanValue = true;
+        String stringValue = "text";
+
+        pointValues.setField("floatField", floatValue);
+        pointValues.setField("integerField", integerValue);
+        pointValues.setField("booleanField", booleanValue);
+        pointValues.setField("stringField", stringValue);
+
+        Assertions.assertThat(pointValues.getField("floatField", Double.class)).isEqualTo(floatValue);
+        Assertions.assertThat(pointValues.getFieldType("floatField")).isEqualTo(Double.class);
+        Assertions.assertThat(pointValues.getField("integerField", Long.class)).isEqualTo(integerValue);
+        Assertions.assertThat(pointValues.getFieldType("integerField")).isEqualTo(Long.class);
+        Assertions.assertThat(pointValues.getField("booleanField", Boolean.class)).isEqualTo(booleanValue);
+        Assertions.assertThat(pointValues.getFieldType("booleanField")).isEqualTo(Boolean.class);
+        Assertions.assertThat(pointValues.getField("stringField", String.class)).isEqualTo(stringValue);
+        Assertions.assertThat(pointValues.getFieldType("stringField")).isEqualTo(String.class);
+        Assertions.assertThat(pointValues.getField("Missing", String.class)).isNull();
+        Assertions.assertThat(pointValues.getFieldType("Missing")).isNull();
+    }
+
+    @Test
     void setFields() {
         PointValues pointValues = PointValues.measurement("measurement");
 
@@ -75,6 +156,32 @@ public class PointValuesTest {
         Assertions.assertThat(42L).isEqualTo(pointValues.getField("field1"));
         Assertions.assertThat("value").isEqualTo(pointValues.getField("field2"));
         Assertions.assertThat(3.14).isEqualTo(pointValues.getField("field3"));
+    }
+
+    @Test
+    void removeField() {
+        PointValues pointValues = PointValues.measurement("measurement")
+            .setField("field1", 42)
+            .setField("field2", "value")
+            .setField("field3", 3.14);
+
+        pointValues.removeField("field1")
+            .removeField("field2");
+
+        Assertions.assertThat(pointValues.getField("field1")).isNull();
+        Assertions.assertThat(pointValues.getField("field2")).isNull();
+        Assertions.assertThat(3.14).isEqualTo(pointValues.getField("field3"));
+    }
+
+    @Test
+    void getFieldNames() {
+        PointValues pointValues = PointValues.measurement("measurement")
+            .setField("field", 42)
+            .setField("123", "value")
+            .setField("some_name", 3.14);
+
+        Assertions.assertThat(pointValues.getFieldNames())
+            .isEqualTo(new String[]{"123", "field", "some_name"});
     }
 
     @Test
