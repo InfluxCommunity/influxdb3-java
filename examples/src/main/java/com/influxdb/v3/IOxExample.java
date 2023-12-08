@@ -22,8 +22,6 @@
 package com.influxdb.v3;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
