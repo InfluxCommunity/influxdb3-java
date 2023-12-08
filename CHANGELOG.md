@@ -1,5 +1,9 @@
 ## 0.5.0 [unreleased]
 
+### Bug Fixes
+
+1. [#77](https://github.com/InfluxCommunity/influxdb3-java/pull/77): Serialize InfluxDB response to `PointValues`
+
 ## 0.4.0 [2023-11-08]
 
 ### Features
