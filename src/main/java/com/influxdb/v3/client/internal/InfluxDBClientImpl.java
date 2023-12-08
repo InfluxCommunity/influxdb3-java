@@ -25,6 +25,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -163,7 +165,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Nonnull
     @Override
-    public Stream<PointValues> queryPoints(@Nonnull final String query)  {
+    public Stream<PointValues> queryPoints(@Nonnull final String query) {
         return queryPoints(query, QueryOptions.DEFAULTS);
     }
 
@@ -177,9 +179,6 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                             .range(0, vector.getRowCount())
                             .mapToObj(rowNumber -> {
                                 PointValues p = new PointValues();
-
-
-                                ArrayList<Object> row = new ArrayList<>();
                                 for (int i = 0; i < fieldVectors.size(); i++) {
                                     var schema = vector.getSchema().getFields().get(i);
                                     var value = fieldVectors.get(i).getObject(rowNumber);
@@ -192,7 +191,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
                                     if ((Objects.equals(name, "measurement")
                                             || Objects.equals(name, "iox::measurement"))
-                                        && value instanceof String) {
+                                            && value instanceof String) {
                                         p.setMeasurement((String) value);
                                         continue;
                                     }
@@ -208,15 +207,21 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                         continue;
                                     }
 
-                                    String[] parts = metaType.split(":");
+                                    String[] parts = metaType.split("::");
                                     String valueType = parts[2];
 
                                     if ("field".equals(valueType)) {
                                         p.setField(name, value);
                                     } else if ("tag".equals(valueType) && value instanceof String) {
                                         p.setTag(name, (String) value);
-                                    } else if ("timestamp".equals(valueType) && value instanceof Instant) {
-                                        p.setTimestamp((Instant) value);
+                                    } else if ("timestamp".equals(valueType)) {
+                                        if (value instanceof Long) {
+                                            p.setTimestamp(Instant.ofEpochMilli((Long) value));
+                                        } else if (value instanceof Instant) {
+                                            p.setTimestamp((Instant) value);
+                                        } else if (value instanceof LocalDateTime) {
+                                            p.setTimestamp(((LocalDateTime) value).toInstant(ZoneOffset.UTC));
+                                        }
                                     }
                                 }
 
