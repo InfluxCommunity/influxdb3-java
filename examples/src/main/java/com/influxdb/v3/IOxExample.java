@@ -23,6 +23,7 @@ package com.influxdb.v3;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
@@ -100,8 +101,8 @@ public final class IOxExample {
             try (Stream<PointValues> stream = client.queryPoints(sql)) {
                 stream.forEach(
                     (PointValues p) -> {
-                        var time = p.getField("time", LocalDateTime.class);
-                        var location = p.getField("location", String.class);
+                        var time = p.getTimestamp();
+                        var location = p.getTag("location");
                         var value = p.getField("value", Double.class);
 
                         System.out.printf("| %-8s | %-8s | %-30s |%n", location, value, time);
