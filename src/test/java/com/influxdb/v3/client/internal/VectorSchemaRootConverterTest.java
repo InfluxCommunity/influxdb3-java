@@ -45,9 +45,10 @@ import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.PointValues;
 
-public class VectorSchemaRootConverterTest {
+class VectorSchemaRootConverterTest {
+
     @Test
-    public void timestampAsArrowTime() {
+    void timestampAsArrowTime() {
         try (VectorSchemaRoot root = createTimeVector(1234, new ArrowType.Time(TimeUnit.MILLISECOND, 32))) {
 
             PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
@@ -58,7 +59,7 @@ public class VectorSchemaRootConverterTest {
     }
 
     @Test
-    public void timestampAsArrowTimestamp() {
+    void timestampAsArrowTimestamp() {
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.MILLISECOND, "UTC"))) {
 
             PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
@@ -69,7 +70,7 @@ public class VectorSchemaRootConverterTest {
     }
 
     @Test
-    public void timestampWithoutMetadataAndFieldWithoutMetadata() {
+    void timestampWithoutMetadataAndFieldWithoutMetadata() {
         FieldType timeType = new FieldType(true, new ArrowType.Time(TimeUnit.MILLISECOND, 32), null);
         Field timeField = new Field("time", timeType, null);
 

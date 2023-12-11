@@ -56,9 +56,9 @@ final class VectorSchemaRootConverter {
      * @return the converted PointValues object
      */
     @Nonnull
-    public PointValues toPointValues(final int rowNumber,
-                                     @Nonnull final VectorSchemaRoot vector,
-                                     @Nonnull final List<FieldVector> fieldVectors) {
+    PointValues toPointValues(final int rowNumber,
+                              @Nonnull final VectorSchemaRoot vector,
+                              @Nonnull final List<FieldVector> fieldVectors) {
         PointValues p = new PointValues();
         for (int i = 0; i < fieldVectors.size(); i++) {
             var schema = vector.getSchema().getFields().get(i);
