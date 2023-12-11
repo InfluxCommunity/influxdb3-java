@@ -78,8 +78,8 @@ final class VectorSchemaRootConverter {
             }
 
             if (metaType == null) {
-                if (Objects.equals(name, "time") && value instanceof Instant) {
-                    p.setTimestamp((Instant) value);
+                if (Objects.equals(name, "time") && (value instanceof Long || value instanceof LocalDateTime)) {
+                    setTimestamp(value, p);
                 } else {
                     // just push as field If you don't know what type is it
                     p.setField(name, value);
@@ -96,13 +96,17 @@ final class VectorSchemaRootConverter {
             } else if ("tag".equals(valueType) && value instanceof String) {
                 p.setTag(name, (String) value);
             } else if ("timestamp".equals(valueType)) {
-                if (value instanceof Long) {
-                    p.setTimestamp(Instant.ofEpochMilli((Long) value));
-                } else if (value instanceof LocalDateTime) {
-                    p.setTimestamp(((LocalDateTime) value).toInstant(ZoneOffset.UTC));
-                }
+                setTimestamp(value, p);
             }
         }
         return p;
+    }
+
+    private void setTimestamp(@Nonnull final Object value, @Nonnull final PointValues pointValues) {
+        if (value instanceof Long) {
+            pointValues.setTimestamp(Instant.ofEpochMilli((Long) value));
+        } else if (value instanceof LocalDateTime) {
+            pointValues.setTimestamp(((LocalDateTime) value).toInstant(ZoneOffset.UTC));
+        }
     }
 }

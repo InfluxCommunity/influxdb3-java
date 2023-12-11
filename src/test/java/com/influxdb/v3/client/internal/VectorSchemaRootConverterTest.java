@@ -59,12 +59,38 @@ public class VectorSchemaRootConverterTest {
 
     @Test
     public void timestampAsArrowTimestamp() {
-
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.MILLISECOND, "UTC"))) {
 
             PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(45_678L * 1_000_000);
+            Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+        }
+    }
+
+    @Test
+    public void timestampWithoutMetadata() {
+        FieldType timeType = new FieldType(true, new ArrowType.Time(TimeUnit.MILLISECOND, 32), null);
+        Field timeField = new Field("time", timeType, null);
+
+        try (VectorSchemaRoot root = initializeVectorSchemaRoot(timeField)) {
+
+            //
+            // set data
+            //
+            TimeMilliVector timeVector = (TimeMilliVector) root.getVector("time");
+            timeVector.allocateNew();
+            timeVector.setSafe(0, 123_456);
+
+            //
+            // set rows count
+            //
+            timeVector.setValueCount(1);
+            root.setRowCount(1);
+
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            BigInteger expected = BigInteger.valueOf(123_456L * 1_000_000);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
         }
     }
