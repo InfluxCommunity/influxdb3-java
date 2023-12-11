@@ -215,9 +215,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                     } else if ("tag".equals(valueType) && value instanceof String) {
                                         p.setTag(name, (String) value);
                                     } else if ("timestamp".equals(valueType)) {
-                                        if (value instanceof Long) {
-                                            p.setTimestamp(Instant.ofEpochMilli((Long) value));
-                                        } else if (value instanceof Instant) {
+                                        if (value instanceof Instant) {
                                             p.setTimestamp((Instant) value);
                                         } else if (value instanceof LocalDateTime) {
                                             p.setTimestamp(((LocalDateTime) value).toInstant(ZoneOffset.UTC));
