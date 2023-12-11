@@ -22,9 +22,9 @@
 package com.influxdb.v3.client.internal;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -32,6 +32,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BaseFixedWidthVector;
 import org.apache.arrow.vector.TimeMilliVector;
 import org.apache.arrow.vector.TimeStampVector;
+import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.TimeUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
@@ -39,6 +40,7 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.assertj.core.api.Assertions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.PointValues;
@@ -54,6 +56,7 @@ public class VectorSchemaRootConverterTest {
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
         }
     }
+
     @Test
     public void timestampAsArrowTimestamp() {
 
@@ -63,6 +66,32 @@ public class VectorSchemaRootConverterTest {
 
             BigInteger expected = BigInteger.valueOf(45_678L * 1_000_000);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+        }
+    }
+
+    @Test
+    public void measurementValue() {
+        FieldType stringType = new FieldType(true, new ArrowType.Utf8(), null);
+        Field measurementField = new Field("measurement", stringType, null);
+
+        try (VectorSchemaRoot root = initializeVectorSchemaRoot(measurementField)) {
+
+            //
+            // set data
+            //
+            VarCharVector measurementVector = (VarCharVector) root.getVector("measurement");
+            measurementVector.allocateNew();
+            measurementVector.setSafe(0, "measurementValue".getBytes(StandardCharsets.UTF_8));
+
+            //
+            // set rows count
+            //
+            measurementVector.setValueCount(1);
+            root.setRowCount(1);
+
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            Assertions.assertThat(pointValues.getMeasurement()).isEqualTo("measurementValue");
         }
     }
 
@@ -94,7 +123,7 @@ public class VectorSchemaRootConverterTest {
     }
 
     @Nonnull
-    private static VectorSchemaRoot createVectorSchemaRoot(@Nonnull final ArrowType arrowType) {
+    private VectorSchemaRoot createVectorSchemaRoot(@Nonnull final ArrowType arrowType) {
 
         // Creating metadata
         Map<String, String> metadata = new HashMap<>();
@@ -102,12 +131,14 @@ public class VectorSchemaRootConverterTest {
         FieldType timeType = new FieldType(true, arrowType, null, metadata);
         Field timeField = new Field("timestamp", timeType, null);
 
-        // Creating schema for VectorSchemaRoot
-        List<Field> fields = new ArrayList<>();
-        fields.add(timeField);
-        Schema schema = new Schema(fields);
+        return initializeVectorSchemaRoot(timeField);
+    }
 
-        // Creating root
+    @NotNull
+    private VectorSchemaRoot initializeVectorSchemaRoot(@Nonnull final Field... fields) {
+
+        Schema schema = new Schema(Arrays.asList(fields));
+
         VectorSchemaRoot root = VectorSchemaRoot.create(schema, new RootAllocator(Long.MAX_VALUE));
         root.allocateNew();
 
