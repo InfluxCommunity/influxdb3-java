@@ -21,6 +21,9 @@
  */
 package com.influxdb.v3.client;
 
+import java.math.BigInteger;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,6 +37,8 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.query.QueryOptions;
+import com.influxdb.v3.client.write.WriteOptions;
+import com.influxdb.v3.client.write.WritePrecision;
 
 class ITQueryWrite {
 
@@ -149,6 +154,38 @@ class ITQueryWrite {
 
             Assertions.assertThat(names).contains("Alice");
             Assertions.assertThat(names).contains("Bob");
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    void pointValues() {
+
+        Instant timestamp = Instant.now().minus(1, ChronoUnit.DAYS);
+
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .build());
+
+        long testId = System.currentTimeMillis();
+        client.writeRecord(String.format("integration_test,location=north value=60.0,testId=%d %s",
+                testId, timestamp.toEpochMilli()), new WriteOptions.Builder().precision(WritePrecision.MS).build());
+
+        String sql = String.format("SELECT * FROM integration_test WHERE \"testId\"=%d", testId);
+        try (Stream<PointValues> stream = client.queryPoints(sql)) {
+            List<PointValues> values = stream.collect(Collectors.toList());
+
+            Assertions.assertThat(values).hasSize(1);
+
+            Assertions.assertThat(values.get(0).getTag("location")).isEqualTo("north");
+            Assertions.assertThat(values.get(0).getFloatField("value")).isEqualTo(60.0);
+
+            BigInteger expected = BigInteger.valueOf(timestamp.toEpochMilli() * 1_000_000);
+            Assertions.assertThat((BigInteger) values.get(0).getTimestamp()).isEqualByComparingTo(expected);
         }
     }
 

@@ -24,13 +24,11 @@ package com.influxdb.v3.client.internal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -42,7 +40,6 @@ import javax.annotation.Nullable;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.util.Text;
 
 import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBClient;
@@ -163,7 +160,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Nonnull
     @Override
-    public Stream<PointValues> queryPoints(@Nonnull final String query)  {
+    public Stream<PointValues> queryPoints(@Nonnull final String query) {
         return queryPoints(query, QueryOptions.DEFAULTS);
     }
 
@@ -175,53 +172,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                     List<FieldVector> fieldVectors = vector.getFieldVectors();
                     return IntStream
                             .range(0, vector.getRowCount())
-                            .mapToObj(rowNumber -> {
-                                PointValues p = new PointValues();
-
-
-                                ArrayList<Object> row = new ArrayList<>();
-                                for (int i = 0; i < fieldVectors.size(); i++) {
-                                    var schema = vector.getSchema().getFields().get(i);
-                                    var value = fieldVectors.get(i).getObject(rowNumber);
-                                    var name = schema.getName();
-                                    var metaType = schema.getMetadata().get("iox::column::type");
-
-                                    if (value instanceof Text) {
-                                        value = value.toString();
-                                    }
-
-                                    if ((Objects.equals(name, "measurement")
-                                            || Objects.equals(name, "iox::measurement"))
-                                        && value instanceof String) {
-                                        p.setMeasurement((String) value);
-                                        continue;
-                                    }
-
-                                    if (metaType == null) {
-                                        if (Objects.equals(name, "time") && value instanceof Instant) {
-                                            p.setTimestamp((Instant) value);
-                                        } else {
-                                            // just push as field If you don't know what type is it
-                                            p.setField(name, value);
-                                        }
-
-                                        continue;
-                                    }
-
-                                    String[] parts = metaType.split(":");
-                                    String valueType = parts[2];
-
-                                    if ("field".equals(valueType)) {
-                                        p.setField(name, value);
-                                    } else if ("tag".equals(valueType) && value instanceof String) {
-                                        p.setTag(name, (String) value);
-                                    } else if ("timestamp".equals(valueType) && value instanceof Instant) {
-                                        p.setTimestamp((Instant) value);
-                                    }
-                                }
-
-                                return p;
-                            });
+                            .mapToObj(row ->
+                                    VectorSchemaRootConverter.INSTANCE.toPointValues(row, vector, fieldVectors));
                 });
     }
 
