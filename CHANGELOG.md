@@ -1,5 +1,9 @@
 ## 0.5.0 [unreleased]
 
+### Features
+
+1. [#78](https://github.com/InfluxCommunity/influxdb3-java/pull/78): Default Tags can be used when writing points.
+
 ### Bug Fixes
 
 1. [#77](https://github.com/InfluxCommunity/influxdb3-java/pull/77): Serialize InfluxDB response to `PointValues`
