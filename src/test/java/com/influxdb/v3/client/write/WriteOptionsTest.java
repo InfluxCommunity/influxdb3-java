@@ -54,7 +54,7 @@ class WriteOptionsTest {
     }
 
     @Test
-    void optionsWithDefaultTags(){
+    void optionsWithDefaultTags() {
         Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
 
         WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512, defaultTags);
