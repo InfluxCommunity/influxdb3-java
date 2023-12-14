@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client;
 
+import java.util.Map;
 import java.util.Properties;
 
 import org.assertj.core.api.Assertions;
@@ -85,5 +86,22 @@ class InfluxDBClientTest {
         } finally {
             System.setProperties(old);
         }
+    }
+
+    @Test
+    void withDefaultTags() throws Exception {
+
+        Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
+
+        try(InfluxDBClient client = InfluxDBClient.getInstance(
+          "http://localhost:8086",
+          "MY-TOKEN".toCharArray(),
+          "MY-DATABASE",
+          defaultTags)){
+            Assertions.assertThat(client).isNotNull();
+        };
+
+
+
     }
 }
