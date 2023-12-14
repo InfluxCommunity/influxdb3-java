@@ -217,7 +217,7 @@ public final class WriteOptions {
         }
 
         /**
-         * Sets defaultTags
+         * Sets defaultTags.
          *
          * @param defaultTags to be used when writing points
          * @return this

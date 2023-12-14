@@ -159,8 +159,8 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets default tags used when writing points
-     * @return
+     * Gets default tags used when writing points.
+     * @return default tags
      */
     public Map<String, String> getDefaultTags() {
         return defaultTags;
