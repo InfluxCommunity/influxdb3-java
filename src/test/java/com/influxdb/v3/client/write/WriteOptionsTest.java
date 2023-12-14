@@ -21,11 +21,16 @@
  */
 package com.influxdb.v3.client.write;
 
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.config.ClientConfig;
+
 
 class WriteOptionsTest {
 
@@ -126,5 +131,37 @@ class WriteOptionsTest {
         Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
         Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
         Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(4096);
+    }
+
+    @Test
+    void optionsOverridesDefaultTags() {
+        Map<String, String> defaultTagsBase = new HashMap<>() {{
+            put("model", "train");
+            put("scale", "HO");
+        }};
+
+        Map<String, String> defaultTagsNew = new HashMap<>() {{
+            put("unit", "D1");
+        }};
+
+        ClientConfig config = configBuilder
+          .database("my-database")
+          .organization("my-org")
+          .writePrecision(WritePrecision.S)
+          .gzipThreshold(512)
+          .defaultTags(defaultTagsBase)
+          .build();
+
+        Assertions.assertThat(config.getDefaultTags()).isEqualTo(defaultTagsBase);
+
+        WriteOptions options = new WriteOptions.Builder()
+          .defaultTags(defaultTagsNew)
+          .build();
+
+        Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
+        Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
+        Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(512);
+        Assertions.assertThat(options.defaultTagsSafe(config)).isEqualTo(defaultTagsNew);
+
     }
 }

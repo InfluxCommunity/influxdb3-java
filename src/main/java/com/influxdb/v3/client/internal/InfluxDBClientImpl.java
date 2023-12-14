@@ -220,10 +220,15 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             put("precision", precision.name().toLowerCase());
         }};
 
+        Map<String, String> defaultTags = options.defaultTagsSafe(config);
+
         String lineProtocol = data.stream().map(item -> {
                     if (item == null) {
                         return null;
                     } else if (item instanceof Point) {
+                        for (String key : defaultTags.keySet()) {
+                            ((Point) item).setTag(key, defaultTags.get(key));
+                        }
                         return ((Point) item).toLineProtocol();
                     } else {
                         return item.toString();

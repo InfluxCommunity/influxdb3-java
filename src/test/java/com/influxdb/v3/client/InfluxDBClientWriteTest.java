@@ -23,6 +23,7 @@ package com.influxdb.v3.client;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 
 import okhttp3.mockwebserver.RecordedRequest;
 import org.assertj.core.api.Assertions;
@@ -256,5 +257,28 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         RecordedRequest request = mockServer.takeRequest();
         Assertions.assertThat(request).isNotNull();
         Assertions.assertThat(request.getBody().readUtf8()).isEqualTo("mem,tag=one value=1.0\ncpu,tag=two value=2.0");
+    }
+
+
+    @Test
+    void defaultTags() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        Point point = Point.measurement("mem")
+          .setTag("tag", "one")
+          .setField("value", 1.0);
+
+        Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M5");
+
+        WriteOptions options = new WriteOptions.Builder().defaultTags(defaultTags).build();
+
+        client.writePoint(point, options);
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+
+        Assertions.assertThat(request).isNotNull();
+        Assertions.assertThat(request.getBody().readUtf8()).isEqualTo("mem,model=M5,tag=one,unit=U2 value=1.0");
+
     }
 }

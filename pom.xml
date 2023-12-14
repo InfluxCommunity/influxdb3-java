@@ -432,6 +432,9 @@
                         <version>${junit-jupiter.version}</version>
                     </dependency>
                 </dependencies>
+                <configuration>
+                    <argLine>--add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
+                </configuration>
             </plugin>
 
             <plugin>

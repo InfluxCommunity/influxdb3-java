@@ -23,6 +23,7 @@ package com.influxdb.v3.client;
 
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -228,6 +229,32 @@ public interface InfluxDBClient extends AutoCloseable {
                 .token(token)
                 .database(database)
                 .build();
+
+        return getInstance(config);
+    }
+
+    /**
+     * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
+     * common operations such as writing, querying.
+     *
+     * @param host the URL of the InfluxDB server
+     * @param token the authentication token for accessing the InfluxDB server, can be null
+     * @param database  the database to be used for InfluxDB operations, can be null
+     * @param defaultTags tags to be added by default to writes of points
+     * @return new instance of the {@link InfluxDBClient}
+     */
+    @Nonnull
+    static InfluxDBClient getInstance(@Nonnull final String host,
+                                      @Nullable final char[] token,
+                                      @Nullable final String database,
+                                      @Nullable Map<String, String> defaultTags) {
+
+        ClientConfig config = new ClientConfig.Builder()
+          .host(host)
+          .token(token)
+          .database(database)
+          .defaultTags(defaultTags)
+          .build();
 
         return getInstance(config);
     }
