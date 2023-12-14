@@ -54,6 +54,22 @@ class WriteOptionsTest {
     }
 
     @Test
+    void optionsWithDefaultTags(){
+        Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
+
+        WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512, defaultTags);
+        WriteOptions optionsViaBuilder = new WriteOptions.Builder()
+          .database("my-database")
+          .precision(WritePrecision.S)
+          .gzipThreshold(512)
+          .defaultTags(defaultTags)
+          .build();
+
+        Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
+
+    }
+
+    @Test
     void optionsEmpty() {
         ClientConfig config = configBuilder
                 .database("my-database")
