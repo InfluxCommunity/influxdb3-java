@@ -59,8 +59,13 @@ class ClientConfigTest {
     void hashConfig() {
         ClientConfig config = configBuilder.build();
 
+        Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
+
         Assertions.assertThat(config.hashCode()).isEqualTo(configBuilder.build().hashCode());
-        Assertions.assertThat(config.hashCode()).isNotEqualTo(configBuilder.database("database").build().hashCode());
+        Assertions.assertThat(config.hashCode())
+          .isNotEqualTo(configBuilder.database("database").build().hashCode());
+        Assertions.assertThat(config.hashCode())
+          .isNotEqualTo(configBuilder.defaultTags(defaultTags).build().hashCode());
     }
 
     @Test

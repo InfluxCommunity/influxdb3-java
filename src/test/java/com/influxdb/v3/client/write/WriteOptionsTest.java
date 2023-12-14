@@ -180,4 +180,19 @@ class WriteOptionsTest {
         Assertions.assertThat(options.defaultTagsSafe(config)).isEqualTo(defaultTagsNew);
 
     }
+
+    @Test
+    void optionsHashCode() {
+
+        Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
+
+        WriteOptions.Builder builder = new WriteOptions.Builder();
+        WriteOptions baseOptions = builder.build();
+
+        Assertions.assertThat(baseOptions.hashCode())
+          .isNotEqualTo(builder.database("my-database").build().hashCode());
+        Assertions.assertThat(baseOptions.hashCode())
+          .isNotEqualTo(builder.defaultTags(defaultTags).build().hashCode());
+
+    }
 }

@@ -261,8 +261,11 @@ public final class ClientConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(host, Arrays.hashCode(token), organization, database, writePrecision, gzipThreshold,
-                timeout, allowHttpRedirects, disableServerCertificateValidation, proxy, authenticator, headers);
+        return Objects.hash(host, Arrays.hashCode(token), organization,
+          database, writePrecision, gzipThreshold,
+          timeout, allowHttpRedirects, disableServerCertificateValidation,
+          proxy, authenticator, headers,
+          defaultTags);
     }
 
     @Override
