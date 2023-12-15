@@ -49,6 +49,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>organization</code> - organization to be used for operations</li>
  *     <li><code>database</code> - database to be used for InfluxDB operations</li>
  *     <li><code>writePrecision</code> - precision to use when writing points to InfluxDB</li>
+ *     <li><code>defaultTags</code> - defaultTags added when writing points to InfluxDB</li>
  *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
  *     <li><code>responseTimeout</code> - timeout when connecting to InfluxDB</li>
  *     <li><code>allowHttpRedirects</code> - allow redirects for InfluxDB connections</li>
@@ -89,6 +90,7 @@ public final class ClientConfig {
     private final String database;
     private final WritePrecision writePrecision;
     private final Integer gzipThreshold;
+    private final Map<String, String> defaultTags;
     private final Duration timeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
@@ -154,6 +156,14 @@ public final class ClientConfig {
     @Nonnull
     public Integer getGzipThreshold() {
         return gzipThreshold;
+    }
+
+    /**
+     * Gets default tags used when writing points.
+     * @return default tags
+     */
+    public Map<String, String> getDefaultTags() {
+        return defaultTags;
     }
 
     /**
@@ -240,6 +250,7 @@ public final class ClientConfig {
                 && Objects.equals(database, that.database)
                 && writePrecision == that.writePrecision
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
+                && Objects.equals(defaultTags, that.defaultTags)
                 && Objects.equals(timeout, that.timeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
@@ -250,8 +261,11 @@ public final class ClientConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(host, Arrays.hashCode(token), organization, database, writePrecision, gzipThreshold,
-                timeout, allowHttpRedirects, disableServerCertificateValidation, proxy, authenticator, headers);
+        return Objects.hash(host, Arrays.hashCode(token), organization,
+          database, writePrecision, gzipThreshold,
+          timeout, allowHttpRedirects, disableServerCertificateValidation,
+          proxy, authenticator, headers,
+          defaultTags);
     }
 
     @Override
@@ -268,6 +282,7 @@ public final class ClientConfig {
                 .add("proxy=" + proxy)
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
+                .add("defaultTags=" + defaultTags)
                 .toString();
     }
 
@@ -283,6 +298,7 @@ public final class ClientConfig {
         private String database;
         private WritePrecision writePrecision;
         private Integer gzipThreshold;
+        private Map<String, String> defaultTags;
         private Duration timeout;
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
@@ -367,6 +383,19 @@ public final class ClientConfig {
         public Builder gzipThreshold(@Nullable final Integer gzipThreshold) {
 
             this.gzipThreshold = gzipThreshold;
+            return this;
+        }
+
+        /**
+         * Sets default tags to be written with points.
+         *
+         * @param defaultTags - tags to be used.
+         * @return this
+         */
+        @Nonnull
+        public Builder defaultTags(@Nullable final Map<String, String> defaultTags) {
+
+            this.defaultTags = defaultTags;
             return this;
         }
 
@@ -569,6 +598,7 @@ public final class ClientConfig {
         database = builder.database;
         writePrecision = builder.writePrecision != null ? builder.writePrecision : WritePrecision.NS;
         gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : 1000;
+        defaultTags = builder.defaultTags;
         timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(10);
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null

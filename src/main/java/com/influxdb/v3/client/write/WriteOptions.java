@@ -21,6 +21,8 @@
  */
 package com.influxdb.v3.client.write;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,7 +38,8 @@ import com.influxdb.v3.client.internal.Arguments;
  * <ul>
  *     <li><code>database</code> - specifies the database to be used for InfluxDB operations</li>
  *     <li><code>organization</code> - specifies the organization to be used for InfluxDB operations</li>
- *     <li><code>precision</code> - specified the precision to use for the timestamp of points</li>
+ *     <li><code>precision</code> - specifies the precision to use for the timestamp of points</li>
+ *     <li><code>defaultTags</code> - specifies tags to be added by default to all write operations using points.</li>
  * </ul>
  */
 @ThreadSafe
@@ -59,6 +62,7 @@ public final class WriteOptions {
     private final String database;
     private final WritePrecision precision;
     private final Integer gzipThreshold;
+    private final Map<String, String> defaultTags;
 
     /**
      * Construct WriteAPI options.
@@ -73,7 +77,27 @@ public final class WriteOptions {
         this.database = database;
         this.precision = precision;
         this.gzipThreshold = gzipThreshold;
+        this.defaultTags = new HashMap<>();
     }
+
+    /**
+     * Construct WriteAPI options.
+     *
+     * @param database     The database to be used for InfluxDB operations.
+     * @param precision    The precision to use for the timestamp of points.
+     * @param gzipThreshold The threshold for compressing request body.
+     * @param defaultTags   Default tags to be added when writing points.
+     */
+    public WriteOptions(@Nonnull final String database,
+                        @Nonnull final WritePrecision precision,
+                        @Nonnull final Integer gzipThreshold,
+                        @Nonnull final Map<String, String> defaultTags) {
+        this.database = database;
+        this.precision = precision;
+        this.gzipThreshold = gzipThreshold;
+        this.defaultTags = defaultTags;
+    }
+
 
     /**
      * @param config with default value
@@ -94,6 +118,21 @@ public final class WriteOptions {
         Arguments.checkNotNull(config, "config");
         return precision != null ? precision
                 : (config.getWritePrecision() != null ? config.getWritePrecision() : DEFAULT_WRITE_PRECISION);
+    }
+
+    /**
+     * @param config with/without defaultTags defined
+     * @return defaultTags - can be an empty map if none are defined.
+     */
+    @Nonnull
+    public Map<String, String> defaultTagsSafe(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
+        return defaultTags.isEmpty()
+          ? (config.getDefaultTags() != null
+              ? config.getDefaultTags()
+              : defaultTags
+            )
+          : defaultTags;
     }
 
     /**
@@ -118,12 +157,13 @@ public final class WriteOptions {
         WriteOptions that = (WriteOptions) o;
         return Objects.equals(database, that.database)
                 && precision == that.precision
-                && Objects.equals(gzipThreshold, that.gzipThreshold);
+                && Objects.equals(gzipThreshold, that.gzipThreshold)
+                && defaultTags.equals(that.defaultTags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(database, precision, gzipThreshold);
+        return Objects.hash(database, precision, gzipThreshold, defaultTags);
     }
 
     private boolean isNotDefined(final String option) {
@@ -139,6 +179,7 @@ public final class WriteOptions {
         private String database;
         private WritePrecision precision;
         private Integer gzipThreshold;
+        private Map<String, String> defaultTags = new HashMap<>();
 
         /**
          * Sets the database.
@@ -180,6 +221,18 @@ public final class WriteOptions {
         }
 
         /**
+         * Sets defaultTags.
+         *
+         * @param defaultTags to be used when writing points
+         * @return this
+         */
+        @Nonnull
+        public Builder defaultTags(@Nonnull final Map<String, String> defaultTags) {
+            this.defaultTags = defaultTags;
+            return this;
+        }
+
+        /**
          * Build an instance of {@code ClientConfig}.
          *
          * @return the configuration for an {@code InfluxDBClient}.
@@ -195,5 +248,6 @@ public final class WriteOptions {
         this.database = builder.database;
         this.precision = builder.precision;
         this.gzipThreshold = builder.gzipThreshold;
+        this.defaultTags = builder.defaultTags;
     }
 }
