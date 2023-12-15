@@ -100,8 +100,5 @@ class InfluxDBClientTest {
           defaultTags)) {
             Assertions.assertThat(client).isNotNull();
         }
-
-
-
     }
 }

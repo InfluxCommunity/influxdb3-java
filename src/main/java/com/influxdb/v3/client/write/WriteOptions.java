@@ -127,8 +127,12 @@ public final class WriteOptions {
     @Nonnull
     public Map<String, String> defaultTagsSafe(@Nonnull final ClientConfig config) {
         Arguments.checkNotNull(config, "config");
-        return defaultTags.size() > 0 ? defaultTags
-          : (config.getDefaultTags() != null ? config.getDefaultTags() : defaultTags);
+        return defaultTags.isEmpty()
+          ? (config.getDefaultTags() != null
+              ? config.getDefaultTags()
+              : defaultTags
+            )
+          : defaultTags;
     }
 
     /**
