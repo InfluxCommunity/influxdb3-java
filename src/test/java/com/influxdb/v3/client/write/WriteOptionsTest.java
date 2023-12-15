@@ -182,6 +182,34 @@ class WriteOptionsTest {
     }
 
     @Test
+    void optionsOverridesEmptyDefaultTags() {
+
+        Map<String, String> defaultTags = new HashMap<>() {{
+            put("model", "train");
+            put("scale", "HO");
+        }};
+
+        ClientConfig config = configBuilder
+          .database("my-database")
+          .organization("my-org")
+          .writePrecision(WritePrecision.S)
+          .gzipThreshold(512)
+          .defaultTags(defaultTags)
+          .build();
+
+        Assertions.assertThat(config.getDefaultTags()).isEqualTo(defaultTags);
+
+        WriteOptions options = new WriteOptions.Builder().build();
+
+        Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
+        Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
+        Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(512);
+        Assertions.assertThat(options.defaultTagsSafe(config)).isEqualTo(defaultTags);
+
+
+    }
+
+    @Test
     void optionsHashCode() {
 
         Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
