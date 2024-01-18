@@ -69,7 +69,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     .database("my-database")
  *     .writePrecision(WritePrecision.S)
  *     .gzipThreshold(4096)
- *     .proxy(ProxySelector.of(new InetSocketAddress("http://proxy.local", 8888)))
+ *     .proxy(ProxySelector.of(new InetSocketAddress("proxy.local", 8888)))
  *     .build();
  *
  * try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
