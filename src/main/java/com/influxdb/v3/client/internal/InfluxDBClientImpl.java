@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -61,6 +62,16 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     private static final String DATABASE_REQUIRED_MESSAGE = "Please specify the 'Database' as a method parameter "
             + "or use default configuration at 'ClientConfig.database'.";
+
+    private static final Map<String, Object> NO_PARAMETERS = Map.of();
+    private static final List<Class> ALLOWED_NAMED_PARAMETER_TYPES = List.of(
+            String.class,
+            Integer.class,
+            Long.class,
+            Float.class,
+            Double.class,
+            Boolean.class
+    );
 
     private boolean closed = false;
     private final ClientConfig config;
@@ -136,13 +147,27 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<Object[]> query(@Nonnull final String query) {
-        return query(query, QueryOptions.DEFAULTS);
+        return query(query, NO_PARAMETERS, QueryOptions.DEFAULTS);
     }
 
     @Nonnull
     @Override
     public Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryOptions options) {
-        return queryData(query, options)
+        return query(query, NO_PARAMETERS, options);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<Object[]> query(@Nonnull final String query, @Nonnull final Map<String, Object> parameters) {
+        return query(query, parameters, QueryOptions.DEFAULTS);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<Object[]> query(@Nonnull final String query,
+                                  @Nonnull final Map<String, Object> parameters,
+                                  @Nonnull final QueryOptions options) {
+        return queryData(query, parameters, options)
                 .flatMap(vector -> {
                     List<FieldVector> fieldVectors = vector.getFieldVectors();
                     return IntStream
@@ -161,13 +186,27 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<PointValues> queryPoints(@Nonnull final String query) {
-        return queryPoints(query, QueryOptions.DEFAULTS);
+        return queryPoints(query, NO_PARAMETERS, QueryOptions.DEFAULTS);
     }
 
     @Nonnull
     @Override
     public Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options) {
-        return queryData(query, options)
+        return queryPoints(query, NO_PARAMETERS, options);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final Map<String, Object> parameters) {
+        return queryPoints(query, parameters, QueryOptions.DEFAULTS);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<PointValues> queryPoints(@Nonnull final String query,
+                                           @Nonnull final Map<String, Object> parameters,
+                                           @Nonnull final QueryOptions options) {
+        return queryData(query, parameters, options)
                 .flatMap(vector -> {
                     List<FieldVector> fieldVectors = vector.getFieldVectors();
                     return IntStream
@@ -180,14 +219,28 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query) {
-        return queryBatches(query, QueryOptions.DEFAULTS);
+        return queryBatches(query, NO_PARAMETERS, QueryOptions.DEFAULTS);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query, @Nonnull final QueryOptions options) {
+        return queryBatches(query, NO_PARAMETERS, options);
     }
 
     @Nonnull
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query,
+                                                 @Nonnull final Map<String, Object> parameters) {
+        return queryBatches(query, parameters, QueryOptions.DEFAULTS);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query,
+                                                 @Nonnull final Map<String, Object> parameters,
                                                  @Nonnull final QueryOptions options) {
-        return queryData(query, options);
+        return queryData(query, parameters, options);
     }
 
     @Override
@@ -258,9 +311,11 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Nonnull
     private Stream<VectorSchemaRoot> queryData(@Nonnull final String query,
+                                               @Nonnull final Map<String, Object> parameters,
                                                @Nonnull final QueryOptions options) {
 
         Arguments.checkNonEmpty(query, "query");
+        Arguments.checkNotNull(parameters, "parameters");
         Arguments.checkNotNull(options, "options");
 
         if (closed) {
@@ -272,7 +327,14 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             throw new IllegalStateException(DATABASE_REQUIRED_MESSAGE);
         }
 
-        return flightSqlClient.execute(query, database, options.queryTypeSafe());
+        parameters.forEach((k, v) -> {
+            if (!Objects.isNull(v) && !ALLOWED_NAMED_PARAMETER_TYPES.contains(v.getClass())) {
+                throw new IllegalArgumentException(String.format("The parameter %s value has unsupported type: %s",
+                        k, v.getClass()));
+            }
+        });
+
+        return flightSqlClient.execute(query, database, options.queryTypeSafe(), parameters);
     }
 
     @Nonnull

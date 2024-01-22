@@ -22,6 +22,7 @@
 package com.influxdb.v3;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
@@ -68,6 +69,20 @@ public final class IOxExample {
 
             String sql = "select time,location,value from temperature order by time desc limit 10";
             try (Stream<Object[]> stream = client.query(sql)) {
+                stream.forEach(row -> System.out.printf("| %-8s | %-8s | %-30s |%n", row[1], row[2], row[0]));
+            }
+
+            System.out.printf("--------------------------------------------------------%n%n");
+
+            //
+            // Query by parametrized SQL
+            //
+            System.out.printf("--------------------------------------------------------%n");
+            System.out.printf("| %-8s | %-8s | %-30s |%n", "location", "value", "time");
+            System.out.printf("--------------------------------------------------------%n");
+
+            String sqlWithParameters = "select time,location,value from temperature where location=$location order by time desc limit 10";
+            try (Stream<Object[]> stream = client.query(sqlWithParameters, Map.of("location", "north"))) {
                 stream.forEach(row -> System.out.printf("| %-8s | %-8s | %-30s |%n", row[1], row[2], row[0]));
             }
 

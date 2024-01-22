@@ -91,13 +91,18 @@ final class FlightSqlClient implements AutoCloseable {
     @Nonnull
     Stream<VectorSchemaRoot> execute(@Nonnull final String query,
                                      @Nonnull final String database,
-                                     @Nonnull final QueryType queryType) {
+                                     @Nonnull final QueryType queryType,
+                                     @Nonnull final Map<String, Object> queryParameters) {
 
-        Map<String, String> ticketData = new HashMap<>() {{
+        Map<String, Object> ticketData = new HashMap<>() {{
             put("database", database);
             put("sql_query", query);
             put("query_type", queryType.name().toLowerCase());
         }};
+
+        if (queryParameters.size() > 0) {
+            ticketData.put("params", queryParameters);
+        }
 
         String json;
         try {
