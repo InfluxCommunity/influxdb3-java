@@ -1,4 +1,6 @@
-## 0.6.0 [unreleased]
+## 0.5.1 [2024-02-01]
+
+Resync artifacts with Maven Central.
 
 ## 0.5.0 [2024-01-30]
 
