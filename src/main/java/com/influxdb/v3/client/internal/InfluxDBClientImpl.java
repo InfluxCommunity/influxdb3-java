@@ -219,7 +219,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query) {
-        return queryBatches(query, NO_PARAMETERS, QueryOptions.DEFAULTS);
+        return queryBatches(query, QueryOptions.DEFAULTS);
     }
 
     @Nonnull
