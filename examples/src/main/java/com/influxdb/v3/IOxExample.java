@@ -77,7 +77,7 @@ public final class IOxExample {
             //
             // Query by parametrized SQL
             //
-            System.out.printf("--------------------------------------------------------%n");
+            System.out.printf("--------------------Parametrized SQL--------------------%n");
             System.out.printf("| %-8s | %-8s | %-30s |%n", "location", "value", "time");
             System.out.printf("--------------------------------------------------------%n");
 
