@@ -121,6 +121,20 @@ try (Stream<Object[]> stream = client.query(sql)) {
 System.out.printf("--------------------------------------------------------%n%n");
 
 //
+// Query by parametrized SQL
+//
+System.out.printf("--------------------Parametrized SQL--------------------%n");
+System.out.printf("| %-8s | %-8s | %-30s |%n", "location", "value", "time");
+System.out.printf("--------------------------------------------------------%n");
+
+String sqlParams = "select time,location,value from temperature where location=$location order by time desc limit 10";
+try (Stream<Object[]> stream = client.query(sqlParams, Map.of("location", "north"))) {
+    stream.forEach(row -> System.out.printf("| %-8s | %-8s | %-30s |%n", row[1], row[2], row[0]));
+}
+
+System.out.printf("--------------------------------------------------------%n%n");
+
+//
 // Query by InfluxQL
 //
 System.out.printf("-----------------------------------------%n");

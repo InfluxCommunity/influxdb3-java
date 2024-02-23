@@ -4,7 +4,6 @@
 
 1. [#94](https://github.com/InfluxCommunity/influxdb3-java/pull/94): Add support for named query parameters
 
-
 ## 0.5.1 [2024-02-01]
 
 Resync artifacts with Maven Central.
