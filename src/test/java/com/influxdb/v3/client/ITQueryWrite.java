@@ -152,12 +152,20 @@ class ITQueryWrite {
         long testId = System.currentTimeMillis();
         client.writeRecord(measurement + ",type=used value=124.0,testId=" + testId);
 
+        Map<String, Object> parameters = Map.of("id", testId);
         String sql = String.format("SELECT value FROM %s WHERE \"testId\"=$id", measurement);
-        try (Stream<Object[]> stream = client.query(sql, Map.of("id", testId))) {
+        try (Stream<Object[]> stream = client.query(sql, parameters)) {
             stream.forEach(row -> {
                 Assertions.assertThat(row).hasSize(1);
                 Assertions.assertThat(row[0]).isEqualTo(124.0);
             });
+        }
+        try (Stream<PointValues> stream = client.queryPoints(sql, parameters)) {
+            stream.forEach(row -> Assertions.assertThat(row.getField("value")).isEqualTo(124.0));
+        }
+        try (Stream<VectorSchemaRoot> batches = client.queryBatches(sql, parameters)) {
+
+            Assertions.assertThat(batches.count()).isGreaterThanOrEqualTo(1);
         }
     }
 
