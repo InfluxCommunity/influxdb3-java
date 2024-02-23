@@ -64,7 +64,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             + "or use default configuration at 'ClientConfig.database'.";
 
     private static final Map<String, Object> NO_PARAMETERS = Map.of();
-    private static final List<Class> ALLOWED_NAMED_PARAMETER_TYPES = List.of(
+    private static final List<Class<?>> ALLOWED_NAMED_PARAMETER_TYPES = List.of(
             String.class,
             Integer.class,
             Long.class,
