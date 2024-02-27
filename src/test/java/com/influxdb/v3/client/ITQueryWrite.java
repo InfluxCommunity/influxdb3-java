@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,7 +60,7 @@ class ITQueryWrite {
         client = getInstance();
 
         String measurement = "integration_test";
-        int testId = (int) System.currentTimeMillis();
+        long testId = System.currentTimeMillis();
         client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
 
         String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
@@ -124,7 +125,7 @@ class ITQueryWrite {
                 .build());
 
         String measurement = "integration_test";
-        int testId = (int) System.currentTimeMillis();
+        long testId = System.currentTimeMillis();
         client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
 
         String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
@@ -133,6 +134,38 @@ class ITQueryWrite {
                 Assertions.assertThat(row).hasSize(1);
                 Assertions.assertThat(row[0]).isEqualTo(123.0);
             });
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    void queryWriteParameters() {
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .build());
+
+        String measurement = "integration_test";
+        long testId = System.currentTimeMillis();
+        client.writeRecord(measurement + ",type=used value=124.0,testId=" + testId);
+
+        Map<String, Object> parameters = Map.of("id", testId);
+        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=$id", measurement);
+        try (Stream<Object[]> stream = client.query(sql, parameters)) {
+            stream.forEach(row -> {
+                Assertions.assertThat(row).hasSize(1);
+                Assertions.assertThat(row[0]).isEqualTo(124.0);
+            });
+        }
+        try (Stream<PointValues> stream = client.queryPoints(sql, parameters)) {
+            stream.forEach(row -> Assertions.assertThat(row.getField("value")).isEqualTo(124.0));
+        }
+        try (Stream<VectorSchemaRoot> batches = client.queryBatches(sql, parameters)) {
+
+            Assertions.assertThat(batches.count()).isGreaterThanOrEqualTo(1);
         }
     }
 

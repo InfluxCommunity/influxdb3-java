@@ -101,4 +101,19 @@ class InfluxDBClientTest {
             Assertions.assertThat(client).isNotNull();
         }
     }
+
+    @Test
+    public void unsupportedQueryParams() throws Exception {
+        try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086",
+                "my-token".toCharArray(), "my-database")) {
+
+            String query = "select * from cpu where client=$client";
+            Map<String, Object> parameters = Map.of("client", client);
+
+            Assertions.assertThatThrownBy(() -> client.queryPoints(query, parameters))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("The parameter client value has unsupported type: "
+                            + "class com.influxdb.v3.client.internal.InfluxDBClientImpl");
+        }
+    }
 }
