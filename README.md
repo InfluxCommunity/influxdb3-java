@@ -45,7 +45,7 @@ Add the latest version of the client to your project:
 <dependency>
     <groupId>com.influxdb</groupId>
     <artifactId>influxdb3-java</artifactId>
-    <version>0.5.1</version>
+    <version>0.6.0</version>
 </dependency>
 ```
 
@@ -53,7 +53,7 @@ Add the latest version of the client to your project:
 
 ```groovy
 dependencies {
-    implementation "com.influxdb:influxdb3-java:0.5.1"
+    implementation "com.influxdb:influxdb3-java:0.6.0"
 }
 ```
 
