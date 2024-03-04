@@ -125,7 +125,6 @@ final class FlightSqlClient implements AutoCloseable {
 
     @Nonnull
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
-        final FlightClient client;
         Location location;
         try {
             URI uri = new URI(config.getHost());
@@ -138,12 +137,11 @@ final class FlightSqlClient implements AutoCloseable {
             throw new RuntimeException(e);
         }
 
-        client = FlightClient.builder()
+        return FlightClient.builder()
                 .location(location)
                 .allocator(new RootAllocator(Long.MAX_VALUE))
                 .verifyServer(!config.getDisableServerCertificateValidation())
                 .build();
-        return client;
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {

@@ -137,6 +137,24 @@ public class FlightSqlClientTest {
     }
 
     @Test
+    public void callHeadersEmptyToken() throws Exception {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(serverLocation)
+                .token("".toCharArray())
+                .build();
+
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client)) {
+
+            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of());
+
+            final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
+
+            Assertions.assertThat(incomingHeaders.keys()).containsOnly(GrpcUtil.MESSAGE_ACCEPT_ENCODING);
+            Assertions.assertThat(incomingHeaders.get("authorization")).isNull();
+        }
+    }
+
+    @Test
     public void callHeadersCustomHeader() throws Exception {
         ClientConfig clientConfig = new ClientConfig.Builder()
                 .host(serverLocation)
