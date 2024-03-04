@@ -81,6 +81,22 @@ public class FlightSqlClientTest {
     }
 
     @Test
+    public void invalidHost() {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host("xyz://a bc")
+                .token("my-token".toCharArray())
+                .build();
+
+        Assertions.assertThatThrownBy(() -> {
+                    try (FlightSqlClient ignored = new FlightSqlClient(clientConfig)) {
+                        Assertions.fail("Should not be here");
+                    }
+                })
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("xyz://a bc");
+    }
+
+    @Test
     public void callHeaders() throws Exception {
         ClientConfig clientConfig = new ClientConfig.Builder()
                 .host(serverLocation)
