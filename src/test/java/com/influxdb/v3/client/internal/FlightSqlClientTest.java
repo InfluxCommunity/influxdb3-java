@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import io.grpc.internal.GrpcUtil;
@@ -93,6 +94,7 @@ public class FlightSqlClientTest {
                     }
                 })
                 .isInstanceOf(RuntimeException.class)
+                .hasCauseInstanceOf(URISyntaxException.class)
                 .hasMessageContaining("xyz://a bc");
     }
 
@@ -114,6 +116,23 @@ public class FlightSqlClientTest {
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
             );
             Assertions.assertThat(incomingHeaders.get("authorization")).isEqualTo("Bearer my-token");
+        }
+    }
+
+    @Test
+    public void callHeadersWithoutToken() throws Exception {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(serverLocation)
+                .build();
+
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client)) {
+
+            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of());
+
+            final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
+
+            Assertions.assertThat(incomingHeaders.keys()).containsOnly(GrpcUtil.MESSAGE_ACCEPT_ENCODING);
+            Assertions.assertThat(incomingHeaders.get("authorization")).isNull();
         }
     }
 
