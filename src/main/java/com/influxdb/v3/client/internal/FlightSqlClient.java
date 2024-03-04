@@ -125,23 +125,26 @@ final class FlightSqlClient implements AutoCloseable {
 
     @Nonnull
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
-        Location location;
-        try {
-            URI uri = new URI(config.getHost());
-            if ("https".equals(uri.getScheme())) {
-                location = Location.forGrpcTls(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 443);
-            } else {
-                location = Location.forGrpcInsecure(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 80);
-            }
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+        Location location = createLocation(config);
 
         return FlightClient.builder()
                 .location(location)
                 .allocator(new RootAllocator(Long.MAX_VALUE))
                 .verifyServer(!config.getDisableServerCertificateValidation())
                 .build();
+    }
+
+    private static Location createLocation(@Nonnull final ClientConfig config) {
+        try {
+            URI uri = new URI(config.getHost());
+            if ("https".equals(uri.getScheme())) {
+                return Location.forGrpcTls(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 443);
+            } else {
+                return Location.forGrpcInsecure(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 80);
+            }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {
