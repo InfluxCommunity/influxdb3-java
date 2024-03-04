@@ -3,6 +3,7 @@
 ### Features
 
 1. [#107](https://github.com/InfluxCommunity/influxdb3-java/pull/107): Custom headers are also supported for the query (gRPC request)
+
     ```java
     ClientConfig config = new ClientConfig.Builder()
         .host("https://us-east-1-1.aws.cloud2.influxdata.com")
