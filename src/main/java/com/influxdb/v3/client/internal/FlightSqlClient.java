@@ -134,7 +134,8 @@ final class FlightSqlClient implements AutoCloseable {
                 .build();
     }
 
-    private static Location createLocation(@Nonnull final ClientConfig config) {
+    @Nonnull
+    private Location createLocation(@Nonnull final ClientConfig config) {
         try {
             URI uri = new URI(config.getHost());
             if ("https".equals(uri.getScheme())) {
