@@ -58,12 +58,12 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     </li>
  *     <li><code>proxy</code> - HTTP proxy selector</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
- *     <li><code>headers</code> - set of HTTP headers to be added to requests</li>
+ *     <li><code>headers</code> - headers to be added to requests</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
  * <pre>
- * ClientConfig config = new Config.Builder()
+ * ClientConfig config = new ClientConfig.Builder()
  *     .host("https://us-east-1-1.aws.cloud2.influxdata.com")
  *     .token("my-token".toCharArray())
  *     .database("my-database")
@@ -217,9 +217,9 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets custom HTTP headers.
+     * Gets custom headers for requests.
      *
-     * @return the HTTP headers
+     * @return the headers
      */
     @Nullable
     public Map<String, String> getHeaders() {
@@ -465,9 +465,26 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets the custom HTTP headers that will be included in requests.
+         * Sets the custom headers that will be added to requests. This is useful for adding custom headers to requests,
+         * such as tracing headers. To add custom headers use following code:
+         * <pre>
+         * ClientConfig config = new ClientConfig.Builder()
+         *     .host("https://us-east-1-1.aws.cloud2.influxdata.com")
+         *     .token("my-token".toCharArray())
+         *     .database("my-database")
+         *     .headers(Map.of("X-Tracing-Id", "123"))
+         *     .build();
          *
-         * @param headers Set of HTTP headers.
+         * try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
+         *     //
+         *     // your code here
+         *     //
+         * } catch (Exception e) {
+         *     throw new RuntimeException(e);
+         * }
+         * </pre>
+         *
+         * @param headers the headers to be added to requests
          * @return this
          */
         @Nonnull
@@ -526,7 +543,7 @@ public final class ClientConfig {
         /**
          * Build an instance of {@code ClientConfig} from environment variables and/or system properties.
          *
-         * @param env environment variables
+         * @param env        environment variables
          * @param properties system properties
          * @return the configuration for an {@code InfluxDBClient}.
          */

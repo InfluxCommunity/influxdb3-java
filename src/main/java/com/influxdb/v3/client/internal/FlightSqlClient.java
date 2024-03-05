@@ -35,6 +35,7 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -60,32 +61,30 @@ final class FlightSqlClient implements AutoCloseable {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     FlightSqlClient(@Nonnull final ClientConfig config) {
+        this(config, null);
+    }
+
+    /**
+     * Constructor for testing purposes.
+     *
+     * @param config the client configuration
+     * @param client the flight client, if null a new client will be created
+     */
+    FlightSqlClient(@Nonnull final ClientConfig config, @Nullable final FlightClient client) {
         Arguments.checkNotNull(config, "config");
 
         MetadataAdapter metadata = new MetadataAdapter(new Metadata());
         if (config.getToken() != null && config.getToken().length > 0) {
             metadata.insert("Authorization", "Bearer " + new String(config.getToken()));
         }
-
-        this.headers = new HeaderCallOption(metadata);
-
-        Location location;
-        try {
-            URI uri = new URI(config.getHost());
-            if ("https".equals(uri.getScheme())) {
-                location = Location.forGrpcTls(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 443);
-            } else {
-                location = Location.forGrpcInsecure(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 80);
+        if (config.getHeaders() != null) {
+            for (Map.Entry<String, String> entry : config.getHeaders().entrySet()) {
+                metadata.insert(entry.getKey(), entry.getValue());
             }
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
         }
 
-        client = FlightClient.builder()
-                .location(location)
-                .allocator(new RootAllocator(Long.MAX_VALUE))
-                .verifyServer(!config.getDisableServerCertificateValidation())
-                .build();
+        this.headers = new HeaderCallOption(metadata);
+        this.client = (client != null) ? client : createFlightClient(config);
     }
 
     @Nonnull
@@ -100,7 +99,7 @@ final class FlightSqlClient implements AutoCloseable {
             put("query_type", queryType.name().toLowerCase());
         }};
 
-        if (queryParameters.size() > 0) {
+        if (!queryParameters.isEmpty()) {
             ticketData.put("params", queryParameters);
         }
 
@@ -122,6 +121,31 @@ final class FlightSqlClient implements AutoCloseable {
     @Override
     public void close() throws Exception {
         client.close();
+    }
+
+    @Nonnull
+    private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
+        Location location = createLocation(config);
+
+        return FlightClient.builder()
+                .location(location)
+                .allocator(new RootAllocator(Long.MAX_VALUE))
+                .verifyServer(!config.getDisableServerCertificateValidation())
+                .build();
+    }
+
+    @Nonnull
+    private Location createLocation(@Nonnull final ClientConfig config) {
+        try {
+            URI uri = new URI(config.getHost());
+            if ("https".equals(uri.getScheme())) {
+                return Location.forGrpcTls(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 443);
+            } else {
+                return Location.forGrpcInsecure(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 80);
+            }
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {

@@ -1,5 +1,26 @@
 ## 0.7.0 [unreleased]
 
+### Features
+
+1. [#107](https://github.com/InfluxCommunity/influxdb3-java/pull/107): Custom headers are also supported for the query (gRPC request)
+
+    ```java
+    ClientConfig config = new ClientConfig.Builder()
+        .host("https://us-east-1-1.aws.cloud2.influxdata.com")
+        .token("my-token".toCharArray())
+        .database("my-database")
+        .headers(Map.of("X-Tracing-Id", "123"))
+        .build();
+    
+    try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
+        //
+        // your code here
+        //
+    } catch (Exception e) {
+        throw new RuntimeException(e);
+    } 
+    ```
+
 ## 0.6.0 [2024-03-01]
 
 ### Features
