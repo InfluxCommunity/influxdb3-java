@@ -40,6 +40,7 @@ import com.influxdb.v3.client.internal.Arguments;
  *     <li><code>organization</code> - specifies the organization to be used for InfluxDB operations</li>
  *     <li><code>precision</code> - specifies the precision to use for the timestamp of points</li>
  *     <li><code>defaultTags</code> - specifies tags to be added by default to all write operations using points.</li>
+ *     <li><code>headers</code> - specifies the headers to be added to write request</li>
  * </ul>
  */
 @ThreadSafe
@@ -63,41 +64,77 @@ public final class WriteOptions {
     private final WritePrecision precision;
     private final Integer gzipThreshold;
     private final Map<String, String> defaultTags;
+    private final Map<String, String> headers;
 
     /**
      * Construct WriteAPI options.
      *
-     * @param database     The database to be used for InfluxDB operations.
-     * @param precision    The precision to use for the timestamp of points.
+     * @param database      The database to be used for InfluxDB operations.
+     *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param precision     The precision to use for the timestamp of points.
+     *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      * @param gzipThreshold The threshold for compressing request body.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      */
-    public WriteOptions(@Nonnull final String database,
-                        @Nonnull final WritePrecision precision,
-                        @Nonnull final Integer gzipThreshold) {
-        this.database = database;
-        this.precision = precision;
-        this.gzipThreshold = gzipThreshold;
-        this.defaultTags = new HashMap<>();
+    public WriteOptions(@Nullable final String database,
+                        @Nullable final WritePrecision precision,
+                        @Nullable final Integer gzipThreshold) {
+        this(database, precision, gzipThreshold, null);
     }
 
     /**
      * Construct WriteAPI options.
      *
-     * @param database     The database to be used for InfluxDB operations.
-     * @param precision    The precision to use for the timestamp of points.
+     * @param database      The database to be used for InfluxDB operations.
+     *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param precision     The precision to use for the timestamp of points.
+     *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      * @param gzipThreshold The threshold for compressing request body.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      * @param defaultTags   Default tags to be added when writing points.
      */
-    public WriteOptions(@Nonnull final String database,
-                        @Nonnull final WritePrecision precision,
-                        @Nonnull final Integer gzipThreshold,
-                        @Nonnull final Map<String, String> defaultTags) {
+    public WriteOptions(@Nullable final String database,
+                        @Nullable final WritePrecision precision,
+                        @Nullable final Integer gzipThreshold,
+                        @Nullable final Map<String, String> defaultTags) {
+        this(database, precision, gzipThreshold, defaultTags, null);
+    }
+
+    /**
+     * Construct WriteAPI options.
+     *
+     * @param headers The headers to be added to write request.
+     *                The headers specified here are preferred over the headers specified in the client configuration.
+     */
+    public WriteOptions(@Nullable final Map<String, String> headers) {
+        this(null, null, null, null, headers);
+    }
+
+    /**
+     * Construct WriteAPI options.
+     *
+     * @param database      The database to be used for InfluxDB operations.
+     *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param precision     The precision to use for the timestamp of points.
+     *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     * @param gzipThreshold The threshold for compressing request body.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
+     * @param defaultTags   Default tags to be added when writing points.
+     * @param headers       The headers to be added to write request.
+     *                      The headers specified here are preferred over the headers
+     *                      specified in the client configuration.
+     */
+    public WriteOptions(@Nullable final String database,
+                        @Nullable final WritePrecision precision,
+                        @Nullable final Integer gzipThreshold,
+                        @Nullable final Map<String, String> defaultTags,
+                        @Nullable final Map<String, String> headers) {
         this.database = database;
         this.precision = precision;
         this.gzipThreshold = gzipThreshold;
-        this.defaultTags = defaultTags;
+        this.defaultTags = defaultTags == null ? Map.of() : defaultTags;
+        this.headers = headers == null ? Map.of() : headers;
     }
-
 
     /**
      * @param config with default value
@@ -128,11 +165,11 @@ public final class WriteOptions {
     public Map<String, String> defaultTagsSafe(@Nonnull final ClientConfig config) {
         Arguments.checkNotNull(config, "config");
         return defaultTags.isEmpty()
-          ? (config.getDefaultTags() != null
-              ? config.getDefaultTags()
-              : defaultTags
-            )
-          : defaultTags;
+                ? (config.getDefaultTags() != null
+                ? config.getDefaultTags()
+                : defaultTags
+        )
+                : defaultTags;
     }
 
     /**
@@ -144,6 +181,14 @@ public final class WriteOptions {
         Arguments.checkNotNull(config, "config");
         return gzipThreshold != null ? gzipThreshold
                 : (config.getWritePrecision() != null ? config.getGzipThreshold() : DEFAULT_GZIP_THRESHOLD);
+    }
+
+    /**
+     * @return The headers to be added to write request.
+     */
+    @Nonnull
+    public Map<String, String> headersSafe() {
+        return headers;
     }
 
     @Override
@@ -245,9 +290,6 @@ public final class WriteOptions {
     }
 
     private WriteOptions(@Nonnull final Builder builder) {
-        this.database = builder.database;
-        this.precision = builder.precision;
-        this.gzipThreshold = builder.gzipThreshold;
-        this.defaultTags = builder.defaultTags;
+        this(builder.database, builder.precision, builder.gzipThreshold, builder.defaultTags);
     }
 }

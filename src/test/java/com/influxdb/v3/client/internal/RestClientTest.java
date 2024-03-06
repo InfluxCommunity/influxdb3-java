@@ -39,7 +39,9 @@ import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.AbstractMockServerTest;
 import com.influxdb.v3.client.InfluxDBApiException;
+import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.write.WriteOptions;
 
 public class RestClientTest extends AbstractMockServerTest {
 
@@ -156,6 +158,67 @@ public class RestClientTest extends AbstractMockServerTest {
 
         String authorization = recordedRequest.getHeader("X-device");
         Assertions.assertThat(authorization).isEqualTo("ab-01");
+    }
+
+    @Test
+    public void customHeaderRequest() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .token("my-token".toCharArray())
+                .headers(Map.of("X-device", "ab-01"))
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, Map.of("X-Request-Trace-Id", "123"));
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        String header = recordedRequest.getHeader("X-device");
+        Assertions.assertThat(header).isEqualTo("ab-01");
+        header = recordedRequest.getHeader("X-Request-Trace-Id");
+        Assertions.assertThat(header).isEqualTo("123");
+    }
+
+    @Test
+    public void useCustomHeaderFromRequest() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .token("my-token".toCharArray())
+                .headers(Map.of("X-device", "ab-01"))
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, Map.of("X-device", "ab-02"));
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        String header = recordedRequest.getHeader("X-device");
+        Assertions.assertThat(header).isEqualTo("ab-02");
+    }
+
+    @Test
+    public void useParamsFromWriteConfig() throws Exception {
+
+        ClientConfig config = new ClientConfig.Builder()
+                .host(baseURL)
+                .token("my-token".toCharArray())
+                .database("my-database")
+                .build();
+
+        mockServer.enqueue(createResponse(200));
+
+        try (RestClient restClient = new RestClient(config);
+             InfluxDBClient client = new InfluxDBClientImpl(config, restClient, null)) {
+
+            client.writeRecord("mem,tag=one value=1.0", new WriteOptions(Map.of("X-Tracing-Id", "852")));
+        }
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        String header = recordedRequest.getHeader("X-Tracing-Id");
+        Assertions.assertThat(header).isEqualTo("852");
     }
 
     @Test

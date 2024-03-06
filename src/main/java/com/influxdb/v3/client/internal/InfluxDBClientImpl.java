@@ -87,13 +87,26 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
      * @param config the client config.
      */
     public InfluxDBClientImpl(@Nonnull final ClientConfig config) {
+        this(config, null, null);
+    }
+
+    /**
+     * Constructor for testing purposes.
+     *
+     * @param config          the client config
+     * @param restClient      the rest client, if null a new client will be created
+     * @param flightSqlClient the flight sql client, if null a new client will be created
+     */
+    InfluxDBClientImpl(@Nonnull final ClientConfig config,
+                       @Nullable final RestClient restClient,
+                       @Nullable final FlightSqlClient flightSqlClient) {
         Arguments.checkNotNull(config, "config");
 
         config.validate();
 
         this.config = config;
-        this.restClient = new RestClient(config);
-        this.flightSqlClient = new FlightSqlClient(config);
+        this.restClient = restClient != null ? restClient : new RestClient(config);
+        this.flightSqlClient = flightSqlClient != null ? flightSqlClient : new FlightSqlClient(config);
     }
 
     @Override
@@ -305,8 +318,9 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                 throw new InfluxDBApiException(e);
             }
         }
+        headers.putAll(options.headersSafe());
 
-        restClient.request("api/v2/write", HttpMethod.POST, body, headers, queryParams);
+        restClient.request("api/v2/write", HttpMethod.POST, body, queryParams, headers);
     }
 
     @Nonnull
@@ -334,7 +348,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
         });
 
-        return flightSqlClient.execute(query, database, options.queryTypeSafe(), parameters);
+        return flightSqlClient.execute(query, database, options.queryTypeSafe(), parameters, options.headersSafe());
     }
 
     @Nonnull

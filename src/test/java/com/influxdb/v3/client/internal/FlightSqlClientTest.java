@@ -39,7 +39,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.query.QueryType;
 
 public class FlightSqlClientTest {
@@ -107,7 +109,7 @@ public class FlightSqlClientTest {
 
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client)) {
 
-            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of());
+            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of(), Map.of());
 
             final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
 
@@ -127,7 +129,7 @@ public class FlightSqlClientTest {
 
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client)) {
 
-            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of());
+            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of(), Map.of());
 
             final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
 
@@ -145,7 +147,7 @@ public class FlightSqlClientTest {
 
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client)) {
 
-            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of());
+            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of(), Map.of());
 
             final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
 
@@ -164,7 +166,7 @@ public class FlightSqlClientTest {
 
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client)) {
 
-            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of());
+            flightSqlClient.execute("select * from cpu", "mydb", QueryType.SQL, Map.of(), Map.of());
 
             final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
 
@@ -174,6 +176,87 @@ public class FlightSqlClientTest {
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
             );
             Assertions.assertThat(incomingHeaders.get("X-Tracing-Id")).isEqualTo("123");
+        }
+    }
+
+    @Test
+    public void customHeaderForRequest() throws Exception {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(serverLocation)
+                .token("my-token".toCharArray())
+                .headers(Map.of("X-Tracing-Id", "123"))
+                .build();
+
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client)) {
+
+            flightSqlClient.execute(
+                    "select * from cpu",
+                    "mydb",
+                    QueryType.SQL,
+                    Map.of(),
+                    Map.of("X-Invoice-Id", "456"));
+
+            final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
+
+            Assertions.assertThat(incomingHeaders.keys()).containsOnly(
+                    "authorization",
+                    "x-tracing-id",
+                    "x-invoice-id",
+                    GrpcUtil.MESSAGE_ACCEPT_ENCODING
+            );
+            Assertions.assertThat(incomingHeaders.get("X-Tracing-Id")).isEqualTo("123");
+        }
+    }
+
+    @Test
+    public void customHeaderForRequestOverrideConfig() throws Exception {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(serverLocation)
+                .token("my-token".toCharArray())
+                .headers(Map.of("X-Tracing-Id", "123"))
+                .build();
+
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client)) {
+
+            flightSqlClient.execute(
+                    "select * from cpu",
+                    "mydb",
+                    QueryType.SQL,
+                    Map.of(),
+                    Map.of("X-Tracing-Id", "456"));
+
+            final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
+
+            Assertions.assertThat(incomingHeaders.keys()).containsOnly(
+                    "authorization",
+                    "x-tracing-id",
+                    GrpcUtil.MESSAGE_ACCEPT_ENCODING
+            );
+            Assertions.assertThat(incomingHeaders.get("X-Tracing-Id")).isEqualTo("456");
+        }
+    }
+
+    @Test
+    public void useParamsFromQueryConfig() throws Exception {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(serverLocation)
+                .token("my-token".toCharArray())
+                .database("mydb")
+                .build();
+
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, client);
+             InfluxDBClient influxDBClient = new InfluxDBClientImpl(clientConfig, null, flightSqlClient)) {
+
+            influxDBClient.query("select * from cpu", new QueryOptions(Map.of("X-Tracing-Id", "987")));
+
+            final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
+
+            Assertions.assertThat(incomingHeaders.keys()).containsOnly(
+                    "authorization",
+                    "x-tracing-id",
+                    GrpcUtil.MESSAGE_ACCEPT_ENCODING
+            );
+            Assertions.assertThat(incomingHeaders.get("X-Tracing-Id")).isEqualTo("987");
         }
     }
 
