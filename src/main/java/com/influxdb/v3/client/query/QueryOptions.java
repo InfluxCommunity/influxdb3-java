@@ -38,6 +38,12 @@ import com.influxdb.v3.client.internal.Arguments;
  *     <li><code>queryType</code> - specifies the type of query sent to InfluxDB. Default to 'SQL'.</li>
  *     <li><code>headers</code> - specifies the headers to be added to query request</li>
  * </ul>
+ * <p>
+ * To add custom headers to the query request, use the following code:
+ * <pre>
+ * QueryOptions options = new QueryOptions(Map.of("X-Tracing-Id", "123"));
+ * Stream&lt;Object[]&gt; rows = client.query("select * from cpu", queryOptions);
+ * </pre>
  */
 @ThreadSafe
 @SuppressWarnings("ConstantConditions")

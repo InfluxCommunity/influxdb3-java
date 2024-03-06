@@ -42,6 +42,12 @@ import com.influxdb.v3.client.internal.Arguments;
  *     <li><code>defaultTags</code> - specifies tags to be added by default to all write operations using points.</li>
  *     <li><code>headers</code> - specifies the headers to be added to write request</li>
  * </ul>
+ * <p>
+ * To add custom headers to the write request, use the following code:
+ * <pre>
+ * WriteOptions options = new WriteOptions(Map.of("X-Tracing-Id", "123"));
+ * client.writeRecord(options, point);
+ * </pre>
  */
 @ThreadSafe
 @SuppressWarnings("ConstantConditions")
