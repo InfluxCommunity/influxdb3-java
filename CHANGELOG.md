@@ -20,6 +20,7 @@
         throw new RuntimeException(e);
     } 
     ```
+   
 1. [#108](https://github.com/InfluxCommunity/influxdb3-java/pull/108): Custom headers can be specified per request (query/write):
 
     ```java
