@@ -203,12 +203,13 @@ public final class WriteOptions {
         return Objects.equals(database, that.database)
                 && precision == that.precision
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
-                && defaultTags.equals(that.defaultTags);
+                && defaultTags.equals(that.defaultTags)
+                && headers.equals(that.headers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(database, precision, gzipThreshold, defaultTags);
+        return Objects.hash(database, precision, gzipThreshold, defaultTags, headers);
     }
 
     private boolean isNotDefined(final String option) {
