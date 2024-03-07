@@ -66,7 +66,21 @@ class WriteOptionsTest {
           .build();
 
         Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
+    }
 
+    @Test
+    void optionsWithHeaders() {
+        Map<String, String> headers = Map.of("X-Trace-Id", "189");
+
+        WriteOptions options = new WriteOptions("mydb", WritePrecision.MS, 2048, null, headers);
+        WriteOptions optionsViaBuilder = new WriteOptions.Builder()
+          .database("mydb")
+          .precision(WritePrecision.MS)
+          .gzipThreshold(2048)
+          .headers(headers)
+          .build();
+
+        Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
     }
 
     @Test
@@ -178,7 +192,6 @@ class WriteOptionsTest {
         Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
         Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(512);
         Assertions.assertThat(options.defaultTagsSafe(config)).isEqualTo(defaultTagsNew);
-
     }
 
     @Test
@@ -205,8 +218,6 @@ class WriteOptionsTest {
         Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
         Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(512);
         Assertions.assertThat(options.defaultTagsSafe(config)).isEqualTo(defaultTags);
-
-
     }
 
     @Test
@@ -221,6 +232,5 @@ class WriteOptionsTest {
           .isNotEqualTo(builder.database("my-database").build().hashCode());
         Assertions.assertThat(baseOptions.hashCode())
           .isNotEqualTo(builder.defaultTags(defaultTags).build().hashCode());
-
     }
 }

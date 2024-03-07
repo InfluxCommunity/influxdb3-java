@@ -122,7 +122,8 @@ final class RestClient implements AutoCloseable {
     void request(@Nonnull final String path,
                  @Nonnull final HttpMethod method,
                  @Nullable final byte[] data,
-                 @Nullable final Map<String, String> queryParams, @Nullable final Map<String, String> headers) {
+                 @Nullable final Map<String, String> queryParams,
+                 @Nullable final Map<String, String> headers) {
 
         QueryStringEncoder uriEncoder = new QueryStringEncoder(String.format("%s%s", baseUrl, path));
         if (queryParams != null) {

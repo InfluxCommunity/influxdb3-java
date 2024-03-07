@@ -186,7 +186,7 @@ public final class WriteOptions {
     public Integer gzipThresholdSafe(@Nonnull final ClientConfig config) {
         Arguments.checkNotNull(config, "config");
         return gzipThreshold != null ? gzipThreshold
-                : (config.getWritePrecision() != null ? config.getGzipThreshold() : DEFAULT_GZIP_THRESHOLD);
+                : (config.getGzipThreshold() != null ? config.getGzipThreshold() : DEFAULT_GZIP_THRESHOLD);
     }
 
     /**
@@ -232,6 +232,7 @@ public final class WriteOptions {
         private WritePrecision precision;
         private Integer gzipThreshold;
         private Map<String, String> defaultTags = new HashMap<>();
+        private Map<String, String> headers = new HashMap<>();
 
         /**
          * Sets the database.
@@ -285,6 +286,18 @@ public final class WriteOptions {
         }
 
         /**
+         * Sets the headers.
+         *
+         * @param headers headers
+         * @return this
+         */
+        @Nonnull
+        public Builder headers(@Nonnull final Map<String, String> headers) {
+            this.headers = headers;
+            return this;
+        }
+
+        /**
          * Build an instance of {@code ClientConfig}.
          *
          * @return the configuration for an {@code InfluxDBClient}.
@@ -297,6 +310,6 @@ public final class WriteOptions {
     }
 
     private WriteOptions(@Nonnull final Builder builder) {
-        this(builder.database, builder.precision, builder.gzipThreshold, builder.defaultTags);
+        this(builder.database, builder.precision, builder.gzipThreshold, builder.defaultTags, builder.headers);
     }
 }
