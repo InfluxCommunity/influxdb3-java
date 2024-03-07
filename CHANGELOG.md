@@ -21,6 +21,37 @@
     } 
     ```
 
+1. [#108](https://github.com/InfluxCommunity/influxdb3-java/pull/108): Custom headers can be specified per request (query/write):
+
+    ```java
+    ClientConfig config = new ClientConfig.Builder()
+        .host("https://us-east-1-1.aws.cloud2.influxdata.com")
+        .token("my-token".toCharArray())
+        .database("my-database")
+        .build();
+    
+    try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
+        //
+        // Write with custom headers
+        //
+        WriteOptions writeOptions = new WriteOptions(
+            Map.of("X-Tracing-Id", "852")
+        );
+        client.writeRecord("mem,tag=one value=1.0", writeOptions);
+        
+        //
+        // Query with custom headers
+        //
+        QueryOptions queryOptions = new QueryOptions(
+            Map.of("X-Tracing-Id", "852")
+        );
+        Stream<Object[]> rows = client.query("select * from cpu", queryOptions);
+   
+    } catch (Exception e) {
+        throw new RuntimeException(e);
+    } 
+    ```
+
 ## 0.6.0 [2024-03-01]
 
 ### Features

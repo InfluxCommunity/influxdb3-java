@@ -52,8 +52,8 @@ public interface InfluxDBClient extends AutoCloseable {
     /**
      * Write a record specified in the InfluxDB Line Protocol to the InfluxDB server.
      *
-     * @param record    the record specified in the InfluxDB Line Protocol, can be null
-     * @param options  the options for writing data to InfluxDB
+     * @param record  the record specified in the InfluxDB Line Protocol, can be null
+     * @param options the options for writing data to InfluxDB
      */
     void writeRecord(@Nullable final String record, @Nonnull final WriteOptions options);
 
@@ -67,7 +67,7 @@ public interface InfluxDBClient extends AutoCloseable {
     /**
      * Write records specified in the InfluxDB Line Protocol to the InfluxDB server.
      *
-     * @param records    the records specified in the InfluxDB Line Protocol, cannot be null
+     * @param records the records specified in the InfluxDB Line Protocol, cannot be null
      * @param options the options for writing data to InfluxDB
      */
     void writeRecords(@Nonnull final List<String> records, @Nonnull final WriteOptions options);
@@ -82,7 +82,7 @@ public interface InfluxDBClient extends AutoCloseable {
     /**
      * Write a {@link Point} to the InfluxDB server.
      *
-     * @param point      the {@link Point} to write, can be null
+     * @param point   the {@link Point} to write, can be null
      * @param options the options for writing data to InfluxDB
      */
     void writePoint(@Nullable final Point point, @Nonnull final WriteOptions options);
@@ -97,7 +97,7 @@ public interface InfluxDBClient extends AutoCloseable {
     /**
      * Write a list of {@link Point} to the InfluxDB server.
      *
-     * @param points     the list of {@link Point} to write, cannot be null
+     * @param points  the list of {@link Point} to write, cannot be null
      * @param options the options for writing data to InfluxDB
      */
     void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteOptions options);
@@ -133,7 +133,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query the SQL query string to execute, cannot be null
+     * @param query      the SQL query string to execute, cannot be null
      * @param parameters query named parameters
      * @return Batches of rows returned by the query
      */
@@ -152,7 +152,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the SQL query string to execute, cannot be null
+     * @param query   the query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
      */
@@ -172,9 +172,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the SQL query string to execute, cannot be null
+     * @param query      the query string to execute, cannot be null
      * @param parameters query named parameters
-     * @param options the options for querying data from InfluxDB
+     * @param options    the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
      */
     @Nonnull
@@ -194,7 +194,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the SQL query string to execute, cannot be null
+     * @param query the SQL query string to execute, cannot be null
      * @return Batches of PointValues returned by the query
      */
     @Nonnull
@@ -232,7 +232,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the SQL query string to execute, cannot be null
+     * @param query   the query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
      * @return Batches of PointValues returned by the query
      */
@@ -253,9 +253,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the SQL query string to execute, cannot be null
+     * @param query      the query string to execute, cannot be null
      * @param parameters query named parameters
-     * @param options the options for querying data from InfluxDB
+     * @param options    the options for querying data from InfluxDB
      * @return Batches of PointValues returned by the query
      */
     @Nonnull
@@ -294,7 +294,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query the SQL query string to execute, cannot be null
+     * @param query      the SQL query string to execute, cannot be null
      * @param parameters query named parameters
      * @return Batches of rows returned by the query
      */
@@ -311,7 +311,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the SQL query string to execute, cannot be null
+     * @param query   the query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
      */
@@ -330,9 +330,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the SQL query string to execute, cannot be null
+     * @param query      the query string to execute, cannot be null
      * @param parameters query named parameters
-     * @param options the options for querying data from InfluxDB
+     * @param options    the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
      */
     @Nonnull
@@ -344,9 +344,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
      * common operations such as writing, querying.
      *
-     * @param host the URL of the InfluxDB server
-     * @param token the authentication token for accessing the InfluxDB server, can be null
-     * @param database  the database to be used for InfluxDB operations, can be null
+     * @param host     the URL of the InfluxDB server
+     * @param token    the authentication token for accessing the InfluxDB server, can be null
+     * @param database the database to be used for InfluxDB operations, can be null
      * @return new instance of the {@link InfluxDBClient}
      */
     @Nonnull
@@ -366,9 +366,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
      * common operations such as writing, querying.
      *
-     * @param host the URL of the InfluxDB server
-     * @param token the authentication token for accessing the InfluxDB server, can be null
-     * @param database  the database to be used for InfluxDB operations, can be null
+     * @param host        the URL of the InfluxDB server
+     * @param token       the authentication token for accessing the InfluxDB server, can be null
+     * @param database    the database to be used for InfluxDB operations, can be null
      * @param defaultTags tags to be added by default to writes of points
      * @return new instance of the {@link InfluxDBClient}
      */
@@ -379,11 +379,11 @@ public interface InfluxDBClient extends AutoCloseable {
                                       @Nullable Map<String, String> defaultTags) {
 
         ClientConfig config = new ClientConfig.Builder()
-          .host(host)
-          .token(token)
-          .database(database)
-          .defaultTags(defaultTags)
-          .build();
+                .host(host)
+                .token(token)
+                .database(database)
+                .defaultTags(defaultTags)
+                .build();
 
         return getInstance(config);
     }

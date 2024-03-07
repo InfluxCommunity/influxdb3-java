@@ -140,6 +140,7 @@ public final class ClientConfig {
 
     /**
      * Gets the default precision to use for the timestamp of points.
+     * If no precision is specified then 'ns' is used.
      *
      * @return the default precision to use for the timestamp of points, may be null
      */

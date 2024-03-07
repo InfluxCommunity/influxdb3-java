@@ -55,9 +55,9 @@ import com.influxdb.v3.client.query.QueryType;
 
 final class FlightSqlClient implements AutoCloseable {
 
-    private final HeaderCallOption headers;
     private final FlightClient client;
 
+    private final Map<String, String> defaultHeaders = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     FlightSqlClient(@Nonnull final ClientConfig config) {
@@ -73,17 +73,13 @@ final class FlightSqlClient implements AutoCloseable {
     FlightSqlClient(@Nonnull final ClientConfig config, @Nullable final FlightClient client) {
         Arguments.checkNotNull(config, "config");
 
-        MetadataAdapter metadata = new MetadataAdapter(new Metadata());
         if (config.getToken() != null && config.getToken().length > 0) {
-            metadata.insert("Authorization", "Bearer " + new String(config.getToken()));
+            defaultHeaders.put("Authorization", "Bearer " + new String(config.getToken()));
         }
         if (config.getHeaders() != null) {
-            for (Map.Entry<String, String> entry : config.getHeaders().entrySet()) {
-                metadata.insert(entry.getKey(), entry.getValue());
-            }
+            defaultHeaders.putAll(config.getHeaders());
         }
 
-        this.headers = new HeaderCallOption(metadata);
         this.client = (client != null) ? client : createFlightClient(config);
     }
 
@@ -91,7 +87,8 @@ final class FlightSqlClient implements AutoCloseable {
     Stream<VectorSchemaRoot> execute(@Nonnull final String query,
                                      @Nonnull final String database,
                                      @Nonnull final QueryType queryType,
-                                     @Nonnull final Map<String, Object> queryParameters) {
+                                     @Nonnull final Map<String, Object> queryParameters,
+                                     @Nonnull final Map<String, String> headers) {
 
         Map<String, Object> ticketData = new HashMap<>() {{
             put("database", database);
@@ -110,8 +107,9 @@ final class FlightSqlClient implements AutoCloseable {
             throw new RuntimeException(e);
         }
 
+        HeaderCallOption headerCallOption = metadataHeader(headers);
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
-        FlightStream stream = client.getStream(ticket, headers);
+        FlightStream stream = client.getStream(ticket, headerCallOption);
         FlightSqlIterator iterator = new FlightSqlIterator(stream);
 
         Spliterator<VectorSchemaRoot> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL);
@@ -146,6 +144,21 @@ final class FlightSqlClient implements AutoCloseable {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Nonnull
+    private HeaderCallOption metadataHeader(@Nonnull final Map<String, String> requestHeaders) {
+        MetadataAdapter metadata = new MetadataAdapter(new Metadata());
+        for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
+            metadata.insert(entry.getKey(), entry.getValue());
+        }
+
+        for (Map.Entry<String, String> entry : defaultHeaders.entrySet()) {
+            if (!metadata.containsKey(entry.getKey())) {
+                metadata.insert(entry.getKey(), entry.getValue());
+            }
+        }
+        return new HeaderCallOption(metadata);
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {

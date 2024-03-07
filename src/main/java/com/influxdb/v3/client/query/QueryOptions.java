@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client.query;
 
+import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -35,7 +36,14 @@ import com.influxdb.v3.client.internal.Arguments;
  * <ul>
  *     <li><code>database</code> - specifies the database to be used for InfluxDB operations</li>
  *     <li><code>queryType</code> - specifies the type of query sent to InfluxDB. Default to 'SQL'.</li>
+ *     <li><code>headers</code> - specifies the headers to be added to query request</li>
  * </ul>
+ * <p>
+ * To add custom headers to the query request, use the following code:
+ * <pre>
+ * QueryOptions options = new QueryOptions(Map.of("X-Tracing-Id", "123"));
+ * Stream&lt;Object[]&gt; rows = client.query("select * from cpu", queryOptions);
+ * </pre>
  */
 @ThreadSafe
 @SuppressWarnings("ConstantConditions")
@@ -52,9 +60,10 @@ public final class QueryOptions {
 
     private final String database;
     private final QueryType queryType;
+    private final Map<String, String> headers;
 
     /**
-     * Construct QueryAPI options.
+     * Construct QueryAPI options. The query type is set to SQL.
      *
      * @param database The database to be used for InfluxDB operations.
      */
@@ -72,6 +81,16 @@ public final class QueryOptions {
     }
 
     /**
+     * Construct QueryAPI options. The query type is set to SQL.
+     *
+     * @param headers The headers to be added to query request.
+     *                The headers specified here are preferred over the headers specified in the client configuration.
+     */
+    public QueryOptions(@Nullable final Map<String, String> headers) {
+        this(null, QueryType.SQL, headers);
+    }
+
+    /**
      * Construct QueryAPI options.
      *
      * @param database  The database to be used for InfluxDB operations.
@@ -79,8 +98,24 @@ public final class QueryOptions {
      * @param queryType The type of query sent to InfluxDB. If it is not specified then use {@link QueryType#SQL}.
      */
     public QueryOptions(@Nullable final String database, @Nullable final QueryType queryType) {
+        this(database, queryType, null);
+    }
+
+    /**
+     * Construct QueryAPI options.
+     *
+     * @param database  The database to be used for InfluxDB operations.
+     *                  If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param queryType The type of query sent to InfluxDB. If it is not specified then use {@link QueryType#SQL}.
+     * @param headers   The headers to be added to query request.
+     *                  The headers specified here are preferred over the headers specified in the client configuration.
+     */
+    public QueryOptions(@Nullable final String database,
+                        @Nullable final QueryType queryType,
+                        @Nullable final Map<String, String> headers) {
         this.database = database;
         this.queryType = queryType;
+        this.headers = headers == null ? Map.of() : headers;
     }
 
     /**
@@ -99,6 +134,14 @@ public final class QueryOptions {
     @Nonnull
     public QueryType queryTypeSafe() {
         return queryType == null ? QueryType.SQL : queryType;
+    }
+
+    /**
+     * @return The headers to be added to query request, cannot be null.
+     */
+    @Nonnull
+    public Map<String, String> headersSafe() {
+        return headers;
     }
 
     private boolean isNotDefined(final String option) {
