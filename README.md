@@ -31,6 +31,8 @@ The Java client that provides an easy and convenient way to interact with Influx
 This package supports both writing data to InfluxDB and querying data using the FlightSQL client,
 which allows you to execute SQL queries against InfluxDB IOx.
 
+We offer this [Getting Started: InfluxDB 3.0 Java Client Library](https://www.youtube.com/watch?v=EFnG7rUDvR4) video for learning more about the library.
+
 > :warning: This client requires Java 11 and is compatible up to and including Java 20.
 
 ## Installation
