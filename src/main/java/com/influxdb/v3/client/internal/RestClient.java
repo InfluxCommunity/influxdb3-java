@@ -79,9 +79,7 @@ final class RestClient implements AutoCloseable {
         this.config = config;
 
         // user agent version
-        Package mainPackage = RestClient.class.getPackage();
-        String version = mainPackage != null ? mainPackage.getImplementationVersion() : "unknown";
-        this.userAgent = String.format("influxdb3-java/%s", version != null ? version : "unknown");
+        this.userAgent = Identity.getUserAgent();
 
         // URL
         String host = config.getHost();
