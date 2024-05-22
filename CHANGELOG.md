@@ -1,6 +1,6 @@
 ## 0.8.0 [unreleased]
 
-### Features 
+### Features
 
 1. [#144](https://github.com/InfluxCommunity/influxdb3-java/pull/133): user-agent header is updated for both REST and gRPC calls.
 
