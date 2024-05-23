@@ -139,7 +139,7 @@ public class RestClientTest extends AbstractMockServerTest {
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
         String userAgent = recordedRequest.getHeader("User-Agent");
-        Assertions.assertThat(userAgent).startsWith("influxdb3-java:");
+        Assertions.assertThat(userAgent).startsWith("influxdb3-java/");
     }
 
     @Test

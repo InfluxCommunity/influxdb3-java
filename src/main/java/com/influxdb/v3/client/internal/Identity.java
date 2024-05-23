@@ -42,6 +42,6 @@ public final class Identity {
    * @return - the standard user-agent string.
    */
   public static String getUserAgent() {
-    return String.format("influxdb3-java:%s", getVersion());
+    return String.format("influxdb3-java/%s", getVersion());
   }
 }
