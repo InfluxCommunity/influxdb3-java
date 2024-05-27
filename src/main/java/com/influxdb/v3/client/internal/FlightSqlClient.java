@@ -76,9 +76,14 @@ final class FlightSqlClient implements AutoCloseable {
         if (config.getToken() != null && config.getToken().length > 0) {
             defaultHeaders.put("Authorization", "Bearer " + new String(config.getToken()));
         }
+
+        defaultHeaders.put("User-Agent", Identity.getUserAgent());
+
         if (config.getHeaders() != null) {
             defaultHeaders.putAll(config.getHeaders());
         }
+
+        Package mainPackage = RestClient.class.getPackage();
 
         this.client = (client != null) ? client : createFlightClient(config);
     }

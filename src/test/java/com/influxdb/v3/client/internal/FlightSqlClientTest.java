@@ -115,9 +115,11 @@ public class FlightSqlClientTest {
 
             Assertions.assertThat(incomingHeaders.keys()).containsOnly(
                     "authorization",
+                    "user-agent",
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
             );
             Assertions.assertThat(incomingHeaders.get("authorization")).isEqualTo("Bearer my-token");
+            Assertions.assertThat(incomingHeaders.get("user-agent")).isEqualTo(Identity.getUserAgent());
         }
     }
 
@@ -133,7 +135,10 @@ public class FlightSqlClientTest {
 
             final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
 
-            Assertions.assertThat(incomingHeaders.keys()).containsOnly(GrpcUtil.MESSAGE_ACCEPT_ENCODING);
+            Assertions.assertThat(incomingHeaders.keys()).containsOnly(
+              "user-agent",
+              GrpcUtil.MESSAGE_ACCEPT_ENCODING
+            );
             Assertions.assertThat(incomingHeaders.get("authorization")).isNull();
         }
     }
@@ -151,7 +156,10 @@ public class FlightSqlClientTest {
 
             final CallHeaders incomingHeaders = callHeadersMiddleware.headers;
 
-            Assertions.assertThat(incomingHeaders.keys()).containsOnly(GrpcUtil.MESSAGE_ACCEPT_ENCODING);
+            Assertions.assertThat(incomingHeaders.keys()).containsOnly(
+              "user-agent",
+              GrpcUtil.MESSAGE_ACCEPT_ENCODING
+            );
             Assertions.assertThat(incomingHeaders.get("authorization")).isNull();
         }
     }
@@ -172,6 +180,7 @@ public class FlightSqlClientTest {
 
             Assertions.assertThat(incomingHeaders.keys()).containsOnly(
                     "authorization",
+                    "user-agent",
                     "x-tracing-id",
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
             );
@@ -200,6 +209,7 @@ public class FlightSqlClientTest {
 
             Assertions.assertThat(incomingHeaders.keys()).containsOnly(
                     "authorization",
+                    "user-agent",
                     "x-tracing-id",
                     "x-invoice-id",
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
@@ -229,6 +239,7 @@ public class FlightSqlClientTest {
 
             Assertions.assertThat(incomingHeaders.keys()).containsOnly(
                     "authorization",
+                    "user-agent",
                     "x-tracing-id",
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
             );
@@ -254,6 +265,7 @@ public class FlightSqlClientTest {
             Assertions.assertThat(incomingHeaders.keys()).containsOnly(
                     "authorization",
                     "x-tracing-id",
+                    "user-agent",
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
             );
             Assertions.assertThat(incomingHeaders.get("X-Tracing-Id")).isEqualTo("987");
