@@ -176,7 +176,12 @@ final class RestClient implements AutoCloseable {
             String body = response.body();
             if (!body.isEmpty()) {
                 try {
-                    reason = objectMapper.readTree(body).get("message").asText();
+                    final var obj = objectMapper.readTree(body);
+                    if (obj.hasNonNull("message")) { // Cloud
+                        reason = obj.get("message").asText();
+                    } else if (obj.hasNonNull("error_message")) { // OSS (Edge)
+                        reason = obj.get("error_message").asText();
+                    }
                 } catch (JsonProcessingException e) {
                     LOG.debug("Can't parse msg from response {}", response);
                 }
