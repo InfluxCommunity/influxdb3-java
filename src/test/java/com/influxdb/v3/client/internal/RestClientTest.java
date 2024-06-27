@@ -359,7 +359,7 @@ public class RestClientTest extends AbstractMockServerTest {
     @Test
     public void errorFromBodyEdgeWithMessage() { // OSS/Edge specific error message
         mockServer.enqueue(createResponse(400)
-                .setBody("{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value in line protocol\"}}"));
+                .setBody("{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value\"}}"));
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host(baseURL)
@@ -368,7 +368,7 @@ public class RestClientTest extends AbstractMockServerTest {
         Assertions.assertThatThrownBy(
                         () -> restClient.request("ping", HttpMethod.GET, null, null, null))
                 .isInstanceOf(InfluxDBApiException.class)
-                .hasMessage("HTTP status code: 400; Message: invalid field value in line protocol");
+                .hasMessage("HTTP status code: 400; Message: invalid field value");
     }
 
     @Test
