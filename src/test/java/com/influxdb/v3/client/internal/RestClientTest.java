@@ -342,6 +342,36 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
+    public void errorFromBodyEdgeWithoutMessage() { // OSS/Edge error message
+        mockServer.enqueue(createResponse(400)
+                .setBody("{\"error\":\"parsing failed\"}"));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+
+        Assertions.assertThatThrownBy(
+                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                .isInstanceOf(InfluxDBApiException.class)
+                .hasMessage("HTTP status code: 400; Message: parsing failed");
+    }
+
+    @Test
+    public void errorFromBodyEdgeWithMessage() { // OSS/Edge specific error message
+        mockServer.enqueue(createResponse(400)
+                .setBody("{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value in line protocol\"}}"));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+
+        Assertions.assertThatThrownBy(
+                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+                .isInstanceOf(InfluxDBApiException.class)
+                .hasMessage("HTTP status code: 400; Message: invalid field value in line protocol");
+    }
+
+    @Test
     public void errorFromBodyText() {
         mockServer.enqueue(createResponse(402)
                 .setBody("token is over the limit"));
