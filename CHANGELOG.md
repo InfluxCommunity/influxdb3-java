@@ -1,5 +1,9 @@
 ## 0.9.0 [unreleased]
 
+### Bug Fixes
+
+1. [#148](https://github.com/InfluxCommunity/influxdb3-java/pull/148): InfluxDB Edge (OSS) error handling
+
 ## 0.8.0 [2024-06-24]
 
 ### Features
