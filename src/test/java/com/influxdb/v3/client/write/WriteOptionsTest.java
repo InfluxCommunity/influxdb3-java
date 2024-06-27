@@ -45,6 +45,21 @@ class WriteOptionsTest {
 
 
     @Test
+    void optionsSelf() {
+        WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512);
+
+        Assertions.assertThat(options).isEqualTo(options);
+    }
+
+    @Test
+    void optionsAlien() {
+        WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512);
+
+        Assertions.assertThat(options).isNotEqualTo(null);
+        Assertions.assertThat(options).isNotEqualTo(this);
+    }
+
+    @Test
     void optionsEqualAll() {
         WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512);
         WriteOptions optionsViaBuilder = new WriteOptions.Builder()
