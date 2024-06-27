@@ -179,7 +179,8 @@ final class RestClient implements AutoCloseable {
             if (!body.isEmpty()) {
                 try {
                     final JsonNode root = objectMapper.readTree(body);
-                    for (String field : List.of("message", "error_message", "error")) {
+                    final List<String> possibilities = List.of("message", "error_message", "error");
+                    for (final String field : possibilities) {
                         final JsonNode node = root.findValue(field);
                         if (node != null) {
                             reason = node.asText();
