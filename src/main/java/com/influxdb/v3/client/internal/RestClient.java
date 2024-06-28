@@ -26,6 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.SecureRandom;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -35,6 +36,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -176,7 +178,15 @@ final class RestClient implements AutoCloseable {
             String body = response.body();
             if (!body.isEmpty()) {
                 try {
-                    reason = objectMapper.readTree(body).get("message").asText();
+                    final JsonNode root = objectMapper.readTree(body);
+                    final List<String> possibilities = List.of("message", "error_message", "error");
+                    for (final String field : possibilities) {
+                        final JsonNode node = root.findValue(field);
+                        if (node != null) {
+                            reason = node.asText();
+                            break;
+                        }
+                    }
                 } catch (JsonProcessingException e) {
                     LOG.debug("Can't parse msg from response {}", response);
                 }
