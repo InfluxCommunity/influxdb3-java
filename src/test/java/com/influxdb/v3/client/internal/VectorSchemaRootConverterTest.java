@@ -189,7 +189,7 @@ class VectorSchemaRootConverterTest {
             ((TimeMilliVector) timeVector).setSafe(0, timeValue);
         } else if (timeVector instanceof TimeStampVector) {
             ((TimeStampVector) timeVector).setSafe(0, timeValue);
-        }else if (timeVector instanceof BigIntVector) {
+        } else if (timeVector instanceof BigIntVector) {
             ((BigIntVector) timeVector).setSafe(0, timeValue);
         } else {
             throw new RuntimeException("Unexpected vector type: " + timeVector.getClass().getName());

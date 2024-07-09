@@ -105,7 +105,9 @@ final class VectorSchemaRootConverter {
         return p;
     }
 
-    private void setTimestamp(@Nonnull final Object value, @Nonnull final Field schema, @Nonnull final PointValues pointValues) {
+    private void setTimestamp(@Nonnull final Object value,
+                              @Nonnull final Field schema,
+                              @Nonnull final PointValues pointValues) {
         if (value instanceof Long) {
             if (schema.getFieldType().getType() instanceof ArrowType.Timestamp) {
                 ArrowType.Timestamp type = (ArrowType.Timestamp) schema.getFieldType().getType();
@@ -125,7 +127,8 @@ final class VectorSchemaRootConverter {
                         timeUnit = TimeUnit.NANOSECONDS;
                         break;
                 }
-                pointValues.setTimestamp(Instant.ofEpochSecond(0, TimeUnit.NANOSECONDS.convert((Long) value, timeUnit)));
+                long nanoseconds = TimeUnit.NANOSECONDS.convert((Long) value, timeUnit);
+                pointValues.setTimestamp(Instant.ofEpochSecond(0, nanoseconds));
             } else {
                 pointValues.setTimestamp(Instant.ofEpochMilli((Long) value));
             }
