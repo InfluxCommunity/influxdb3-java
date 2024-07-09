@@ -217,7 +217,7 @@ class ITQueryWrite {
             Assertions.assertThat(values.get(0).getTag("location")).isEqualTo("north");
             Assertions.assertThat(values.get(0).getFloatField("value")).isEqualTo(60.0);
 
-            BigInteger expected = BigInteger.valueOf(timestamp.toEpochMilli() * 1_000_000);
+            BigInteger expected = BigInteger.valueOf(timestamp.toEpochMilli() * 1_000_000_000_000);
             Assertions.assertThat((BigInteger) values.get(0).getTimestamp()).isEqualByComparingTo(expected);
         }
     }
