@@ -444,6 +444,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <ul>
      *   <li>INFLUX_HOST - cloud/server URL <i>required</i></li>
      *   <li>INFLUX_TOKEN - authentication token <i>required</i></li>
+     *   <li>INFLUX_AUTH_SCHEME - authentication scheme</li>
      *   <li>INFLUX_ORG - organization name</li>
      *   <li>INFLUX_DATABASE - database (bucket) name</li>
      *   <li>INFLUX_PRECISION - timestamp precision when writing data</li>
@@ -453,6 +454,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <ul>
      *   <li>influx.host - cloud/server URL <i>required</i></li>
      *   <li>influx.token - authentication token <i>required</i></li>
+     *   <li>influx.authScheme - authentication scheme</li>
      *   <li>influx.org - organization name</li>
      *   <li>influx.database - database (bucket) name</li>
      *   <li>influx.precision - timestamp precision when writing data</li>

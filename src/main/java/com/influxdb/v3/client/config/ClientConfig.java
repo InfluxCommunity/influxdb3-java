@@ -46,6 +46,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  * <ul>
  *     <li><code>host</code> - hostname or IP address of the InfluxDB server</li>
  *     <li><code>token</code> - authentication token for accessing the InfluxDB server</li>
+ *     <li><code>authScheme</code> - authentication scheme</li>
  *     <li><code>organization</code> - organization to be used for operations</li>
  *     <li><code>database</code> - database to be used for InfluxDB operations</li>
  *     <li><code>writePrecision</code> - precision to use when writing points to InfluxDB</li>
@@ -86,6 +87,7 @@ public final class ClientConfig {
 
     private final String host;
     private final char[] token;
+    private final String authScheme;
     private final String organization;
     private final String database;
     private final WritePrecision writePrecision;
@@ -116,6 +118,16 @@ public final class ClientConfig {
     @Nullable
     public char[] getToken() {
         return token;
+    }
+
+    /**
+     * Gets authentication scheme.
+     *
+     * @return authentication scheme, may be null
+     */
+    @Nullable
+    public String getAuthScheme() {
+        return authScheme;
     }
 
     /**
@@ -247,6 +259,7 @@ public final class ClientConfig {
         ClientConfig that = (ClientConfig) o;
         return Objects.equals(host, that.host)
                 && Arrays.equals(token, that.token)
+                && Objects.equals(authScheme, that.authScheme)
                 && Objects.equals(organization, that.organization)
                 && Objects.equals(database, that.database)
                 && writePrecision == that.writePrecision
@@ -262,7 +275,7 @@ public final class ClientConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(host, Arrays.hashCode(token), organization,
+        return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
           database, writePrecision, gzipThreshold,
           timeout, allowHttpRedirects, disableServerCertificateValidation,
           proxy, authenticator, headers,
@@ -295,6 +308,7 @@ public final class ClientConfig {
     public static final class Builder {
         private String host;
         private char[] token;
+        private String authScheme;
         private String organization;
         private String database;
         private WritePrecision writePrecision;
@@ -330,6 +344,20 @@ public final class ClientConfig {
         public Builder token(@Nullable final char[] token) {
 
             this.token = token;
+            return this;
+        }
+
+        /**
+         * Sets authentication scheme.
+         *
+         * @param authScheme authentication scheme.
+         *                   Default <code>null</code> for Cloud access, set to 'Bearer' for Edge.
+         * @return this
+         */
+        @Nonnull
+        public Builder authScheme(@Nullable final String authScheme) {
+
+            this.authScheme = authScheme;
             return this;
         }
 
@@ -525,6 +553,9 @@ public final class ClientConfig {
             if (parameters.containsKey("token")) {
                 this.token(parameters.get("token").toCharArray());
             }
+            if (parameters.containsKey("authScheme")) {
+                this.authScheme(parameters.get("authScheme"));
+            }
             if (parameters.containsKey("org")) {
                 this.organization(parameters.get("org"));
             }
@@ -564,6 +595,10 @@ public final class ClientConfig {
             final String token = get.apply("INFLUX_TOKEN", "influx.token");
             if (token != null) {
                 this.token(token.toCharArray());
+            }
+            final String authScheme = get.apply("INFLUX_AUTH_SCHEME", "influx.authScheme");
+            if (authScheme != null) {
+                this.authScheme(authScheme);
             }
             final String org = get.apply("INFLUX_ORG", "influx.org");
             if (org != null) {
@@ -612,6 +647,7 @@ public final class ClientConfig {
     private ClientConfig(@Nonnull final Builder builder) {
         host = builder.host;
         token = builder.token;
+        authScheme = builder.authScheme;
         organization = builder.organization;
         database = builder.database;
         writePrecision = builder.writePrecision != null ? builder.writePrecision : WritePrecision.NS;

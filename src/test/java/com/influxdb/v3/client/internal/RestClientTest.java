@@ -111,6 +111,24 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
+    public void authenticationHeaderCustomAuthScheme() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .token("my-token".toCharArray())
+                .authScheme("my-auth-scheme")
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, null);
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        String authorization = recordedRequest.getHeader("Authorization");
+        Assertions.assertThat(authorization).isEqualTo("my-auth-scheme my-token");
+    }
+
+    @Test
     public void authenticationHeaderNotDefined() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
