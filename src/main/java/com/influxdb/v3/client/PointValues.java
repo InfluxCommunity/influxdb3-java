@@ -96,7 +96,7 @@ public final class PointValues {
   }
 
   /**
-   * Get timestamp. Can be null if not set.
+   * Get timestamp in nanoseconds. If the timestamp is not set, returns null.
    *
    * @return timestamp or null
    */

@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
 
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BaseFixedWidthVector;
+import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.TimeMilliVector;
 import org.apache.arrow.vector.TimeStampVector;
 import org.apache.arrow.vector.VarCharVector;
@@ -59,8 +60,63 @@ class VectorSchemaRootConverterTest {
     }
 
     @Test
-    void timestampAsArrowTimestamp() {
+    void timestampAsArrowTimestampSecond() {
+        try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.SECOND, "UTC"))) {
+
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            BigInteger expected = BigInteger.valueOf(45_678L * 1_000_000_000);
+            Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+        }
+    }
+
+    @Test
+    void timestampAsArrowTimestampMillisecond() {
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.MILLISECOND, "UTC"))) {
+
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            BigInteger expected = BigInteger.valueOf(45_678L * 1_000_000);
+            Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+        }
+    }
+
+    @Test
+    void timestampAsArrowTimestampMicrosecond() {
+        try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.MICROSECOND, "UTC"))) {
+
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            BigInteger expected = BigInteger.valueOf(45_678L * 1_000);
+            Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+        }
+    }
+
+    @Test
+    void timestampAsArrowTimestampNanosecond() {
+        try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.NANOSECOND, "UTC"))) {
+
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            BigInteger expected = BigInteger.valueOf(45_678L);
+            Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+        }
+    }
+
+    @Test
+    void timestampAsArrowTimestampNanosecondWithoutTimezone() {
+        try (VectorSchemaRoot root = createTimeVector(45_978, new ArrowType.Timestamp(TimeUnit.NANOSECOND, null))) {
+
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            BigInteger expected = BigInteger.valueOf(45_978L);
+            Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+        }
+    }
+
+    @Test
+    void timestampAsArrowInt() {
+        try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Int(64, true))) {
 
             PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
 
@@ -144,6 +200,8 @@ class VectorSchemaRootConverterTest {
             ((TimeMilliVector) timeVector).setSafe(0, timeValue);
         } else if (timeVector instanceof TimeStampVector) {
             ((TimeStampVector) timeVector).setSafe(0, timeValue);
+        } else if (timeVector instanceof BigIntVector) {
+            ((BigIntVector) timeVector).setSafe(0, timeValue);
         } else {
             throw new RuntimeException("Unexpected vector type: " + timeVector.getClass().getName());
         }
