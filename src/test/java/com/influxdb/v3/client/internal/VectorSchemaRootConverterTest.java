@@ -104,6 +104,17 @@ class VectorSchemaRootConverterTest {
     }
 
     @Test
+    void timestampAsArrowTimestampNanosecondWithoutTimezone() {
+        try (VectorSchemaRoot root = createTimeVector(45_978, new ArrowType.Timestamp(TimeUnit.NANOSECOND, null))) {
+
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            BigInteger expected = BigInteger.valueOf(45_978L);
+            Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+        }
+    }
+
+    @Test
     void timestampAsArrowInt() {
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Int(64, true))) {
 
