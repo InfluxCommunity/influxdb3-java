@@ -91,7 +91,7 @@
         <netty-handler.version>4.1.111.Final</netty-handler.version>
         <junit-jupiter.version>5.10.3</junit-jupiter.version>
 
-        <plugin.surefire.version>3.3.0</plugin.surefire.version>
+        <plugin.surefire.version>3.3.1</plugin.surefire.version>
         <plugin.jacoco.version>0.8.12</plugin.jacoco.version>
         <plugin.checkstyle.version>3.4.0</plugin.checkstyle.version>
         <plugin.javadoc.version>3.7.0</plugin.javadoc.version>
