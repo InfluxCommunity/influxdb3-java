@@ -4,6 +4,7 @@
 
 1. [#148](https://github.com/InfluxCommunity/influxdb3-java/pull/148): InfluxDB Edge (OSS) error handling
 1. [#153](https://github.com/InfluxCommunity/influxdb3-java/pull/153): Parsing timestamp columns
+1. [#158](https://github.com/InfluxCommunity/influxdb3-java/pull/158): Add InfluxDB Edge (OSS) authentication support.
 
 ## 0.8.0 [2024-06-24]
 

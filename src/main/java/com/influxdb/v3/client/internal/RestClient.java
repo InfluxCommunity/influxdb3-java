@@ -162,7 +162,11 @@ final class RestClient implements AutoCloseable {
         }
         request.header("User-Agent", userAgent);
         if (config.getToken() != null && config.getToken().length > 0) {
-            request.header("Authorization", String.format("Token %s", new String(config.getToken())));
+            String authScheme = config.getAuthScheme();
+            if (authScheme == null) {
+                authScheme = "Token";
+            }
+            request.header("Authorization", String.format("%s %s", authScheme, new String(config.getToken())));
         }
 
         HttpResponse<String> response;

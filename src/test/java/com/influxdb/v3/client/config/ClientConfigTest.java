@@ -117,6 +117,13 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getDatabase()).isEqualTo(null);
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.S);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000); // default
+
+        cfg = new ClientConfig.Builder()
+                .build("http://localhost:9999/"
+                        + "?token=my-token&authScheme=my-auth");
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getAuthScheme()).isEqualTo("my-auth");
     }
 
     @Test
@@ -136,7 +143,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000);
 
-        // simple
+        // basic
         env = Map.of(
                 "INFLUX_HOST", "http://localhost:9999/",
                 "INFLUX_TOKEN", "my-token",
@@ -152,6 +159,18 @@ class ClientConfigTest {
         // these are defaults
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000);
+
+        // with Edge authentication
+        env = Map.of(
+                "INFLUX_HOST", "http://localhost:9999/",
+                "INFLUX_TOKEN", "my-token",
+                "INFLUX_AUTH_SCHEME", "my-auth"
+        );
+        cfg = new ClientConfig.Builder()
+                .build(env, null);
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getAuthScheme()).isEqualTo("my-auth");
 
         // with write options
         env = Map.of(
@@ -188,7 +207,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000);
 
-        // simple
+        // basic
         properties = new Properties();
         properties.put("influx.host", "http://localhost:9999/");
         properties.put("influx.token", "my-token");
@@ -203,6 +222,17 @@ class ClientConfigTest {
         // these are defaults
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000);
+
+        // with custom auth scheme
+        properties = new Properties();
+        properties.put("influx.host", "http://localhost:9999/");
+        properties.put("influx.token", "my-token");
+        properties.put("influx.authScheme", "my-auth");
+        cfg = new ClientConfig.Builder()
+                .build(new HashMap<>(), properties);
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getAuthScheme()).isEqualTo("my-auth");
 
         // with write options
         properties = new Properties();
