@@ -35,22 +35,6 @@ public class InfluxDBApiHttpException extends InfluxDBApiException {
   int statusCode;
 
   /**
-   * Construct a new InfluxDBApiHttpException with the indicated cause.
-   * @param cause - cause of the exception
-   */
-  public InfluxDBApiHttpException(@Nullable final Throwable cause) {
-    super(cause);
-  }
-
-  /**
-   * Construct a new InfluxDBApiHttpException with the indicated message.
-   * @param message the detail message
-   */
-  public InfluxDBApiHttpException(@Nullable final String message) {
-    super(message);
-  }
-
-  /**
    * Construct a new InfluxDBApiHttpException with statusCode and headers.
    *
    * @param message the detail message.

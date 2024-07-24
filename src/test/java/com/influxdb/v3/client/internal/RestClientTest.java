@@ -26,10 +26,12 @@ import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -407,6 +409,22 @@ public class RestClientTest extends AbstractMockServerTest {
                         () -> restClient.request("ping", HttpMethod.GET, null, null, null))
                 .isInstanceOf(InfluxDBApiException.class)
                 .hasMessage("HTTP status code: 402; Message: token is over the limit");
+    }
+
+    @Test
+    public void generateHttpException() {
+        HttpHeaders headers = HttpHeaders.of(Map.of(
+          "content-type", List.of("application/json"),
+          "retry-after", List.of("300")),
+          (key, value) -> true);
+
+        InfluxDBApiHttpException exception = new InfluxDBApiHttpException(
+          new InfluxDBApiException("test exception"), headers, 418);
+
+        Assertions.assertThat(exception.headers()).isEqualTo(headers);
+        Assertions.assertThat(exception.statusCode()).isEqualTo(418);
+        Assertions.assertThat(exception.getCause()).isInstanceOf(InfluxDBApiException.class);
+        Assertions.assertThat(exception.getCause().getMessage()).isEqualTo("test exception");
     }
 
     @Test
