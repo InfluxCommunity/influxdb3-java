@@ -13,7 +13,7 @@
 
 ### Command line run
 
-1. Set environment variables.
+* Set environment variables.
 
 ```bash
 
@@ -22,9 +22,11 @@ export INFLUX_TOKEN=<ORGANIZATION_TOKEN>
 export INFLUX_DATABASE=<TARGET_DATABASE>
 
 ```
-2. Run with maven
- 
+
+* Run with maven
+
 ```bash
 mvn compile exec:java -Dexec.main="com.influxdb.v3.RetryExample"
 ```
-3. Repeat previous step to force an HTTP 429 response and rewrite attempt.
+
+* Repeat previous step to force an HTTP 429 response and rewrite attempt.
