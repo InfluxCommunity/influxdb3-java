@@ -14,11 +14,13 @@
 ### Command line run
 
 1. Set environment variables.
- 
+
 ```bash
+
 export INFLUX_HOST=<INFLUX_CLOUD_HOST_URL>
 export INFLUX_TOKEN=<ORGANIZATION_TOKEN>
 export INFLUX_DATABASE=<TARGET_DATABASE>
+
 ```
 2. Run with maven
  
