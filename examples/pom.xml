@@ -32,6 +32,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <exec.main>com.influxdb.v3.IOxExample</exec.main>
     </properties>
 
     <dependencies>
@@ -56,7 +57,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.influxdb.v3.IOxExample</mainClass>
+                    <mainClass>${exec.main}</mainClass>
                 </configuration>
             </plugin>
             <plugin>

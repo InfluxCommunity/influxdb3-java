@@ -6,3 +6,21 @@
 ## Basic
 
 - [IOxExample](src/main/java/com/influxdb/v3/IOxExample.java) - How to use write and query data from InfluxDB IOx
+
+## RetryExample
+
+- [RetryExample](src/main/java/com/influxdb/v3/RetryExample.java) - How to catch an `InfluxDBApiHttpException` to then retry making write requests.
+
+### Command line run
+
+1. Set environment variables.
+```bash
+export INFLUX_HOST=<INFLUX_CLOUD_HOST_URL>
+export INFLUX_TOKEN=<ORGANIZATION_TOKEN>
+export INFLUX_DATABASE=<TARGET_DATABASE>
+```
+2. Run with maven
+```bash
+mvn compile exec:java -Dexec.main="com.influxdb.v3.RetryExample"
+```
+3. Repeat previous step to force an HTTP 429 response and rewrite attempt.
