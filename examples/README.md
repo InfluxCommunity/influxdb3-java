@@ -13,7 +13,7 @@
 
 ### Command line run
 
-* Set environment variables.
+- Set environment variables.
 
 ```bash
 
@@ -23,10 +23,10 @@ export INFLUX_DATABASE=<TARGET_DATABASE>
 
 ```
 
-* Run with maven
+- Run with maven
 
 ```bash
 mvn compile exec:java -Dexec.main="com.influxdb.v3.RetryExample"
 ```
 
-* Repeat previous step to force an HTTP 429 response and rewrite attempt.
+- Repeat previous step to force an HTTP 429 response and rewrite attempt.
