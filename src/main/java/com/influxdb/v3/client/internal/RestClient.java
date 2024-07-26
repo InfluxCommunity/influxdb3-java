@@ -45,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.influxdb.v3.client.InfluxDBApiException;
+import com.influxdb.v3.client.InfluxDBApiHttpException;
 import com.influxdb.v3.client.config.ClientConfig;
 
 final class RestClient implements AutoCloseable {
@@ -212,7 +213,7 @@ final class RestClient implements AutoCloseable {
             }
 
             String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
-            throw new InfluxDBApiException(message);
+            throw new InfluxDBApiHttpException(message, response.headers(), response.statusCode());
         }
     }
 

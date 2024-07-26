@@ -26,8 +26,12 @@ import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -39,9 +43,12 @@ import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.AbstractMockServerTest;
 import com.influxdb.v3.client.InfluxDBApiException;
+import com.influxdb.v3.client.InfluxDBApiHttpException;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.write.WriteOptions;
+
+import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 
 public class RestClientTest extends AbstractMockServerTest {
 
@@ -402,5 +409,53 @@ public class RestClientTest extends AbstractMockServerTest {
                         () -> restClient.request("ping", HttpMethod.GET, null, null, null))
                 .isInstanceOf(InfluxDBApiException.class)
                 .hasMessage("HTTP status code: 402; Message: token is over the limit");
+    }
+
+    @Test
+    public void generateHttpException() {
+        HttpHeaders headers = HttpHeaders.of(Map.of(
+          "content-type", List.of("application/json"),
+          "retry-after", List.of("300")),
+          (key, value) -> true);
+
+        InfluxDBApiHttpException exception = new InfluxDBApiHttpException(
+          new InfluxDBApiException("test exception"), headers, 418);
+
+        Assertions.assertThat(exception.headers()).isEqualTo(headers);
+        Assertions.assertThat(exception.statusCode()).isEqualTo(418);
+        Assertions.assertThat(exception.getCause()).isInstanceOf(InfluxDBApiException.class);
+        Assertions.assertThat(exception.getCause().getMessage()).isEqualTo("test exception");
+    }
+
+    @Test
+    public void errorHttpExceptionThrown() {
+        String retryDate = Instant.now().plus(300, ChronoUnit.SECONDS).toString();
+
+        mockServer.enqueue(createResponse(503)
+          .setHeader("retry-after", retryDate)
+          .setHeader("content-type", "application/json")
+          .setBody("{\"message\":\"temporarily offline\"}")
+        );
+
+        restClient = new RestClient(new ClientConfig.Builder()
+          .host(baseURL)
+          .build());
+
+        Throwable thrown = catchThrowable(() -> restClient.request(
+          "/api/v2/write", HttpMethod.POST, null, null, null)
+        );
+
+        Assertions.assertThat(thrown).isNotNull();
+        Assertions.assertThat(thrown).isInstanceOf(InfluxDBApiHttpException.class);
+        InfluxDBApiHttpException he = (InfluxDBApiHttpException) thrown;
+        Assertions.assertThat(he.headers()).isNotNull();
+        Assertions.assertThat(he.getHeader("retry-after").get(0))
+          .isNotNull().isEqualTo(retryDate);
+        Assertions.assertThat(he.getHeader("content-type").get(0))
+          .isNotNull().isEqualTo("application/json");
+        Assertions.assertThat(he.getHeader("wumpus")).isNull();
+        Assertions.assertThat(he.statusCode()).isEqualTo(503);
+        Assertions.assertThat(he.getMessage())
+          .isEqualTo("HTTP status code: 503; Message: temporarily offline");
     }
 }

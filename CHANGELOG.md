@@ -1,5 +1,9 @@
 ## 0.9.0 [unreleased]
 
+### Features
+
+1. [#163](https://github.com/InfluxCommunity/influxdb3-java/pull/163): Introduces `InfluxDBApiHttpException` to facilitate write retries and error recovery.
+
 ### Bug Fixes
 
 1. [#148](https://github.com/InfluxCommunity/influxdb3-java/pull/148): InfluxDB Edge (OSS) error handling

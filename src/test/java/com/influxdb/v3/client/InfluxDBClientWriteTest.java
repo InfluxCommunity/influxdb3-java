@@ -34,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
+import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
+
 class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
     private InfluxDBClient client;
@@ -280,5 +282,32 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         Assertions.assertThat(request).isNotNull();
         Assertions.assertThat(request.getBody().readUtf8()).isEqualTo("mem,model=M5,tag=one,unit=U2 value=1.0");
 
+    }
+
+    @Test
+    public void retryHandled429Test() throws InterruptedException {
+        mockServer.enqueue(createResponse(429)
+          .setBody("{ \"message\" : \"Too Many Requests\" }")
+          .setHeader("retry-after", "42")
+          .setHeader("content-type", "application/json")
+        );
+
+        Point point = Point.measurement("mem")
+          .setTag("tag", "one")
+          .setField("value", 1.0);
+
+        Throwable thrown = catchThrowable(() -> client.writePoint(point));
+
+        Assertions.assertThat(thrown).isNotNull();
+        Assertions.assertThat(thrown).isInstanceOf(InfluxDBApiHttpException.class);
+        InfluxDBApiHttpException he = (InfluxDBApiHttpException) thrown;
+        Assertions.assertThat(he.headers()).isNotNull();
+        Assertions.assertThat(he.getHeader("retry-after").get(0))
+          .isNotNull().isEqualTo("42");
+        Assertions.assertThat(he.getHeader("content-type").get(0))
+          .isNotNull().isEqualTo("application/json");
+        Assertions.assertThat(he.statusCode()).isEqualTo(429);
+        Assertions.assertThat(he.getMessage())
+          .isEqualTo("HTTP status code: 429; Message: Too Many Requests");
     }
 }
