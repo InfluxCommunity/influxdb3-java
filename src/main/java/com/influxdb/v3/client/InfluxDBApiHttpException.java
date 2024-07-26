@@ -66,6 +66,11 @@ public class InfluxDBApiHttpException extends InfluxDBApiException {
     this.statusCode = statusCode;
   }
 
+  /**
+   * Gets the HTTP headers property associated with the error.
+   *
+   * @return - the headers object.
+   */
   public HttpHeaders headers() {
     return headers;
   }
@@ -80,6 +85,10 @@ public class InfluxDBApiHttpException extends InfluxDBApiException {
     return headers.map().get(name);
   }
 
+  /**
+   * Gets the HTTP statusCode associated with the error.
+   * @return - the HTTP statusCode.
+   */
   public int statusCode() {
     return statusCode;
   }
