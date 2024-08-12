@@ -31,7 +31,13 @@ import javax.annotation.Nullable;
  */
 public class InfluxDBApiHttpException extends InfluxDBApiException {
 
+  /**
+   * The HTTP headers associated with the error.
+   */
   HttpHeaders headers;
+  /**
+   * The HTTP status code associated with the error.
+   */
   int statusCode;
 
   /**
