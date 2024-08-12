@@ -1,14 +1,14 @@
-## 0.9.0 [unreleased]
+## 0.9.0 [2024-08-12]
 
 ### Features
 
+1. [#158](https://github.com/InfluxCommunity/influxdb3-java/pull/158): Add InfluxDB Edge (OSS) authentication support.
 1. [#163](https://github.com/InfluxCommunity/influxdb3-java/pull/163): Introduces `InfluxDBApiHttpException` to facilitate write retries and error recovery.
 
 ### Bug Fixes
 
 1. [#148](https://github.com/InfluxCommunity/influxdb3-java/pull/148): InfluxDB Edge (OSS) error handling
 1. [#153](https://github.com/InfluxCommunity/influxdb3-java/pull/153): Parsing timestamp columns
-1. [#158](https://github.com/InfluxCommunity/influxdb3-java/pull/158): Add InfluxDB Edge (OSS) authentication support.
 
 ## 0.8.0 [2024-06-24]
 
