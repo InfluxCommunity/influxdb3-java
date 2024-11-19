@@ -112,7 +112,7 @@ final class VectorSchemaRootConverter {
                 p.setIntegerField(name, (Long) value);
                 break;
             case "iox::column_type::field::float":
-                p.setFloatField(name, (Float) value);
+                p.setFloatField(name, (Double) value);
                 break;
             case "iox::column_type::field::string":
                 p.setStringField(name, (String) value);
