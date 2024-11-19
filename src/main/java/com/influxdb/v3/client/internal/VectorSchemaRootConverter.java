@@ -105,7 +105,7 @@ final class VectorSchemaRootConverter {
         return p;
     }
 
-    private void setFieldWithMetaType(PointValues p, String name, Object value, String metaType) {
+    private void setFieldWithMetaType(final PointValues p, final String name, final Object value, final String metaType) {
         switch (metaType) {
             case "iox::column_type::field::integer":
             case "iox::column_type::field::uinteger":
@@ -120,6 +120,7 @@ final class VectorSchemaRootConverter {
             case "iox::column_type::field::boolean":
                 p.setBooleanField(name, (Boolean) value);
                 break;
+            default:
         }
     }
 
