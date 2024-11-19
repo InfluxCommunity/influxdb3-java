@@ -21,6 +21,12 @@
  */
 package com.influxdb.v3.client.internal;
 
+import com.influxdb.v3.client.write.WritePrecision;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -30,12 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.influxdb.v3.client.write.WritePrecision;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.Field;
 
 import static java.util.function.Function.identity;
 
@@ -141,16 +141,25 @@ public final class NanosecondConverter {
                         break;
                 }
                 long nanoseconds = TimeUnit.NANOSECONDS.convert((Long) value, timeUnit);
-                BigInteger convertedTime = NanosecondConverter.convert(Instant.ofEpochSecond(0, nanoseconds), WritePrecision.NS);
-                result = NanosecondConverter.convertToNanos(convertedTime, WritePrecision.NS);
+                Instant instant = Instant.ofEpochSecond(0, nanoseconds);
+                result = convertInstantToNano(instant, WritePrecision.NS);
             } else {
-                BigInteger convertedTime = NanosecondConverter.convert(Instant.ofEpochMilli((Long) value), WritePrecision.NS);
-                result = NanosecondConverter.convertToNanos(convertedTime, WritePrecision.NS);
+                Instant instant = Instant.ofEpochMilli((Long) value);
+                result = convertInstantToNano(instant, WritePrecision.NS);
             }
         } else if (value instanceof LocalDateTime) {
-            BigInteger convertedTime = NanosecondConverter.convert(((LocalDateTime) value).toInstant(ZoneOffset.UTC), WritePrecision.NS);
-            result = NanosecondConverter.convertToNanos(convertedTime, WritePrecision.NS);
+            Instant instant = ((LocalDateTime) value).toInstant(ZoneOffset.UTC);
+            result = convertInstantToNano(instant, WritePrecision.NS);
         }
         return result;
+    }
+
+    private static BigInteger convertInstantToNano(final Instant instant, final WritePrecision precision) {
+        var writePrecision = WritePrecision.NS;
+        if (precision != null) {
+            writePrecision = precision;
+        }
+        BigInteger convertedTime = NanosecondConverter.convert(instant, writePrecision);
+        return NanosecondConverter.convertToNanos(convertedTime, writePrecision);
     }
 }
