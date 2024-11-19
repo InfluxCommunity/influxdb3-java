@@ -195,19 +195,23 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                                 switch (metaType) {
                                                     case "iox::column_type::field::integer":
                                                     case "iox::column_type::field::uinteger":
-                                                        var intValue = (Long) fieldVectors.get(i).getObject(rowNumber);
+                                                        var intValue = (Long) fieldVectors.get(i)
+                                                                                          .getObject(rowNumber);
                                                         row.add(intValue);
                                                         break;
                                                     case "iox::column_type::field::float":
-                                                        var doubleValue = (Double) fieldVectors.get(i).getObject(rowNumber);
+                                                        var doubleValue = (Double) fieldVectors.get(i)
+                                                                                               .getObject(rowNumber);
                                                         row.add(doubleValue);
                                                         break;
                                                     case "iox::column_type::field::string":
-                                                        var stringValue = (String) fieldVectors.get(i).getObject(rowNumber);
+                                                        var stringValue = (String) fieldVectors.get(i)
+                                                                                               .getObject(rowNumber);
                                                         row.add(stringValue);
                                                         break;
                                                     case "iox::column_type::field::boolean":
-                                                        var boolValue = (Boolean) fieldVectors.get(i).getObject(rowNumber);
+                                                        var boolValue = (Boolean) fieldVectors.get(i)
+                                                                                              .getObject(rowNumber);
                                                         row.add(boolValue);
                                                         break;
                                                     default:
