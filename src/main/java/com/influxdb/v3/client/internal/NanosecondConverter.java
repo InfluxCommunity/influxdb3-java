@@ -21,8 +21,6 @@
  */
 package com.influxdb.v3.client.internal;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -32,10 +30,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import com.influxdb.v3.client.write.WritePrecision;
-import static java.util.function.Function.identity;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+
+import com.influxdb.v3.client.write.WritePrecision;
+
+import static java.util.function.Function.identity;
 
 /**
  * Nanosecond converter.
