@@ -23,6 +23,7 @@ package com.influxdb.v3.client.internal;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -183,16 +184,45 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         return queryData(query, parameters, options)
                 .flatMap(vector -> {
                     List<FieldVector> fieldVectors = vector.getFieldVectors();
-                    return IntStream
-                            .range(0, vector.getRowCount())
-                            .mapToObj(rowNumber -> {
+                    return IntStream.range(0, vector.getRowCount())
+                                    .mapToObj(rowNumber -> {
+                                        ArrayList<Object> row = new ArrayList<>();
+                                        for (int i = 0; i < fieldVectors.size(); i++) {
+                                            var schema = vector.getSchema().getFields().get(i);
+                                            var metaType = schema.getMetadata().get("iox::column::type");
+                                            String valueType = metaType.split("::")[2];
+                                            if ("field".equals(valueType)) {
+                                                switch (metaType) {
+                                                    case "iox::column_type::field::integer":
+                                                    case "iox::column_type::field::uinteger":
+                                                        var intValue = (Long) fieldVectors.get(i).getObject(rowNumber);
+                                                        row.add(intValue);
+                                                        break;
+                                                    case "iox::column_type::field::float":
+                                                        var doubleValue = (Double) fieldVectors.get(i).getObject(rowNumber);
+                                                        row.add(doubleValue);
+                                                        break;
+                                                    case "iox::column_type::field::string":
+                                                        var stringValue = (String) fieldVectors.get(i).getObject(rowNumber);
+                                                        row.add(stringValue);
+                                                        break;
+                                                    case "iox::column_type::field::boolean":
+                                                        var boolValue = (Boolean) fieldVectors.get(i).getObject(rowNumber);
+                                                        row.add(boolValue);
+                                                        break;
+                                                    default:
+                                                }
+                                            } else if ("timestamp".equals(valueType)) {
+                                                var timestamp = fieldVectors.get(i).getObject(rowNumber);
+                                                BigInteger time = NanosecondConverter.getTimestamp(timestamp, schema);
+                                                row.add(time);
+                                            } else {
+                                                row.add(fieldVectors.get(i).getObject(rowNumber));
+                                            }
+                                        }
 
-                                ArrayList<Object> row = new ArrayList<>();
-                                for (FieldVector fieldVector : fieldVectors) {
-                                    row.add(fieldVector.getObject(rowNumber));
-                                }
-                                return row.toArray();
-                            });
+                                        return row.toArray();
+                                    });
                 });
     }
 
