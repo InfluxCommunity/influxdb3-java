@@ -190,7 +190,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                         for (int i = 0; i < fieldVectors.size(); i++) {
                                             var schema = vector.getSchema().getFields().get(i);
                                             var metaType = schema.getMetadata().get("iox::column::type");
-                                            String valueType = metaType.split("::")[2];
+                                            String valueType = metaType != null ? metaType.split("::")[2] : null;
+
                                             if ("field".equals(valueType)) {
                                                 switch (metaType) {
                                                     case "iox::column_type::field::integer":
