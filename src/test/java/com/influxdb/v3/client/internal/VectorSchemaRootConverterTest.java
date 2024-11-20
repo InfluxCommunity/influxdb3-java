@@ -25,16 +25,20 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BaseFixedWidthVector;
 import org.apache.arrow.vector.BigIntVector;
+import org.apache.arrow.vector.BitVector;
+import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.TimeMilliVector;
 import org.apache.arrow.vector.TimeStampVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.types.FloatingPointPrecision;
 import org.apache.arrow.vector.types.TimeUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -124,6 +128,41 @@ class VectorSchemaRootConverterTest {
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
         }
     }
+
+    @Test
+    public void testConverterWithMetaType() {
+        try (VectorSchemaRoot root = generateVectorSchemaRoot()) {
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+
+            String measurement = pointValues.getMeasurement();
+            Assertions.assertThat(measurement).isEqualTo("host");
+            Assertions.assertThat(measurement.getClass()).isEqualTo(String.class);
+
+            BigInteger expected = BigInteger.valueOf(123_456L * 1_000_000);
+            Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
+
+            Long memTotal = (Long) pointValues.getField("mem_total");
+            Assertions.assertThat(memTotal).isEqualTo(2048);
+            Assertions.assertThat(memTotal.getClass()).isEqualTo(Long.class);
+
+            Long diskFree = (Long) pointValues.getField("disk_free");
+            Assertions.assertThat(diskFree).isEqualTo(1_000_000);
+            Assertions.assertThat(diskFree.getClass()).isEqualTo(Long.class);
+
+            Double temperature = (Double) pointValues.getField("temperature");
+            Assertions.assertThat(temperature).isEqualTo(100.8766f);
+            Assertions.assertThat(temperature.getClass()).isEqualTo(Double.class);
+
+            String name = (String) pointValues.getField("name");
+            Assertions.assertThat(name).isEqualTo("intel");
+            Assertions.assertThat(name.getClass()).isEqualTo(String.class);
+
+            Boolean isActive = (Boolean) pointValues.getField("isActive");
+            Assertions.assertThat(isActive).isEqualTo(true);
+            Assertions.assertThat(isActive.getClass()).isEqualTo(Boolean.class);
+        }
+    }
+
 
     @Test
     void timestampWithoutMetadataAndFieldWithoutMetadata() {
@@ -237,4 +276,87 @@ class VectorSchemaRootConverterTest {
 
         return root;
     }
+
+    public VectorSchemaRoot generateVectorSchemaRoot() {
+        Field measurementField = generateStringField("measurement");
+        Field timeField = generateTimeField();
+        Field memTotalField = generateIntField("mem_total");
+        Field diskFreeField = generateUnsignedIntField("disk_free");
+        Field temperatureField = generateFloatField("temperature");
+        Field nameField = generateStringField("name");
+        Field isActiveField = generateBoolField("isActive");
+        List<Field> fields = List.of(measurementField, timeField, memTotalField, diskFreeField, temperatureField, nameField, isActiveField);
+
+        VectorSchemaRoot root = initializeVectorSchemaRoot(fields.toArray(new Field[0]));
+        VarCharVector measurement = (VarCharVector) root.getVector("measurement");
+        measurement.allocateNew();
+        measurement.set(0, "host".getBytes());
+
+        TimeMilliVector timeVector = (TimeMilliVector) root.getVector("time");
+        timeVector.allocateNew();
+        timeVector.setSafe(0, 123_456);
+
+        BigIntVector intVector = (BigIntVector) root.getVector("mem_total");
+        intVector.allocateNew();
+        intVector.set(0, 2048);
+
+        BigIntVector unsignedIntVector = (BigIntVector) root.getVector("disk_free");
+        unsignedIntVector.allocateNew();
+        unsignedIntVector.set(0, 1_000_000);
+
+        Float8Vector floatVector = (Float8Vector) root.getVector("temperature");
+        floatVector.allocateNew();
+        floatVector.set(0, 100.8766f);
+
+        VarCharVector stringVector = (VarCharVector) root.getVector("name");
+        stringVector.allocateNew();
+        stringVector.setSafe(0, "intel".getBytes());
+
+        BitVector boolVector = (BitVector) root.getVector("isActive");
+        boolVector.allocateNew();
+        boolVector.setSafe(0, 1);
+
+        return root;
+    }
+
+    private Field generateIntField(final String fieldName) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("iox::column::type", "iox::column_type::field::integer");
+        FieldType intType = new FieldType(true, new ArrowType.Int(64, true), null, metadata);
+        return new Field(fieldName, intType, null);
+    }
+
+    private Field generateUnsignedIntField(final String fieldName) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("iox::column::type", "iox::column_type::field::uinteger");
+        FieldType intType = new FieldType(true, new ArrowType.Int(64, true), null, metadata);
+        return new Field(fieldName, intType, null);
+    }
+
+    private Field generateFloatField(final String fieldName) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("iox::column::type", "iox::column_type::field::float");
+        FieldType floatType = new FieldType(true, new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE), null, metadata);
+        return new Field(fieldName, floatType, null);
+    }
+
+    private Field generateStringField(final String fieldName) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("iox::column::type", "iox::column_type::field::string");
+        FieldType stringType = new FieldType(true, new ArrowType.Utf8(), null, metadata);
+        return new Field(fieldName, stringType, null);
+    }
+
+    private Field generateBoolField(final String fieldName) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("iox::column::type", "iox::column_type::field::boolean");
+        FieldType boolType = new FieldType(true, new ArrowType.Bool(), null, metadata);
+        return new Field(fieldName, boolType, null);
+    }
+
+    private Field generateTimeField() {
+        FieldType timeType = new FieldType(true, new ArrowType.Time(TimeUnit.MILLISECOND, 32), null);
+        return new Field("time", timeType, null);
+    }
+
 }
