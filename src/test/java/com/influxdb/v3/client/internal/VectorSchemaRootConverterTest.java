@@ -285,7 +285,13 @@ class VectorSchemaRootConverterTest {
         Field temperatureField = generateFloatField("temperature");
         Field nameField = generateStringField("name");
         Field isActiveField = generateBoolField("isActive");
-        List<Field> fields = List.of(measurementField, timeField, memTotalField, diskFreeField, temperatureField, nameField, isActiveField);
+        List<Field> fields = List.of(measurementField,
+                                     timeField,
+                                     memTotalField,
+                                     diskFreeField,
+                                     temperatureField,
+                                     nameField,
+                                     isActiveField);
 
         VectorSchemaRoot root = initializeVectorSchemaRoot(fields.toArray(new Field[0]));
         VarCharVector measurement = (VarCharVector) root.getVector("measurement");
@@ -322,21 +328,30 @@ class VectorSchemaRootConverterTest {
     private Field generateIntField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::integer");
-        FieldType intType = new FieldType(true, new ArrowType.Int(64, true), null, metadata);
+        FieldType intType = new FieldType(true,
+                                          new ArrowType.Int(64, true),
+                                          null,
+                                          metadata);
         return new Field(fieldName, intType, null);
     }
 
     private Field generateUnsignedIntField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::uinteger");
-        FieldType intType = new FieldType(true, new ArrowType.Int(64, true), null, metadata);
+        FieldType intType = new FieldType(true,
+                                          new ArrowType.Int(64, true),
+                                          null,
+                                          metadata);
         return new Field(fieldName, intType, null);
     }
 
     private Field generateFloatField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::float");
-        FieldType floatType = new FieldType(true, new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE), null, metadata);
+        FieldType floatType = new FieldType(true,
+                                            new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE),
+                                            null,
+                                            metadata);
         return new Field(fieldName, floatType, null);
     }
 
@@ -355,7 +370,9 @@ class VectorSchemaRootConverterTest {
     }
 
     private Field generateTimeField() {
-        FieldType timeType = new FieldType(true, new ArrowType.Time(TimeUnit.MILLISECOND, 32), null);
+        FieldType timeType = new FieldType(true,
+                                           new ArrowType.Time(TimeUnit.MILLISECOND, 32),
+                                           null);
         return new Field("time", timeType, null);
     }
 
