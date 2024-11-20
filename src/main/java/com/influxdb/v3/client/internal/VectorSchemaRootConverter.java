@@ -109,7 +109,9 @@ final class VectorSchemaRootConverter {
                                       final String name,
                                       final Object value,
                                       final String metaType) {
-        if (value == null) return;
+        if (value == null) {
+            return;
+        }
 
         switch (metaType) {
             case "iox::column_type::field::integer":
