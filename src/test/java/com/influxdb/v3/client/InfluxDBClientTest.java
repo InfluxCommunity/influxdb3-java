@@ -138,7 +138,13 @@ class InfluxDBClientTest {
             String uuid = UUID.randomUUID().toString();
             long timestamp = Instant.now().getEpochSecond();
             String record = String.format(
-                    "host9,tag=empty name=\"intel\",mem_total=2048,disk_free=100,temperature=100.86,isActive=true,testId=\"%s\" %d",
+                    "host9,tag=empty " +
+                            "name=\"intel\"," +
+                            "mem_total=2048," +
+                            "disk_free=100," +
+                            "temperature=100.86," +
+                            "isActive=true," +
+                            "testId=\"%s\" %d",
                     uuid,
                     timestamp
             );
