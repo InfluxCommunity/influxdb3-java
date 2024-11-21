@@ -95,7 +95,7 @@ final class VectorSchemaRootConverter {
             String valueType = parts[2];
 
             if ("field".equals(valueType)) {
-                p.setField(name, value);
+                setFieldWithMetaType(p, name, value, metaType);
             } else if ("tag".equals(valueType) && value instanceof String) {
                 p.setTag(name, (String) value);
             } else if ("timestamp".equals(valueType)) {
@@ -103,6 +103,32 @@ final class VectorSchemaRootConverter {
             }
         }
         return p;
+    }
+
+    private void setFieldWithMetaType(final PointValues p,
+                                      final String name,
+                                      final Object value,
+                                      final String metaType) {
+        if (value == null) {
+            return;
+        }
+
+        switch (metaType) {
+            case "iox::column_type::field::integer":
+            case "iox::column_type::field::uinteger":
+                p.setIntegerField(name, (Long) value);
+                break;
+            case "iox::column_type::field::float":
+                p.setFloatField(name, (Double) value);
+                break;
+            case "iox::column_type::field::string":
+                p.setStringField(name, (String) value);
+                break;
+            case "iox::column_type::field::boolean":
+                p.setBooleanField(name, (Boolean) value);
+                break;
+            default:
+        }
     }
 
     private void setTimestamp(@Nonnull final Object value,
