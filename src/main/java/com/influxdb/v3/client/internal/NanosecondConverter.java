@@ -119,7 +119,7 @@ public final class NanosecondConverter {
         return FROM_NANOS.get(precision).apply(nanos);
     }
 
-    public static BigInteger getTimestamp(@Nonnull final Object value, @Nonnull final Field schema) {
+    public static BigInteger getTimestampNanoSecond(@Nonnull final Object value, @Nonnull final Field schema) {
         BigInteger result = null;
 
         if (value instanceof Long) {
