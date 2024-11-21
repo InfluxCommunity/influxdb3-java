@@ -218,14 +218,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                                         break;
                                                     default:
                                                 }
-                                            } else if ("timestamp".equals(valueType)) {
+                                            } else if ("timestamp".equals(valueType) || Objects.equals(schema.getName(), "time")) {
                                                 var timestamp = fieldVectors.get(i).getObject(rowNumber);
                                                 BigInteger time = NanosecondConverter.getTimestamp(timestamp, schema);
                                                 row.add(time);
                                             } else {
-                                                Text textValue = (Text) fieldVectors.get(i)
-                                                                                    .getObject(rowNumber);
-                                                row.add(textValue.toString());
+                                                Object value = fieldVectors.get(i).getObject(rowNumber);
+                                                row.add(value);
                                             }
                                         }
 
