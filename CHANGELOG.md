@@ -1,7 +1,7 @@
 ## 0.10.0 [unreleased]
 
 ### Features
-1. [#197](https://github.com/InfluxCommunity/influxdb3-java/pull/197): Respect iox::column_type::field metadata when mapping query results into values
+1. [#200](https://github.com/InfluxCommunity/influxdb3-java/pull/200): Respect iox::column_type::field metadata when mapping query results into values
 
 ## 0.9.0 [2024-08-12]
 
