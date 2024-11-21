@@ -138,10 +138,10 @@ class InfluxDBClientTest {
             String uuid = UUID.randomUUID().toString();
             long timestamp = Instant.now().getEpochSecond();
             String record = String.format(
-                    "host9,tag=empty "
+                    "host10,tag=empty "
                             + "name=\"intel\","
                             + "mem_total=2048,"
-                            + "disk_free=100,"
+                            + "disk_free=100i,"
                             + "temperature=100.86,"
                             + "isActive=true,"
                             + "testId=\"%s\" %d",
@@ -151,15 +151,18 @@ class InfluxDBClientTest {
             client.writeRecord(record, new WriteOptions(null, WritePrecision.S, null));
 
             Map<String, Object> parameters = Map.of("testId", uuid);
-            String sql = "Select * from host9 where \"testId\"=$testId";
+            String sql = "Select * from host10 where \"testId\"=$testId";
             try (Stream<Object[]> stream = client.query(sql, parameters)) {
                 stream.findFirst()
                       .ifPresent(objects -> {
-                          Assertions.assertThat(objects[0].getClass()).isEqualTo(Double.class);
-                          Assertions.assertThat(objects[0]).isEqualTo(100.0);
+                          Assertions.assertThat(objects[0].getClass()).isEqualTo(Long.class);
+                          Assertions.assertThat(objects[0]).isEqualTo(100L);
 
                           Assertions.assertThat(objects[1].getClass()).isEqualTo(Boolean.class);
                           Assertions.assertThat(objects[1]).isEqualTo(true);
+
+                          Assertions.assertThat(objects[2].getClass()).isEqualTo(Double.class);
+                          Assertions.assertThat(objects[2]).isEqualTo(2048.0);
 
                           Assertions.assertThat(objects[3].getClass()).isEqualTo(String.class);
                           Assertions.assertThat(objects[3]).isEqualTo("intel");
