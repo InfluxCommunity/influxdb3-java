@@ -75,7 +75,17 @@ public class NanosecondConverterTest {
                                                       null);
         Field timeFieldNanoSecond = new Field("time", timeTypeNanoSecond, null);
         timestampNanoSecond = NanosecondConverter.getTimestampNano(123_456L, timeFieldNanoSecond);
-        Assertions.assertEquals(BigInteger.valueOf(123_456L), timestampNanoSecond
+        Assertions.assertEquals(BigInteger.valueOf(123_456L), timestampNanoSecond);
+
+        // For ArrowType.Time type
+        FieldType timeMilliSecond = new FieldType(true,
+                                                      new ArrowType.Time(TimeUnit.MILLISECOND, 32),
+                                                      null);
+        Field fieldMilliSecond = new Field("time", timeMilliSecond, null);
+        timestampNanoSecond = NanosecondConverter.getTimestampNano(123_456L, fieldMilliSecond);
+        Assertions.assertEquals(
+                BigInteger.valueOf(123_456L)
+                          .multiply(BigInteger.valueOf(1_000_000)), timestampNanoSecond
         );
     }
 }
