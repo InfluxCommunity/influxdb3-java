@@ -42,6 +42,7 @@ import javax.annotation.Nullable;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.util.Text;
 
 import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBClient;
@@ -206,9 +207,9 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                                         row.add(doubleValue);
                                                         break;
                                                     case "iox::column_type::field::string":
-                                                        var stringValue = (String) fieldVectors.get(i)
-                                                                                               .getObject(rowNumber);
-                                                        row.add(stringValue);
+                                                        var textValue = (Text) fieldVectors.get(i)
+                                                                                           .getObject(rowNumber);
+                                                        row.add(textValue.toString());
                                                         break;
                                                     case "iox::column_type::field::boolean":
                                                         var boolValue = (Boolean) fieldVectors.get(i)
@@ -222,7 +223,9 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                                 BigInteger time = NanosecondConverter.getTimestamp(timestamp, schema);
                                                 row.add(time);
                                             } else {
-                                                row.add(fieldVectors.get(i).getObject(rowNumber));
+                                                Text textValue = (Text) fieldVectors.get(i)
+                                                                                    .getObject(rowNumber);
+                                                row.add(textValue.toString());
                                             }
                                         }
 
