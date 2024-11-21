@@ -186,50 +186,50 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                 .flatMap(vector -> {
                     List<FieldVector> fieldVectors = vector.getFieldVectors();
                     return IntStream.range(0, vector.getRowCount())
-                                    .mapToObj(rowNumber -> {
-                                        ArrayList<Object> row = new ArrayList<>();
-                                        for (int i = 0; i < fieldVectors.size(); i++) {
-                                            var schema = vector.getSchema().getFields().get(i);
-                                            var metaType = schema.getMetadata().get("iox::column::type");
-                                            String valueType = metaType != null ? metaType.split("::")[2] : null;
+                           .mapToObj(rowNumber -> {
+                               ArrayList<Object> row = new ArrayList<>();
+                               for (int i = 0; i < fieldVectors.size(); i++) {
+                                   var schema = vector.getSchema().getFields().get(i);
+                                   var metaType = schema.getMetadata().get("iox::column::type");
+                                   String valueType = metaType != null ? metaType.split("::")[2] : null;
 
-                                            if ("field".equals(valueType)) {
-                                                switch (metaType) {
-                                                    case "iox::column_type::field::integer":
-                                                    case "iox::column_type::field::uinteger":
-                                                        var intValue = (Long) fieldVectors.get(i)
-                                                                                          .getObject(rowNumber);
-                                                        row.add(intValue);
-                                                        break;
-                                                    case "iox::column_type::field::float":
-                                                        var doubleValue = (Double) fieldVectors.get(i)
-                                                                                               .getObject(rowNumber);
-                                                        row.add(doubleValue);
-                                                        break;
-                                                    case "iox::column_type::field::string":
-                                                        var textValue = (Text) fieldVectors.get(i)
-                                                                                           .getObject(rowNumber);
-                                                        row.add(textValue.toString());
-                                                        break;
-                                                    case "iox::column_type::field::boolean":
-                                                        var boolValue = (Boolean) fieldVectors.get(i)
-                                                                                              .getObject(rowNumber);
-                                                        row.add(boolValue);
-                                                        break;
-                                                    default:
-                                                }
-                                            } else if ("timestamp".equals(valueType)
-                                                    || Objects.equals(schema.getName(), "time")) {
-                                                var timestamp = fieldVectors.get(i).getObject(rowNumber);
-                                                BigInteger time = NanosecondConverter.getTimestampNano(timestamp, schema);
-                                                row.add(time);
-                                            } else {
-                                                Object value = fieldVectors.get(i).getObject(rowNumber);
-                                                row.add(value);
-                                            }
-                                        }
+                                   if ("field".equals(valueType)) {
+                                       switch (metaType) {
+                                           case "iox::column_type::field::integer":
+                                           case "iox::column_type::field::uinteger":
+                                               var intValue = (Long) fieldVectors.get(i)
+                                                                                 .getObject(rowNumber);
+                                               row.add(intValue);
+                                               break;
+                                           case "iox::column_type::field::float":
+                                               var doubleValue = (Double) fieldVectors.get(i)
+                                                                                      .getObject(rowNumber);
+                                               row.add(doubleValue);
+                                               break;
+                                           case "iox::column_type::field::string":
+                                               var textValue = (Text) fieldVectors.get(i)
+                                                                                  .getObject(rowNumber);
+                                               row.add(textValue.toString());
+                                               break;
+                                           case "iox::column_type::field::boolean":
+                                               var boolValue = (Boolean) fieldVectors.get(i)
+                                                                                     .getObject(rowNumber);
+                                               row.add(boolValue);
+                                               break;
+                                           default:
+                                       }
+                                   } else if ("timestamp".equals(valueType)
+                                           || Objects.equals(schema.getName(), "time")) {
+                                       var timestamp = fieldVectors.get(i).getObject(rowNumber);
+                                       BigInteger time = NanosecondConverter.getTimestampNano(timestamp, schema);
+                                       row.add(time);
+                                   } else {
+                                       Object value = fieldVectors.get(i).getObject(rowNumber);
+                                       row.add(value);
+                                   }
+                               }
 
-                                        return row.toArray();
+                               return row.toArray();
                                     });
                 });
     }
