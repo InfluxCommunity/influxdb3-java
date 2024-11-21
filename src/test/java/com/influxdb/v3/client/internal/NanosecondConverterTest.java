@@ -20,7 +20,7 @@ public class NanosecondConverterTest {
                                                  new ArrowType.Timestamp(TimeUnit.SECOND, "UTC"),
                                                  null);
         Field timeFieldSecond = new Field("time", timeTypeSecond, null);
-        timestampNanoSecond = NanosecondConverter.getTimestampNanoSecond(123_456L, timeFieldSecond);
+        timestampNanoSecond = NanosecondConverter.getTimestampNano(123_456L, timeFieldSecond);
         Assertions.assertEquals(
                 BigInteger.valueOf(123_456L)
                           .multiply(BigInteger.valueOf(1_000_000_000)), timestampNanoSecond
@@ -31,7 +31,7 @@ public class NanosecondConverterTest {
                                                       new ArrowType.Timestamp(TimeUnit.MILLISECOND, "UTC"),
                                                       null);
         Field timeFieldMilliSecond = new Field("time", timeTypeMilliSecond, null);
-        timestampNanoSecond = NanosecondConverter.getTimestampNanoSecond(123_456L, timeFieldMilliSecond);
+        timestampNanoSecond = NanosecondConverter.getTimestampNano(123_456L, timeFieldMilliSecond);
         Assertions.assertEquals(
                 BigInteger.valueOf(123_456L)
                           .multiply(BigInteger.valueOf(1_000_000)), timestampNanoSecond
@@ -42,7 +42,7 @@ public class NanosecondConverterTest {
                                                       new ArrowType.Timestamp(TimeUnit.MICROSECOND, "UTC"),
                                                       null);
         Field timeFieldMicroSecond = new Field("time", timeTypeMicroSecond, null);
-        timestampNanoSecond = NanosecondConverter.getTimestampNanoSecond(123_456L, timeFieldMicroSecond);
+        timestampNanoSecond = NanosecondConverter.getTimestampNano(123_456L, timeFieldMicroSecond);
         Assertions.assertEquals(
                 BigInteger.valueOf(123_456L)
                           .multiply(BigInteger.valueOf(1_000)), timestampNanoSecond
@@ -53,7 +53,7 @@ public class NanosecondConverterTest {
                                                       new ArrowType.Timestamp(TimeUnit.NANOSECOND, "UTC"),
                                                       null);
         Field timeFieldNanoSecond = new Field("time", timeTypeNanoSecond, null);
-        timestampNanoSecond = NanosecondConverter.getTimestampNanoSecond(123_456L, timeFieldNanoSecond);
+        timestampNanoSecond = NanosecondConverter.getTimestampNano(123_456L, timeFieldNanoSecond);
         Assertions.assertEquals(BigInteger.valueOf(123_456L), timestampNanoSecond
         );
     }

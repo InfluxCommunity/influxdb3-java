@@ -221,7 +221,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                             } else if ("timestamp".equals(valueType)
                                                     || Objects.equals(schema.getName(), "time")) {
                                                 var timestamp = fieldVectors.get(i).getObject(rowNumber);
-                                                BigInteger time = NanosecondConverter.getTimestampNanoSecond(timestamp, schema);
+                                                BigInteger time = NanosecondConverter.getTimestampNano(timestamp, schema);
                                                 row.add(time);
                                             } else {
                                                 Object value = fieldVectors.get(i).getObject(rowNumber);
