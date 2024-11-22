@@ -3,7 +3,12 @@
 ### Features
 
 1. [#200](https://github.com/InfluxCommunity/influxdb3-java/pull/200): Respect iox::column_type::field metadata when
-   mapping query results into values
+   mapping query results into values.
+   - iox::column_type::field::integer: => Long
+   - iox::column_type::field::uinteger: => Long
+   - iox::column_type::field::float: => Double
+   - iox::column_type::field::string: => String
+   - iox::column_type::field::boolean: => Boolean
 
 ## 0.9.0 [2024-08-12]
 
