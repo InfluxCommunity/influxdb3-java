@@ -21,22 +21,18 @@
  */
 package com.influxdb.v3.client.internal;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.Text;
 
 import com.influxdb.v3.client.PointValues;
+import com.influxdb.v3.client.write.WritePrecision;
 
 
 /**
@@ -82,7 +78,8 @@ final class VectorSchemaRootConverter {
 
             if (metaType == null) {
                 if (Objects.equals(name, "time") && (value instanceof Long || value instanceof LocalDateTime)) {
-                    setTimestamp(value, schema, p);
+                    var timeNano = NanosecondConverter.getTimestampNano(value, schema);
+                    p.setTimestamp(timeNano, WritePrecision.NS);
                 } else {
                     // just push as field If you don't know what type is it
                     p.setField(name, value);
@@ -99,7 +96,8 @@ final class VectorSchemaRootConverter {
             } else if ("tag".equals(valueType) && value instanceof String) {
                 p.setTag(name, (String) value);
             } else if ("timestamp".equals(valueType)) {
-                setTimestamp(value, schema, p);
+                var timeNano = NanosecondConverter.getTimestampNano(value, schema);
+                p.setTimestamp(timeNano, WritePrecision.NS);
             }
         }
         return p;
@@ -128,38 +126,8 @@ final class VectorSchemaRootConverter {
                 p.setBooleanField(name, (Boolean) value);
                 break;
             default:
-        }
-    }
-
-    private void setTimestamp(@Nonnull final Object value,
-                              @Nonnull final Field schema,
-                              @Nonnull final PointValues pointValues) {
-        if (value instanceof Long) {
-            if (schema.getFieldType().getType() instanceof ArrowType.Timestamp) {
-                ArrowType.Timestamp type = (ArrowType.Timestamp) schema.getFieldType().getType();
-                TimeUnit timeUnit;
-                switch (type.getUnit()) {
-                    case SECOND:
-                        timeUnit = TimeUnit.SECONDS;
-                        break;
-                    case MILLISECOND:
-                        timeUnit = TimeUnit.MILLISECONDS;
-                        break;
-                    case MICROSECOND:
-                        timeUnit = TimeUnit.MICROSECONDS;
-                        break;
-                    default:
-                    case NANOSECOND:
-                        timeUnit = TimeUnit.NANOSECONDS;
-                        break;
-                }
-                long nanoseconds = TimeUnit.NANOSECONDS.convert((Long) value, timeUnit);
-                pointValues.setTimestamp(Instant.ofEpochSecond(0, nanoseconds));
-            } else {
-                pointValues.setTimestamp(Instant.ofEpochMilli((Long) value));
-            }
-        } else if (value instanceof LocalDateTime) {
-            pointValues.setTimestamp(((LocalDateTime) value).toInstant(ZoneOffset.UTC));
+                p.setField(name, value);
+                break;
         }
     }
 }
