@@ -59,11 +59,11 @@ final class VectorSchemaRootConverter {
                               @Nonnull final VectorSchemaRoot vector,
                               @Nonnull final List<FieldVector> fieldVectors) {
         PointValues p = new PointValues();
-        for (int i = 0; i < fieldVectors.size(); i++) {
-            var schema = vector.getSchema().getFields().get(i);
-            var value = fieldVectors.get(i).getObject(rowNumber);
-            var name = schema.getName();
-            var metaType = schema.getMetadata().get("iox::column::type");
+        for (FieldVector fieldVector : fieldVectors) {
+            var field = fieldVector.getField();
+            var value = fieldVector.getObject(rowNumber);
+            var name = field.getName();
+            var metaType = field.getMetadata().get("iox::column::type");
 
             if (value instanceof Text) {
                 value = value.toString();
@@ -78,7 +78,7 @@ final class VectorSchemaRootConverter {
 
             if (metaType == null) {
                 if (Objects.equals(name, "time") && (value instanceof Long || value instanceof LocalDateTime)) {
-                    var timeNano = NanosecondConverter.getTimestampNano(value, schema);
+                    var timeNano = NanosecondConverter.getTimestampNano(value, field);
                     p.setTimestamp(timeNano, WritePrecision.NS);
                 } else {
                     // just push as field If you don't know what type is it
@@ -96,7 +96,7 @@ final class VectorSchemaRootConverter {
             } else if ("tag".equals(valueType) && value instanceof String) {
                 p.setTag(name, (String) value);
             } else if ("timestamp".equals(valueType)) {
-                var timeNano = NanosecondConverter.getTimestampNano(value, schema);
+                var timeNano = NanosecondConverter.getTimestampNano(value, field);
                 p.setTimestamp(timeNano, WritePrecision.NS);
             }
         }

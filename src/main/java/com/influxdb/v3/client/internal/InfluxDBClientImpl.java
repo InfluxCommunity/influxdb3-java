@@ -183,51 +183,47 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                   @Nonnull final Map<String, Object> parameters,
                                   @Nonnull final QueryOptions options) {
         return queryData(query, parameters, options)
-                .flatMap(vector -> {
-                    List<FieldVector> fieldVectors = vector.getFieldVectors();
-                    var fields = vector.getSchema().getFields();
-                    return IntStream.range(0, vector.getRowCount())
-                           .mapToObj(rowNumber -> {
-                               ArrayList<Object> row = new ArrayList<>();
-                               for (int i = 0; i < fieldVectors.size(); i++) {
-                                   var schema = fields.get(i);
-                                   var metaType = schema.getMetadata().get("iox::column::type");
-                                   String valueType = metaType != null ? metaType.split("::")[2] : null;
+                .flatMap(vector -> IntStream.range(0, vector.getRowCount())
+                                        .mapToObj(rowNumber -> {
+                           ArrayList<Object> row = new ArrayList<>();
+                           for (FieldVector fieldVector : vector.getFieldVectors()) {
+                               var field = fieldVector.getField();
+                               var metaType = field.getMetadata().get("iox::column::type");
+                               String valueType = metaType != null ? metaType.split("::")[2] : null;
 
-                                   Object value = fieldVectors.get(i).getObject(rowNumber);
-                                   if ("field".equals(valueType)) {
-                                       switch (metaType) {
-                                           case "iox::column_type::field::integer":
-                                           case "iox::column_type::field::uinteger":
-                                               var intValue = (Long) value;
-                                               row.add(intValue);
-                                               break;
-                                           case "iox::column_type::field::float":
-                                               var doubleValue = (Double) value;
-                                               row.add(doubleValue);
-                                               break;
-                                           case "iox::column_type::field::string":
-                                               var textValue = (Text) value;
-                                               row.add(textValue.toString());
-                                               break;
-                                           case "iox::column_type::field::boolean":
-                                               var boolValue = (Boolean) value;
-                                               row.add(boolValue);
-                                               break;
-                                           default:
-                                       }
-                                   } else if ("timestamp".equals(valueType)
-                                           || Objects.equals(schema.getName(), "time")) {
-                                       BigInteger time = NanosecondConverter.getTimestampNano(value, schema);
-                                       row.add(time);
-                                   } else {
-                                       row.add(value);
+                               Object value = fieldVector.getObject(rowNumber);
+                               if ("field".equals(valueType)) {
+                                   switch (metaType) {
+                                       case "iox::column_type::field::integer":
+                                       case "iox::column_type::field::uinteger":
+                                           var intValue = (Long) value;
+                                           row.add(intValue);
+                                           break;
+                                       case "iox::column_type::field::float":
+                                           var doubleValue = (Double) value;
+                                           row.add(doubleValue);
+                                           break;
+                                       case "iox::column_type::field::string":
+                                           var textValue = (Text) value;
+                                           row.add(textValue.toString());
+                                           break;
+                                       case "iox::column_type::field::boolean":
+                                           var boolValue = (Boolean) value;
+                                           row.add(boolValue);
+                                           break;
+                                       default:
                                    }
+                               } else if ("timestamp".equals(valueType)
+                                       || Objects.equals(field.getName(), "time")) {
+                                   BigInteger time = NanosecondConverter.getTimestampNano(value, field);
+                                   row.add(time);
+                               } else {
+                                   row.add(value);
                                }
+                           }
 
-                               return row.toArray();
-                           });
-                });
+                           return row.toArray();
+                       }));
     }
 
     @Nonnull
