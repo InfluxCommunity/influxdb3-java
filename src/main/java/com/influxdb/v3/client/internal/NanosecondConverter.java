@@ -119,12 +119,19 @@ public final class NanosecondConverter {
         return FROM_NANOS.get(precision).apply(nanos);
     }
 
-    public static BigInteger getTimestampNano(@Nonnull final Object value, @Nonnull final Field schema) {
+    /**
+     * Convert Long or LocalDateTime to timestamp nanosecond
+     *
+     * @param value  the time in Long or LocalDateTime
+     * @param field the arrow field metadata
+     * @return the time in nanosecond
+     */
+    public static BigInteger getTimestampNano(@Nonnull final Object value, @Nonnull final Field field) {
         BigInteger result = null;
 
         if (value instanceof Long) {
-            if (schema.getFieldType().getType() instanceof ArrowType.Timestamp) {
-                ArrowType.Timestamp type = (ArrowType.Timestamp) schema.getFieldType().getType();
+            if (field.getFieldType().getType() instanceof ArrowType.Timestamp) {
+                ArrowType.Timestamp type = (ArrowType.Timestamp) field.getFieldType().getType();
                 TimeUnit timeUnit;
                 switch (type.getUnit()) {
                     case SECOND:
@@ -136,8 +143,8 @@ public final class NanosecondConverter {
                     case MICROSECOND:
                         timeUnit = TimeUnit.MICROSECONDS;
                         break;
-                    default:
                     case NANOSECOND:
+                    default:
                         timeUnit = TimeUnit.NANOSECONDS;
                         break;
                 }
