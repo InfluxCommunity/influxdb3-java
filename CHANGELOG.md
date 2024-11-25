@@ -1,4 +1,4 @@
-## 0.10.0 [unreleased]
+## 1.0.0 [unreleased]
 
 ### Features
 
