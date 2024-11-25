@@ -120,7 +120,7 @@ public final class NanosecondConverter {
     }
 
     /**
-     * Convert Long or LocalDateTime to timestamp nanosecond
+     * Convert Long or LocalDateTime to timestamp nanosecond.
      *
      * @param value  the time in Long or LocalDateTime
      * @param field the arrow field metadata
