@@ -22,6 +22,8 @@ import org.apache.arrow.vector.types.pojo.Schema;
 
 public final class VectorSchemaRootUtils {
 
+    private VectorSchemaRootUtils() {}
+
     public static VectorSchemaRoot generateInvalidVectorSchemaRoot() {
         Field testField = generateInvalidIntField("test_field");
         Field testField1 = generateInvalidUnsignedIntField("test_field1");
@@ -189,7 +191,11 @@ public final class VectorSchemaRootUtils {
     private static Field generateInvalidStringField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::string");
-        FieldType stringType = new FieldType(true, new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE), null, metadata);
+        FieldType stringType = new FieldType(true,
+                                             new ArrowType.FloatingPoint(
+                                                     FloatingPointPrecision.DOUBLE),
+                                             null,
+                                             metadata);
         return new Field(fieldName, stringType, null);
     }
 

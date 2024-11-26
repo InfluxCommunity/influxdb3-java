@@ -178,8 +178,8 @@ public class InfluxDBClientTest {
     }
 
     @Test
-    public void testParseQueryWithInvalidMetaData(){
-        try(VectorSchemaRoot vector = VectorSchemaRootUtils.generateInvalidVectorSchemaRoot()) {
+    public void testParseQueryWithInvalidMetaData() {
+        try (VectorSchemaRoot vector = VectorSchemaRootUtils.generateInvalidVectorSchemaRoot()) {
             Object[] objects = VectorSchemaRootConverter.INSTANCE.getArrayObjectFromVectorSchemaRoot(vector, 0);
 
             Assertions.assertThat(objects[0]).isNull();

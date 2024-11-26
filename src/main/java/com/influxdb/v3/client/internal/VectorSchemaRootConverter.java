@@ -109,12 +109,13 @@ public final class VectorSchemaRootConverter {
     }
 
     /**
-     * Set field value for PointValues base on iox::column::type
+     * Set field value for PointValues base on iox::column::type.
      *
-     * @param p    The target PointValues
+     * @param p    The target PointValues.
      * @param fieldName       Field name in PointValues
      * @param value The value to be set
-     * @param metaType The iox::column::type column meta type, eg: iox::column_type::field::integer, iox::column_type::field::float
+     * @param metaType The iox::column::type column meta type,
+     *                 eg: iox::column_type::field::integer, iox::column_type::field::float
      */
     public void setFieldWithMetaType(final PointValues p,
                                       final String fieldName,
@@ -165,13 +166,13 @@ public final class VectorSchemaRootConverter {
     }
 
     /**
-     * Get array of values from VectorSchemaRoot
+     * Get array of values from VectorSchemaRoot.
      *
-     * @param vector    The data return from InfluxDB
+     * @param vector    The data return from InfluxDB.
      * @param rowNumber The row number of data
      * @return  An array of Objects represent for a row of data
      */
-    public Object[] getArrayObjectFromVectorSchemaRoot(VectorSchemaRoot vector, int rowNumber) {
+    public Object[] getArrayObjectFromVectorSchemaRoot(final VectorSchemaRoot vector, final int rowNumber) {
         List<Object> row = new ArrayList<>();
         for (FieldVector fieldVector : vector.getFieldVectors()) {
             var field = fieldVector.getField();

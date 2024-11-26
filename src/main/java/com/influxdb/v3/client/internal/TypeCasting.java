@@ -10,7 +10,7 @@ import org.apache.arrow.vector.util.Text;
 public final class TypeCasting {
 
     /**
-     * Safe casting to long value
+     * Safe casting to long value.
      *
      * @param value object to cast
      * @return long value
@@ -26,7 +26,7 @@ public final class TypeCasting {
     }
 
     /**
-     * Safe casting to double value
+     * Safe casting to double value.
      *
      * @param value object to cast
      * @return double value
@@ -42,7 +42,7 @@ public final class TypeCasting {
     }
 
     /**
-     * Safe casting to string value
+     * Safe casting to string value.
      *
      * @param value object to cast
      * @return string value
