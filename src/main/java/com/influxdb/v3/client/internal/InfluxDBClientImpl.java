@@ -183,7 +183,10 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                 .flatMap(vector -> IntStream.range(0, vector.getRowCount())
                                         .mapToObj(rowNumber ->
                                         VectorSchemaRootConverter.INSTANCE
-                                                                 .getArrayObjectFromVectorSchemaRoot(vector, rowNumber)));
+                                                                 .getArrayObjectFromVectorSchemaRoot(
+                                                                         vector,
+                                                                         rowNumber
+                                                                 )));
     }
 
     @Nonnull
