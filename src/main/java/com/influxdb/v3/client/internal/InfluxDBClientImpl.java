@@ -23,9 +23,7 @@ package com.influxdb.v3.client.internal;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +40,6 @@ import javax.annotation.Nullable;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.util.Text;
 
 import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBClient;
@@ -184,46 +181,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                   @Nonnull final QueryOptions options) {
         return queryData(query, parameters, options)
                 .flatMap(vector -> IntStream.range(0, vector.getRowCount())
-                                        .mapToObj(rowNumber -> {
-                           ArrayList<Object> row = new ArrayList<>();
-                           for (FieldVector fieldVector : vector.getFieldVectors()) {
-                               var field = fieldVector.getField();
-                               var metaType = field.getMetadata().get("iox::column::type");
-                               String valueType = metaType != null ? metaType.split("::")[2] : null;
-
-                               Object value = fieldVector.getObject(rowNumber);
-                               if ("field".equals(valueType)) {
-                                   switch (metaType) {
-                                       case "iox::column_type::field::integer":
-                                       case "iox::column_type::field::uinteger":
-                                           var intValue = (Long) value;
-                                           row.add(intValue);
-                                           break;
-                                       case "iox::column_type::field::float":
-                                           var doubleValue = (Double) value;
-                                           row.add(doubleValue);
-                                           break;
-                                       case "iox::column_type::field::string":
-                                           var textValue = (Text) value;
-                                           row.add(textValue.toString());
-                                           break;
-                                       case "iox::column_type::field::boolean":
-                                           var boolValue = (Boolean) value;
-                                           row.add(boolValue);
-                                           break;
-                                       default:
-                                   }
-                               } else if ("timestamp".equals(valueType)
-                                       || Objects.equals(field.getName(), "time")) {
-                                   BigInteger time = NanosecondConverter.getTimestampNano(value, field);
-                                   row.add(time);
-                               } else {
-                                   row.add(value);
-                               }
-                           }
-
-                           return row.toArray();
-                       }));
+                                        .mapToObj(rowNumber -> VectorSchemaRootConverter.INSTANCE.getArrayObjectFromVectorSchemaRoot(vector, rowNumber)));
     }
 
     @Nonnull

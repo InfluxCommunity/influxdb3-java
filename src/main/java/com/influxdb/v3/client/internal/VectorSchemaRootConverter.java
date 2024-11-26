@@ -21,9 +21,12 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.math.BigInteger;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -42,9 +45,11 @@ import com.influxdb.v3.client.write.WritePrecision;
  * This class is thread-safe.
  */
 @ThreadSafe
-final class VectorSchemaRootConverter {
+public final class VectorSchemaRootConverter {
 
-    static final VectorSchemaRootConverter INSTANCE = new VectorSchemaRootConverter();
+    private static final Logger LOG = Logger.getLogger(VectorSchemaRootConverter.class.getName());
+
+    public static final VectorSchemaRootConverter INSTANCE = new VectorSchemaRootConverter();
 
     /**
      * Converts a given row of data from a VectorSchemaRoot object to PointValues.
@@ -103,8 +108,16 @@ final class VectorSchemaRootConverter {
         return p;
     }
 
-    private void setFieldWithMetaType(final PointValues p,
-                                      final String name,
+    /**
+     * Set field value for PointValues base on iox::column::type
+     *
+     * @param p    The target PointValues
+     * @param fieldName       Field name in PointValues
+     * @param value The value to be set
+     * @param metaType The iox::column::type column meta type, eg: iox::column_type::field::integer, iox::column_type::field::float
+     */
+    public void setFieldWithMetaType(final PointValues p,
+                                      final String fieldName,
                                       final Object value,
                                       final String metaType) {
         if (value == null) {
@@ -114,20 +127,110 @@ final class VectorSchemaRootConverter {
         switch (metaType) {
             case "iox::column_type::field::integer":
             case "iox::column_type::field::uinteger":
-                p.setIntegerField(name, (Long) value);
+                if (value instanceof Long) {
+                    p.setIntegerField(fieldName, TypeCasting.toLongValue(value));
+                } else {
+                    p.setNullField(fieldName);
+                    LOG.warning(String.format("Value of %s is not an Integer", fieldName));
+                }
                 break;
             case "iox::column_type::field::float":
-                p.setFloatField(name, (Double) value);
+                if (value instanceof Double) {
+                    p.setFloatField(fieldName, TypeCasting.toDoubleValue(value));
+                } else {
+                    p.setNullField(fieldName);
+                    LOG.warning(String.format("Value of %s is not a Double", fieldName));
+                }
                 break;
             case "iox::column_type::field::string":
-                p.setStringField(name, (String) value);
+                if (value instanceof String || value instanceof Text) {
+                    p.setStringField(fieldName, TypeCasting.toStringValue(value));
+                } else {
+                    p.setNullField(fieldName);
+                    LOG.warning(String.format("Value of %s is not a String", fieldName));
+                }
                 break;
             case "iox::column_type::field::boolean":
-                p.setBooleanField(name, (Boolean) value);
+                if (value instanceof Boolean) {
+                    p.setBooleanField(fieldName, (Boolean) value);
+                } else {
+                    p.setNullField(fieldName);
+                    LOG.warning(String.format("Value of %s is not a Boolean", fieldName));
+                }
                 break;
             default:
-                p.setField(name, value);
+                p.setField(fieldName, value);
                 break;
         }
+    }
+
+    /**
+     * Get array of values from VectorSchemaRoot
+     *
+     * @param vector    The data return from InfluxDB
+     * @param rowNumber The row number of data
+     * @return  An array of Objects represent for a row of data
+     */
+    public Object[] getArrayObjectFromVectorSchemaRoot(VectorSchemaRoot vector, int rowNumber) {
+        List<Object> row = new ArrayList<>();
+        for (FieldVector fieldVector : vector.getFieldVectors()) {
+            var field = fieldVector.getField();
+            var metaType = field.getMetadata().get("iox::column::type");
+            String valueType = metaType != null ? metaType.split("::")[2] : null;
+            String fieldName = field.getName();
+
+            Object value = fieldVector.getObject(rowNumber);
+            if (value == null) {
+                row.add(null);
+                continue;
+            }
+
+            if ("field".equals(valueType)) {
+                switch (metaType) {
+                    case "iox::column_type::field::integer":
+                    case "iox::column_type::field::uinteger":
+                        if (value instanceof Long) {
+                            row.add(TypeCasting.toLongValue(value));
+                        } else {
+                            row.add(null);
+                            LOG.warning(String.format("Value of %s is not an Integer", fieldName));
+                        }
+                        break;
+                    case "iox::column_type::field::float":
+                        if (value instanceof Double) {
+                            row.add(TypeCasting.toDoubleValue(value));
+                        } else {
+                            row.add(null);
+                            LOG.warning(String.format("Value of %s is not a Double", fieldName));
+                        }
+                        break;
+                    case "iox::column_type::field::string":
+                        if (value instanceof Text || value instanceof String) {
+                            row.add(TypeCasting.toStringValue(value));
+                        } else {
+                            row.add(null);
+                            LOG.warning(String.format("Value of %s is not a String", fieldName));
+                        }
+                        break;
+                    case "iox::column_type::field::boolean":
+                        if (value instanceof Boolean) {
+                            row.add((Boolean) value);
+                        } else {
+                            row.add(null);
+                            LOG.warning(String.format("Value of %s is not a Boolean", fieldName));
+                        }
+                        break;
+                    default:
+                }
+            } else if ("timestamp".equals(valueType)
+                    || Objects.equals(fieldName, "time")) {
+                BigInteger time = NanosecondConverter.getTimestampNano(value, field);
+                row.add(time);
+            } else {
+                row.add(value);
+            }
+        }
+
+        return row.toArray();
     }
 }

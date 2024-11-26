@@ -23,29 +23,21 @@ package com.influxdb.v3.client.internal;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
-import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.BaseFixedWidthVector;
 import org.apache.arrow.vector.BigIntVector;
-import org.apache.arrow.vector.BitVector;
-import org.apache.arrow.vector.Float8Vector;
 import org.apache.arrow.vector.TimeMilliVector;
 import org.apache.arrow.vector.TimeStampVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.types.FloatingPointPrecision;
 import org.apache.arrow.vector.types.TimeUnit;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
-import org.apache.arrow.vector.types.pojo.Schema;
 import org.assertj.core.api.Assertions;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.PointValues;
@@ -131,7 +123,7 @@ class VectorSchemaRootConverterTest {
 
     @Test
     public void testConverterWithMetaType() {
-        try (VectorSchemaRoot root = generateVectorSchemaRoot()) {
+        try (VectorSchemaRoot root = VectorSchemaRootUtils.generateVectorSchemaRoot()) {
             PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
 
             String measurement = pointValues.getMeasurement();
@@ -163,6 +155,57 @@ class VectorSchemaRootConverterTest {
         }
     }
 
+    @Test
+    void setFieldWithMetaTypeInvalidCases() {
+        PointValues pointValues = PointValues.measurement("host");
+
+        VectorSchemaRootConverter vectorSchemaRootConverter = VectorSchemaRootConverter.INSTANCE;
+
+        // Real value is not an Integer case
+        vectorSchemaRootConverter.setFieldWithMetaType(
+                pointValues,
+                "test_field",
+                "string",
+                "iox::column_type::field::integer"
+        );
+        Assertions.assertThat(pointValues.getField("test_field")).isNull();
+
+        // Real value is not an unsigned Integer case
+        vectorSchemaRootConverter.setFieldWithMetaType(
+                pointValues,
+                "test_field",
+                "string",
+                "iox::column_type::field::uinteger"
+        );
+        Assertions.assertThat(pointValues.getField("test_field")).isNull();
+
+        // Real value is not a Float case
+        vectorSchemaRootConverter.setFieldWithMetaType(
+                pointValues,
+                "test_field",
+                "string",
+                "iox::column_type::field::float"
+        );
+        Assertions.assertThat(pointValues.getField("test_field")).isNull();
+
+        // Real value is not a String case
+        vectorSchemaRootConverter.setFieldWithMetaType(
+                pointValues,
+                "test_field",
+                10.5,
+                "iox::column_type::field::string"
+        );
+        Assertions.assertThat(pointValues.getField("test_field")).isNull();
+
+        // Real value is not a Boolean case
+        vectorSchemaRootConverter.setFieldWithMetaType(
+                pointValues,
+                "test_field",
+                10.5,
+                "iox::column_type::field::boolean"
+        );
+        Assertions.assertThat(pointValues.getField("test_field")).isNull();
+    }
 
     @Test
     void timestampWithoutMetadataAndFieldWithoutMetadata() {
@@ -172,7 +215,7 @@ class VectorSchemaRootConverterTest {
         FieldType stringType = new FieldType(true, new ArrowType.Utf8(), null);
         Field field1 = new Field("field1", stringType, null);
 
-        try (VectorSchemaRoot root = initializeVectorSchemaRoot(timeField, field1)) {
+        try (VectorSchemaRoot root = VectorSchemaRootUtils.initializeVectorSchemaRoot(timeField, field1)) {
 
             //
             // set data
@@ -204,7 +247,7 @@ class VectorSchemaRootConverterTest {
         FieldType stringType = new FieldType(true, new ArrowType.Utf8(), null);
         Field measurementField = new Field("measurement", stringType, null);
 
-        try (VectorSchemaRoot root = initializeVectorSchemaRoot(measurementField)) {
+        try (VectorSchemaRoot root = VectorSchemaRootUtils.initializeVectorSchemaRoot(measurementField)) {
 
             //
             // set data
@@ -263,117 +306,6 @@ class VectorSchemaRootConverterTest {
         FieldType timeType = new FieldType(true, arrowType, null, metadata);
         Field timeField = new Field("timestamp", timeType, null);
 
-        return initializeVectorSchemaRoot(timeField);
+        return VectorSchemaRootUtils.initializeVectorSchemaRoot(timeField);
     }
-
-    @NotNull
-    private VectorSchemaRoot initializeVectorSchemaRoot(@Nonnull final Field... fields) {
-
-        Schema schema = new Schema(Arrays.asList(fields));
-
-        VectorSchemaRoot root = VectorSchemaRoot.create(schema, new RootAllocator(Long.MAX_VALUE));
-        root.allocateNew();
-
-        return root;
-    }
-
-    public VectorSchemaRoot generateVectorSchemaRoot() {
-        Field measurementField = generateStringField("measurement");
-        Field timeField = generateTimeField();
-        Field memTotalField = generateIntField("mem_total");
-        Field diskFreeField = generateUnsignedIntField("disk_free");
-        Field temperatureField = generateFloatField("temperature");
-        Field nameField = generateStringField("name");
-        Field isActiveField = generateBoolField("isActive");
-        List<Field> fields = List.of(measurementField,
-                                     timeField,
-                                     memTotalField,
-                                     diskFreeField,
-                                     temperatureField,
-                                     nameField,
-                                     isActiveField);
-
-        VectorSchemaRoot root = initializeVectorSchemaRoot(fields.toArray(new Field[0]));
-        VarCharVector measurement = (VarCharVector) root.getVector("measurement");
-        measurement.allocateNew();
-        measurement.set(0, "host".getBytes());
-
-        TimeMilliVector timeVector = (TimeMilliVector) root.getVector("time");
-        timeVector.allocateNew();
-        timeVector.setSafe(0, 123_456);
-
-        BigIntVector intVector = (BigIntVector) root.getVector("mem_total");
-        intVector.allocateNew();
-        intVector.set(0, 2048);
-
-        BigIntVector unsignedIntVector = (BigIntVector) root.getVector("disk_free");
-        unsignedIntVector.allocateNew();
-        unsignedIntVector.set(0, 1_000_000);
-
-        Float8Vector floatVector = (Float8Vector) root.getVector("temperature");
-        floatVector.allocateNew();
-        floatVector.set(0, 100.8766f);
-
-        VarCharVector stringVector = (VarCharVector) root.getVector("name");
-        stringVector.allocateNew();
-        stringVector.setSafe(0, "intel".getBytes());
-
-        BitVector boolVector = (BitVector) root.getVector("isActive");
-        boolVector.allocateNew();
-        boolVector.setSafe(0, 1);
-
-        return root;
-    }
-
-    private Field generateIntField(final String fieldName) {
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("iox::column::type", "iox::column_type::field::integer");
-        FieldType intType = new FieldType(true,
-                                          new ArrowType.Int(64, true),
-                                          null,
-                                          metadata);
-        return new Field(fieldName, intType, null);
-    }
-
-    private Field generateUnsignedIntField(final String fieldName) {
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("iox::column::type", "iox::column_type::field::uinteger");
-        FieldType intType = new FieldType(true,
-                                          new ArrowType.Int(64, true),
-                                          null,
-                                          metadata);
-        return new Field(fieldName, intType, null);
-    }
-
-    private Field generateFloatField(final String fieldName) {
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("iox::column::type", "iox::column_type::field::float");
-        FieldType floatType = new FieldType(true,
-                                            new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE),
-                                            null,
-                                            metadata);
-        return new Field(fieldName, floatType, null);
-    }
-
-    private Field generateStringField(final String fieldName) {
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("iox::column::type", "iox::column_type::field::string");
-        FieldType stringType = new FieldType(true, new ArrowType.Utf8(), null, metadata);
-        return new Field(fieldName, stringType, null);
-    }
-
-    private Field generateBoolField(final String fieldName) {
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put("iox::column::type", "iox::column_type::field::boolean");
-        FieldType boolType = new FieldType(true, new ArrowType.Bool(), null, metadata);
-        return new Field(fieldName, boolType, null);
-    }
-
-    private Field generateTimeField() {
-        FieldType timeType = new FieldType(true,
-                                           new ArrowType.Time(TimeUnit.MILLISECOND, 32),
-                                           null);
-        return new Field("time", timeType, null);
-    }
-
 }

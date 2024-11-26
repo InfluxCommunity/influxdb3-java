@@ -436,6 +436,17 @@ public final class PointValues {
   }
 
   /**
+   * Add a null field.
+   *
+   * @param field the field name
+   * @return this
+   */
+  @Nonnull
+  public PointValues setNullField(@Nonnull final String field) {
+    return putField(field, null);
+  }
+
+  /**
    * Adds or replaces fields for this point.
    *
    * @param fieldsToAdd the Map of fields to add

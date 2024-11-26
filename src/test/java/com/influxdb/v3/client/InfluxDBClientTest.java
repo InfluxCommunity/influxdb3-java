@@ -28,14 +28,17 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import org.apache.arrow.vector.VectorSchemaRoot;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import com.influxdb.v3.client.internal.VectorSchemaRootConverter;
+import com.influxdb.v3.client.internal.VectorSchemaRootUtils;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
-class InfluxDBClientTest {
+public class InfluxDBClientTest {
 
     @Test
     void requiredHost() {
@@ -173,4 +176,18 @@ class InfluxDBClientTest {
             }
         }
     }
+
+    @Test
+    public void testParseQueryWithInvalidMetaData(){
+        try(VectorSchemaRoot vector = VectorSchemaRootUtils.generateInvalidVectorSchemaRoot()) {
+            Object[] objects = VectorSchemaRootConverter.INSTANCE.getArrayObjectFromVectorSchemaRoot(vector, 0);
+
+            Assertions.assertThat(objects[0]).isNull();
+            Assertions.assertThat(objects[1]).isNull();
+            Assertions.assertThat(objects[2]).isNull();
+            Assertions.assertThat(objects[3]).isNull();
+            Assertions.assertThat(objects[4]).isNull();
+        }
+    }
+
 }
