@@ -22,7 +22,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 
 public final class VectorSchemaRootUtils {
 
-    private VectorSchemaRootUtils() {}
+    private VectorSchemaRootUtils() { }
 
     public static VectorSchemaRoot generateInvalidVectorSchemaRoot() {
         Field testField = generateInvalidIntField("test_field");

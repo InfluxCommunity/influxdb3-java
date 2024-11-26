@@ -5,9 +5,11 @@ import javax.annotation.Nonnull;
 import org.apache.arrow.vector.util.Text;
 
 /**
- * Functions for safe type casting
+ * Functions for safe type casting.
  */
 public final class TypeCasting {
+
+    private TypeCasting() { }
 
     /**
      * Safe casting to long value.

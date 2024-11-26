@@ -181,7 +181,9 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                   @Nonnull final QueryOptions options) {
         return queryData(query, parameters, options)
                 .flatMap(vector -> IntStream.range(0, vector.getRowCount())
-                                        .mapToObj(rowNumber -> VectorSchemaRootConverter.INSTANCE.getArrayObjectFromVectorSchemaRoot(vector, rowNumber)));
+                                        .mapToObj(rowNumber ->
+                                        VectorSchemaRootConverter.INSTANCE
+                                                                 .getArrayObjectFromVectorSchemaRoot(vector, rowNumber)));
     }
 
     @Nonnull
