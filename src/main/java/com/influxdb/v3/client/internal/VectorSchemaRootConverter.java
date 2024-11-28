@@ -32,6 +32,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.Text;
 
 import com.influxdb.v3.client.PointValues;
@@ -55,39 +56,37 @@ public final class VectorSchemaRootConverter {
      * Converts a given row of data from a VectorSchemaRoot object to PointValues.
      *
      * @param rowNumber    the index of the row to be converted
-     * @param vector       the VectorSchemaRoot object containing the data
      * @param fieldVectors the list of FieldVector objects representing the data columns
      * @return the converted PointValues object
      */
     @Nonnull
     PointValues toPointValues(final int rowNumber,
-                              @Nonnull final VectorSchemaRoot vector,
                               @Nonnull final List<FieldVector> fieldVectors) {
         PointValues p = new PointValues();
         for (FieldVector fieldVector : fieldVectors) {
             var field = fieldVector.getField();
             var value = fieldVector.getObject(rowNumber);
-            var name = field.getName();
+            var fieldName = field.getName();
             var metaType = field.getMetadata().get("iox::column::type");
 
             if (value instanceof Text) {
                 value = value.toString();
             }
 
-            if ((Objects.equals(name, "measurement")
-                    || Objects.equals(name, "iox::measurement"))
+            if ((Objects.equals(fieldName, "measurement")
+                    || Objects.equals(fieldName, "iox::measurement"))
                     && value instanceof String) {
                 p.setMeasurement((String) value);
                 continue;
             }
 
             if (metaType == null) {
-                if (Objects.equals(name, "time") && (value instanceof Long || value instanceof LocalDateTime)) {
+                if (Objects.equals(fieldName, "time") && (value instanceof Long || value instanceof LocalDateTime)) {
                     var timeNano = NanosecondConverter.getTimestampNano(value, field);
                     p.setTimestamp(timeNano, WritePrecision.NS);
                 } else {
                     // just push as field If you don't know what type is it
-                    p.setField(name, value);
+                    p.setField(fieldName, value);
                 }
 
                 continue;
@@ -97,71 +96,68 @@ public final class VectorSchemaRootConverter {
             String valueType = parts[2];
 
             if ("field".equals(valueType)) {
-                setFieldWithMetaType(p, name, value, metaType);
+                var fieldValue = getMappedValue(valueType, metaType, value, fieldName, field);
+                p.setField(fieldName, fieldValue);
             } else if ("tag".equals(valueType) && value instanceof String) {
-                p.setTag(name, (String) value);
+                var tag = (String) getMappedValue(valueType, metaType, value, fieldName, field);
+                p.setTag(fieldName, tag);
             } else if ("timestamp".equals(valueType)) {
-                var timeNano = NanosecondConverter.getTimestampNano(value, field);
+                var timeNano = (BigInteger) getMappedValue(valueType, metaType, value, fieldName, field);
                 p.setTimestamp(timeNano, WritePrecision.NS);
             }
         }
         return p;
     }
 
-    /**
-     * Set field value for PointValues base on iox::column::type.
-     *
-     * @param p    The target PointValues.
-     * @param fieldName       Field name in PointValues
-     * @param value The value to be set
-     * @param metaType The iox::column::type column meta type,
-     *                 eg: iox::column_type::field::integer, iox::column_type::field::float
-     */
-    public void setFieldWithMetaType(final PointValues p,
-                                      final String fieldName,
-                                      final Object value,
-                                      final String metaType) {
+    public Object getMappedValue(final String valueType,
+                                         final String metaType,
+                                         final Object value,
+                                         final String fieldName,
+                                         final Field field) {
         if (value == null) {
-            return;
+            return null;
         }
 
-        switch (metaType) {
-            case "iox::column_type::field::integer":
-            case "iox::column_type::field::uinteger":
-                if (value instanceof Long) {
-                    p.setIntegerField(fieldName, TypeCasting.toLongValue(value));
-                } else {
-                    p.setNullField(fieldName);
-                    LOG.warning(String.format("Value of %s is not an Integer", fieldName));
-                }
-                break;
-            case "iox::column_type::field::float":
-                if (value instanceof Double) {
-                    p.setFloatField(fieldName, TypeCasting.toDoubleValue(value));
-                } else {
-                    p.setNullField(fieldName);
-                    LOG.warning(String.format("Value of %s is not a Double", fieldName));
-                }
-                break;
-            case "iox::column_type::field::string":
-                if (value instanceof String || value instanceof Text) {
-                    p.setStringField(fieldName, TypeCasting.toStringValue(value));
-                } else {
-                    p.setNullField(fieldName);
-                    LOG.warning(String.format("Value of %s is not a String", fieldName));
-                }
-                break;
-            case "iox::column_type::field::boolean":
-                if (value instanceof Boolean) {
-                    p.setBooleanField(fieldName, (Boolean) value);
-                } else {
-                    p.setNullField(fieldName);
-                    LOG.warning(String.format("Value of %s is not a Boolean", fieldName));
-                }
-                break;
-            default:
-                p.setField(fieldName, value);
-                break;
+        if ("field".equals(valueType)) {
+            switch (metaType) {
+                case "iox::column_type::field::integer":
+                case "iox::column_type::field::uinteger":
+                    if (value instanceof Number) {
+                        return TypeCasting.toLongValue(value);
+                    } else {
+                        LOG.warning(String.format("Value of %s is not an Integer", fieldName));
+                        return value;
+                    }
+                case "iox::column_type::field::float":
+                    if (value instanceof Number) {
+                        return TypeCasting.toDoubleValue(value);
+                    } else {
+                        LOG.warning(String.format("Value of %s is not a Double", fieldName));
+                        return value;
+                    }
+                case "iox::column_type::field::string":
+                    if (value instanceof Text || value instanceof String) {
+                        return TypeCasting.toStringValue(value);
+                    } else {
+                        LOG.warning(String.format("Value of %s is not a String", fieldName));
+                        return value;
+                    }
+                case "iox::column_type::field::boolean":
+                    if (value instanceof Boolean) {
+                        return (Boolean) value;
+                    } else {
+                        LOG.warning(String.format("Value of %s is not a Boolean", fieldName));
+                        return value;
+                    }
+                default:
+                    return value;
+            }
+        } else if ("timestamp".equals(valueType) || Objects.equals(fieldName, "time")) {
+            return NanosecondConverter.getTimestampNano(value, field);
+        } else if ("tag".equals(valueType)) {
+            return TypeCasting.toStringValue(value);
+        } else {
+            return value;
         }
     }
 
@@ -178,58 +174,13 @@ public final class VectorSchemaRootConverter {
             var field = fieldVector.getField();
             var metaType = field.getMetadata().get("iox::column::type");
             String valueType = metaType != null ? metaType.split("::")[2] : null;
-            String fieldName = field.getName();
 
-            Object value = fieldVector.getObject(rowNumber);
-            if (value == null) {
-                row.add(null);
-                continue;
-            }
-
-            if ("field".equals(valueType)) {
-                switch (metaType) {
-                    case "iox::column_type::field::integer":
-                    case "iox::column_type::field::uinteger":
-                        if (value instanceof Long) {
-                            row.add(TypeCasting.toLongValue(value));
-                        } else {
-                            row.add(null);
-                            LOG.warning(String.format("Value of %s is not an Integer", fieldName));
-                        }
-                        break;
-                    case "iox::column_type::field::float":
-                        if (value instanceof Double) {
-                            row.add(TypeCasting.toDoubleValue(value));
-                        } else {
-                            row.add(null);
-                            LOG.warning(String.format("Value of %s is not a Double", fieldName));
-                        }
-                        break;
-                    case "iox::column_type::field::string":
-                        if (value instanceof Text || value instanceof String) {
-                            row.add(TypeCasting.toStringValue(value));
-                        } else {
-                            row.add(null);
-                            LOG.warning(String.format("Value of %s is not a String", fieldName));
-                        }
-                        break;
-                    case "iox::column_type::field::boolean":
-                        if (value instanceof Boolean) {
-                            row.add((Boolean) value);
-                        } else {
-                            row.add(null);
-                            LOG.warning(String.format("Value of %s is not a Boolean", fieldName));
-                        }
-                        break;
-                    default:
-                }
-            } else if ("timestamp".equals(valueType)
-                    || Objects.equals(fieldName, "time")) {
-                BigInteger time = NanosecondConverter.getTimestampNano(value, field);
-                row.add(time);
-            } else {
-                row.add(value);
-            }
+            var value = getMappedValue(valueType,
+                                       metaType,
+                                       fieldVector.getObject(rowNumber),
+                                       field.getName(),
+                                       field);
+            row.add(value);
         }
 
         return row.toArray();

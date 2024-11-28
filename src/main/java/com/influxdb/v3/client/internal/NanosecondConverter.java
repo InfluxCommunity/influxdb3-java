@@ -150,23 +150,20 @@ public final class NanosecondConverter {
                 }
                 long nanoseconds = TimeUnit.NANOSECONDS.convert((Long) value, timeUnit);
                 Instant instant = Instant.ofEpochSecond(0, nanoseconds);
-                result = convertInstantToNano(instant, WritePrecision.NS);
+                result = convertInstantToNano(instant);
             } else {
                 Instant instant = Instant.ofEpochMilli((Long) value);
-                result = convertInstantToNano(instant, WritePrecision.NS);
+                result = convertInstantToNano(instant);
             }
         } else if (value instanceof LocalDateTime) {
             Instant instant = ((LocalDateTime) value).toInstant(ZoneOffset.UTC);
-            result = convertInstantToNano(instant, WritePrecision.NS);
+            result = convertInstantToNano(instant);
         }
         return result;
     }
 
-    private static BigInteger convertInstantToNano(final Instant instant, final WritePrecision precision) {
+    private static BigInteger convertInstantToNano(final Instant instant) {
         var writePrecision = WritePrecision.NS;
-        if (precision != null) {
-            writePrecision = precision;
-        }
         BigInteger convertedTime = NanosecondConverter.convert(instant, writePrecision);
         return NanosecondConverter.convertToNanos(convertedTime, writePrecision);
     }

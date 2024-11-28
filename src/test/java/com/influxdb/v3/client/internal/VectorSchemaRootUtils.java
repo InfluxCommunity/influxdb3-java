@@ -142,7 +142,7 @@ public final class VectorSchemaRootUtils {
         return root;
     }
 
-    private static Field generateIntField(final String fieldName) {
+    public static Field generateIntField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::integer");
         FieldType intType = new FieldType(true,
@@ -152,7 +152,7 @@ public final class VectorSchemaRootUtils {
         return new Field(fieldName, intType, null);
     }
 
-    private static Field generateInvalidIntField(final String fieldName) {
+    public static Field generateInvalidIntField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::integer");
         FieldType intType = new FieldType(true,
@@ -162,7 +162,7 @@ public final class VectorSchemaRootUtils {
         return new Field(fieldName, intType, null);
     }
 
-    private static Field generateUnsignedIntField(final String fieldName) {
+    public static Field generateUnsignedIntField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::uinteger");
         FieldType intType = new FieldType(true,
@@ -172,7 +172,7 @@ public final class VectorSchemaRootUtils {
         return new Field(fieldName, intType, null);
     }
 
-    private static Field generateInvalidUnsignedIntField(final String fieldName) {
+    public static Field generateInvalidUnsignedIntField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::uinteger");
         FieldType intType = new FieldType(true,
@@ -182,7 +182,7 @@ public final class VectorSchemaRootUtils {
         return new Field(fieldName, intType, null);
     }
 
-    private static Field generateFloatField(final String fieldName) {
+    public static Field generateFloatField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::float");
         FieldType floatType = new FieldType(true,
@@ -192,7 +192,7 @@ public final class VectorSchemaRootUtils {
         return new Field(fieldName, floatType, null);
     }
 
-    private static Field generateInvalidFloatField(final String fieldName) {
+    public static Field generateInvalidFloatField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::float");
         FieldType floatType = new FieldType(true,
@@ -202,14 +202,14 @@ public final class VectorSchemaRootUtils {
         return new Field(fieldName, floatType, null);
     }
 
-    private static Field generateStringField(final String fieldName) {
+    public static Field generateStringField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::string");
         FieldType stringType = new FieldType(true, new ArrowType.Utf8(), null, metadata);
         return new Field(fieldName, stringType, null);
     }
 
-    private static Field generateInvalidStringField(final String fieldName) {
+    public static Field generateInvalidStringField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::string");
         FieldType stringType = new FieldType(true,
@@ -220,21 +220,21 @@ public final class VectorSchemaRootUtils {
         return new Field(fieldName, stringType, null);
     }
 
-    private static Field generateBoolField(final String fieldName) {
+    public static Field generateBoolField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::boolean");
         FieldType boolType = new FieldType(true, new ArrowType.Bool(), null, metadata);
         return new Field(fieldName, boolType, null);
     }
 
-    private static Field generateInvalidBoolField(final String fieldName) {
+    public static Field generateInvalidBoolField(final String fieldName) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("iox::column::type", "iox::column_type::field::boolean");
         FieldType boolType = new FieldType(true, new ArrowType.Utf8(), null, metadata);
         return new Field(fieldName, boolType, null);
     }
 
-    private static Field generateTimeField() {
+    public static Field generateTimeField() {
         FieldType timeType = new FieldType(true,
                                            new ArrowType.Time(TimeUnit.MILLISECOND, 32),
                                            null);

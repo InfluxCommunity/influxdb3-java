@@ -73,7 +73,7 @@ public final class TypeCasting {
     public static String toStringValue(@Nonnull final Object value) {
 
         if (Text.class.isAssignableFrom(value.getClass())) {
-            return ((Text) value).toString();
+            return value.toString();
         }
 
         return (String) value;

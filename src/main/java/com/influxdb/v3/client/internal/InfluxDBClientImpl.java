@@ -218,7 +218,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                     return IntStream
                             .range(0, vector.getRowCount())
                             .mapToObj(row ->
-                                    VectorSchemaRootConverter.INSTANCE.toPointValues(row, vector, fieldVectors));
+                                    VectorSchemaRootConverter.INSTANCE.toPointValues(row, fieldVectors));
                 });
     }
 

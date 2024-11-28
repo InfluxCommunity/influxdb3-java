@@ -48,7 +48,7 @@ class VectorSchemaRootConverterTest {
     void timestampAsArrowTime() {
         try (VectorSchemaRoot root = createTimeVector(1234, new ArrowType.Time(TimeUnit.MILLISECOND, 32))) {
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(1_234 * 1_000_000);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
@@ -59,7 +59,7 @@ class VectorSchemaRootConverterTest {
     void timestampAsArrowTimestampSecond() {
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.SECOND, "UTC"))) {
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(45_678L * 1_000_000_000);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
@@ -70,7 +70,7 @@ class VectorSchemaRootConverterTest {
     void timestampAsArrowTimestampMillisecond() {
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.MILLISECOND, "UTC"))) {
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(45_678L * 1_000_000);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
@@ -81,7 +81,7 @@ class VectorSchemaRootConverterTest {
     void timestampAsArrowTimestampMicrosecond() {
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.MICROSECOND, "UTC"))) {
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(45_678L * 1_000);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
@@ -92,7 +92,7 @@ class VectorSchemaRootConverterTest {
     void timestampAsArrowTimestampNanosecond() {
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Timestamp(TimeUnit.NANOSECOND, "UTC"))) {
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(45_678L);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
@@ -103,7 +103,7 @@ class VectorSchemaRootConverterTest {
     void timestampAsArrowTimestampNanosecondWithoutTimezone() {
         try (VectorSchemaRoot root = createTimeVector(45_978, new ArrowType.Timestamp(TimeUnit.NANOSECOND, null))) {
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(45_978L);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
@@ -114,7 +114,7 @@ class VectorSchemaRootConverterTest {
     void timestampAsArrowInt() {
         try (VectorSchemaRoot root = createTimeVector(45_678, new ArrowType.Int(64, true))) {
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(45_678L * 1_000_000);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
@@ -122,9 +122,105 @@ class VectorSchemaRootConverterTest {
     }
 
     @Test
+    void getMappedValueValidMetaDataInteger() {
+        Field field = VectorSchemaRootUtils.generateIntField("test");
+        String metaType = field.getMetadata().get("iox::column::type");
+        Long value = 1L;
+        String fieldName = field.getName();
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE
+                .getMappedValue("field", metaType, value, fieldName, field);
+        Assertions.assertThat(mappedValue).isEqualTo(value);
+        Assertions.assertThat(mappedValue.getClass()).isEqualTo(Long.class);
+    }
+
+    @Test
+    void getMappedValueInvalidMetaDataInteger() {
+        Field field = VectorSchemaRootUtils.generateInvalidIntField("test");
+        String metaType = field.getMetadata().get("iox::column::type");
+        String value = "1";
+        String fieldName = field.getName();
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE
+                .getMappedValue("field", metaType, value, fieldName, field);
+        Assertions.assertThat(mappedValue).isEqualTo(value);
+        Assertions.assertThat(mappedValue.getClass()).isEqualTo(String.class);
+    }
+
+    @Test
+    void getMappedValueValidMetaDataFloat() {
+        Field field = VectorSchemaRootUtils.generateFloatField("test");
+        String metaType = field.getMetadata().get("iox::column::type");
+        Double value = 1.2;
+        String fieldName = field.getName();
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE
+                .getMappedValue("field", metaType, value, fieldName, field);
+        Assertions.assertThat(mappedValue).isEqualTo(value);
+        Assertions.assertThat(mappedValue.getClass()).isEqualTo(Double.class);
+    }
+
+    @Test
+    void getMappedValueInvalidMetaDataFloat() {
+        Field field = VectorSchemaRootUtils.generateInvalidFloatField("test");
+        String metaType = field.getMetadata().get("iox::column::type");
+        String value = "1.2";
+        String fieldName = field.getName();
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE
+                .getMappedValue("field", metaType, value, fieldName, field);
+        Assertions.assertThat(mappedValue).isEqualTo(value);
+        Assertions.assertThat(mappedValue.getClass()).isEqualTo(String.class);
+    }
+
+    @Test
+    void getMappedValueValidMetaDataString() {
+        Field field = VectorSchemaRootUtils.generateStringField("test");
+        String metaType = field.getMetadata().get("iox::column::type");
+        String value = "string";
+        String fieldName = field.getName();
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE
+                .getMappedValue("field", metaType, value, fieldName, field);
+        Assertions.assertThat(mappedValue).isEqualTo(value);
+        Assertions.assertThat(mappedValue.getClass()).isEqualTo(String.class);
+    }
+
+    @Test
+    void getMappedValueInvalidMetaDataString() {
+        Field field = VectorSchemaRootUtils.generateInvalidStringField("test");
+        String metaType = field.getMetadata().get("iox::column::type");
+        Double value = 1.1;
+        String fieldName = field.getName();
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE
+                .getMappedValue("field", metaType, value, fieldName, field);
+        Assertions.assertThat(mappedValue).isEqualTo(value);
+        Assertions.assertThat(mappedValue.getClass()).isEqualTo(Double.class);
+    }
+
+    @Test
+    void getMappedValueValidMetaDataBoolean() {
+        Field field = VectorSchemaRootUtils.generateBoolField("test");
+        String metaType = field.getMetadata().get("iox::column::type");
+        Boolean value = true;
+        String fieldName = field.getName();
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE
+                .getMappedValue("field", metaType, value, fieldName, field);
+        Assertions.assertThat(mappedValue).isEqualTo(value);
+        Assertions.assertThat(mappedValue.getClass()).isEqualTo(Boolean.class);
+    }
+
+    @Test
+    void getMappedValueInvalidMetaDataBoolean() {
+        Field field = VectorSchemaRootUtils.generateInvalidBoolField("test");
+        String metaType = field.getMetadata().get("iox::column::type");
+        String value = "true";
+        String fieldName = field.getName();
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE
+                .getMappedValue("field", metaType, value, fieldName, field);
+        Assertions.assertThat(mappedValue).isEqualTo(value);
+        Assertions.assertThat(mappedValue.getClass()).isEqualTo(String.class);
+    }
+
+    @Test
     public void testConverterWithMetaType() {
         try (VectorSchemaRoot root = VectorSchemaRootUtils.generateVectorSchemaRoot()) {
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             String measurement = pointValues.getMeasurement();
             Assertions.assertThat(measurement).isEqualTo("host");
@@ -156,58 +252,6 @@ class VectorSchemaRootConverterTest {
     }
 
     @Test
-    void setFieldWithMetaTypeInvalidCases() {
-        PointValues pointValues = PointValues.measurement("host");
-
-        VectorSchemaRootConverter vectorSchemaRootConverter = VectorSchemaRootConverter.INSTANCE;
-
-        // Real value is not an Integer case
-        vectorSchemaRootConverter.setFieldWithMetaType(
-                pointValues,
-                "test_field",
-                "string",
-                "iox::column_type::field::integer"
-        );
-        Assertions.assertThat(pointValues.getField("test_field")).isNull();
-
-        // Real value is not an unsigned Integer case
-        vectorSchemaRootConverter.setFieldWithMetaType(
-                pointValues,
-                "test_field",
-                "string",
-                "iox::column_type::field::uinteger"
-        );
-        Assertions.assertThat(pointValues.getField("test_field")).isNull();
-
-        // Real value is not a Float case
-        vectorSchemaRootConverter.setFieldWithMetaType(
-                pointValues,
-                "test_field",
-                "string",
-                "iox::column_type::field::float"
-        );
-        Assertions.assertThat(pointValues.getField("test_field")).isNull();
-
-        // Real value is not a String case
-        vectorSchemaRootConverter.setFieldWithMetaType(
-                pointValues,
-                "test_field",
-                10.5,
-                "iox::column_type::field::string"
-        );
-        Assertions.assertThat(pointValues.getField("test_field")).isNull();
-
-        // Real value is not a Boolean case
-        vectorSchemaRootConverter.setFieldWithMetaType(
-                pointValues,
-                "test_field",
-                10.5,
-                "iox::column_type::field::boolean"
-        );
-        Assertions.assertThat(pointValues.getField("test_field")).isNull();
-    }
-
-    @Test
     void timestampWithoutMetadataAndFieldWithoutMetadata() {
         FieldType timeType = new FieldType(true, new ArrowType.Time(TimeUnit.MILLISECOND, 32), null);
         Field timeField = new Field("time", timeType, null);
@@ -234,7 +278,7 @@ class VectorSchemaRootConverterTest {
             timeVector.setValueCount(1);
             root.setRowCount(1);
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             BigInteger expected = BigInteger.valueOf(123_456L * 1_000_000);
             Assertions.assertThat((BigInteger) pointValues.getTimestamp()).isEqualByComparingTo(expected);
@@ -262,7 +306,7 @@ class VectorSchemaRootConverterTest {
             measurementVector.setValueCount(1);
             root.setRowCount(1);
 
-            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root, root.getFieldVectors());
+            PointValues pointValues = VectorSchemaRootConverter.INSTANCE.toPointValues(0, root.getFieldVectors());
 
             Assertions.assertThat(pointValues.getMeasurement()).isEqualTo("measurementValue");
         }
