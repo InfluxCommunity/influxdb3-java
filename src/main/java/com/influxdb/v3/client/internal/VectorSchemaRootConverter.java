@@ -166,13 +166,13 @@ public final class VectorSchemaRootConverter {
                         return value;
                     }
                 default:
+                    return value;
             }
         } else if ("timestamp".equals(valueType) || Objects.equals(fieldName, "time")) {
             return NanosecondConverter.getTimestampNano(value, field);
         } else {
             return TypeCasting.toStringValue(value);
         }
-        return value;
     }
 
     /**
