@@ -118,11 +118,22 @@ public final class VectorSchemaRootConverter {
             return null;
         }
 
-        var metaType = field.getMetadata().get("iox::column::type");
         var fieldName = field.getName();
+        if ("measurement".equals(fieldName) || "iox::measurement".equals(fieldName)) {
+            return value.toString();
+        }
+
+        var metaType = field.getMetadata().get("iox::column::type");
+        if (metaType == null) {
+            if ("time".equals(fieldName) && (value instanceof Long || value instanceof LocalDateTime)) {
+                return NanosecondConverter.getTimestampNano(value, field);
+            } else {
+                return value;
+            }
+        }
+
         String[] parts = metaType.split("::");
         String valueType = parts[2];
-        
         if ("field".equals(valueType)) {
             switch (metaType) {
                 case "iox::column_type::field::integer":
