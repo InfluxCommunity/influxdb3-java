@@ -169,7 +169,7 @@ public final class VectorSchemaRootConverter {
             }
         } else if ("timestamp".equals(valueType) || Objects.equals(fieldName, "time")) {
             return NanosecondConverter.getTimestampNano(value, field);
-        } else if ("tag".equals(valueType)) {
+        } else {
             return TypeCasting.toStringValue(value);
         }
         return value;
