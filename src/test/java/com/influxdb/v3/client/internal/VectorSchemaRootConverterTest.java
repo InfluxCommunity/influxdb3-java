@@ -124,11 +124,8 @@ class VectorSchemaRootConverterTest {
     @Test
     void getMappedValueValidMetaDataInteger() {
         Field field = VectorSchemaRootUtils.generateIntField("test");
-        String metaType = field.getMetadata().get("iox::column::type");
         Long value = 1L;
-        String fieldName = field.getName();
-        Object mappedValue = VectorSchemaRootConverter.INSTANCE
-                .getMappedValue("field", metaType, value, fieldName, field);
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE.getMappedValue(field, value);
         Assertions.assertThat(mappedValue).isEqualTo(value);
         Assertions.assertThat(mappedValue.getClass()).isEqualTo(Long.class);
     }
@@ -136,11 +133,8 @@ class VectorSchemaRootConverterTest {
     @Test
     void getMappedValueInvalidMetaDataInteger() {
         Field field = VectorSchemaRootUtils.generateInvalidIntField("test");
-        String metaType = field.getMetadata().get("iox::column::type");
         String value = "1";
-        String fieldName = field.getName();
-        Object mappedValue = VectorSchemaRootConverter.INSTANCE
-                .getMappedValue("field", metaType, value, fieldName, field);
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE.getMappedValue(field, value);
         Assertions.assertThat(mappedValue).isEqualTo(value);
         Assertions.assertThat(mappedValue.getClass()).isEqualTo(String.class);
     }
@@ -148,11 +142,8 @@ class VectorSchemaRootConverterTest {
     @Test
     void getMappedValueValidMetaDataFloat() {
         Field field = VectorSchemaRootUtils.generateFloatField("test");
-        String metaType = field.getMetadata().get("iox::column::type");
         Double value = 1.2;
-        String fieldName = field.getName();
-        Object mappedValue = VectorSchemaRootConverter.INSTANCE
-                .getMappedValue("field", metaType, value, fieldName, field);
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE.getMappedValue(field, value);
         Assertions.assertThat(mappedValue).isEqualTo(value);
         Assertions.assertThat(mappedValue.getClass()).isEqualTo(Double.class);
     }
@@ -160,11 +151,8 @@ class VectorSchemaRootConverterTest {
     @Test
     void getMappedValueInvalidMetaDataFloat() {
         Field field = VectorSchemaRootUtils.generateInvalidFloatField("test");
-        String metaType = field.getMetadata().get("iox::column::type");
         String value = "1.2";
-        String fieldName = field.getName();
-        Object mappedValue = VectorSchemaRootConverter.INSTANCE
-                .getMappedValue("field", metaType, value, fieldName, field);
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE.getMappedValue(field, value);
         Assertions.assertThat(mappedValue).isEqualTo(value);
         Assertions.assertThat(mappedValue.getClass()).isEqualTo(String.class);
     }
@@ -172,11 +160,8 @@ class VectorSchemaRootConverterTest {
     @Test
     void getMappedValueValidMetaDataString() {
         Field field = VectorSchemaRootUtils.generateStringField("test");
-        String metaType = field.getMetadata().get("iox::column::type");
         String value = "string";
-        String fieldName = field.getName();
-        Object mappedValue = VectorSchemaRootConverter.INSTANCE
-                .getMappedValue("field", metaType, value, fieldName, field);
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE.getMappedValue(field, value);
         Assertions.assertThat(mappedValue).isEqualTo(value);
         Assertions.assertThat(mappedValue.getClass()).isEqualTo(String.class);
     }
@@ -184,11 +169,8 @@ class VectorSchemaRootConverterTest {
     @Test
     void getMappedValueInvalidMetaDataString() {
         Field field = VectorSchemaRootUtils.generateInvalidStringField("test");
-        String metaType = field.getMetadata().get("iox::column::type");
         Double value = 1.1;
-        String fieldName = field.getName();
-        Object mappedValue = VectorSchemaRootConverter.INSTANCE
-                .getMappedValue("field", metaType, value, fieldName, field);
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE.getMappedValue(field, value);
         Assertions.assertThat(mappedValue).isEqualTo(value);
         Assertions.assertThat(mappedValue.getClass()).isEqualTo(Double.class);
     }
@@ -196,11 +178,8 @@ class VectorSchemaRootConverterTest {
     @Test
     void getMappedValueValidMetaDataBoolean() {
         Field field = VectorSchemaRootUtils.generateBoolField("test");
-        String metaType = field.getMetadata().get("iox::column::type");
         Boolean value = true;
-        String fieldName = field.getName();
-        Object mappedValue = VectorSchemaRootConverter.INSTANCE
-                .getMappedValue("field", metaType, value, fieldName, field);
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE.getMappedValue(field, value);
         Assertions.assertThat(mappedValue).isEqualTo(value);
         Assertions.assertThat(mappedValue.getClass()).isEqualTo(Boolean.class);
     }
@@ -208,11 +187,8 @@ class VectorSchemaRootConverterTest {
     @Test
     void getMappedValueInvalidMetaDataBoolean() {
         Field field = VectorSchemaRootUtils.generateInvalidBoolField("test");
-        String metaType = field.getMetadata().get("iox::column::type");
         String value = "true";
-        String fieldName = field.getName();
-        Object mappedValue = VectorSchemaRootConverter.INSTANCE
-                .getMappedValue("field", metaType, value, fieldName, field);
+        Object mappedValue = VectorSchemaRootConverter.INSTANCE.getMappedValue(field, value);
         Assertions.assertThat(mappedValue).isEqualTo(value);
         Assertions.assertThat(mappedValue.getClass()).isEqualTo(String.class);
     }

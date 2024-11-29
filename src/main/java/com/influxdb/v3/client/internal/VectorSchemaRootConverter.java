@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.arrow.vector.FieldVector;
@@ -92,32 +93,36 @@ public final class VectorSchemaRootConverter {
                 continue;
             }
 
-            String[] parts = metaType.split("::");
-            String valueType = parts[2];
-
+            String valueType = metaType.split("::")[2];
+            Object mappedValue = getMappedValue(field, value);
             if ("field".equals(valueType)) {
-                var fieldValue = getMappedValue(valueType, metaType, value, fieldName, field);
-                p.setField(fieldName, fieldValue);
+                p.setField(fieldName, mappedValue);
             } else if ("tag".equals(valueType) && value instanceof String) {
-                var tag = (String) getMappedValue(valueType, metaType, value, fieldName, field);
-                p.setTag(fieldName, tag);
+                p.setTag(fieldName, (String) mappedValue);
             } else if ("timestamp".equals(valueType)) {
-                var timeNano = (BigInteger) getMappedValue(valueType, metaType, value, fieldName, field);
-                p.setTimestamp(timeNano, WritePrecision.NS);
+                p.setTimestamp((BigInteger) mappedValue, WritePrecision.NS);
             }
         }
         return p;
     }
 
-    public Object getMappedValue(final String valueType,
-                                         final String metaType,
-                                         final Object value,
-                                         final String fieldName,
-                                         final Field field) {
+    /**
+     * Function to cast value return base on metadata from InfluxDB.
+     *
+     * @param field the Field object from Arrow
+     * @param value the value to cast
+     * @return the casted value
+     */
+    public Object getMappedValue(@Nonnull final Field field, @Nullable final Object value) {
         if (value == null) {
             return null;
         }
 
+        var metaType = field.getMetadata().get("iox::column::type");
+        var fieldName = field.getName();
+        String[] parts = metaType.split("::");
+        String valueType = parts[2];
+        
         if ("field".equals(valueType)) {
             switch (metaType) {
                 case "iox::column_type::field::integer":
@@ -171,15 +176,10 @@ public final class VectorSchemaRootConverter {
     public Object[] getArrayObjectFromVectorSchemaRoot(final VectorSchemaRoot vector, final int rowNumber) {
         List<Object> row = new ArrayList<>();
         for (FieldVector fieldVector : vector.getFieldVectors()) {
-            var field = fieldVector.getField();
-            var metaType = field.getMetadata().get("iox::column::type");
-            String valueType = metaType != null ? metaType.split("::")[2] : null;
-
-            var value = getMappedValue(valueType,
-                                       metaType,
-                                       fieldVector.getObject(rowNumber),
-                                       field.getName(),
-                                       field);
+            var value = getMappedValue(
+                    fieldVector.getField(),
+                    fieldVector.getObject(rowNumber)
+            );
             row.add(value);
         }
 
