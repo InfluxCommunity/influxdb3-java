@@ -1,5 +1,9 @@
 ## 0.10.0 [unreleased]
 
+### Dependencies
+
+1. [#202](https://github.com/InfluxCommunity/influxdb3-java/pull/202): Migrate from `flight-grpc` to `flight-core` package.
+
 ## 0.9.0 [2024-08-12]
 
 ### Features
