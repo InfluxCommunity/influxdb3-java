@@ -21,22 +21,22 @@
  */
 package com.influxdb.v3.client.internal;
 
-import java.time.Instant;
+import java.math.BigInteger;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.util.Text;
 
 import com.influxdb.v3.client.PointValues;
+import com.influxdb.v3.client.write.WritePrecision;
 
 
 /**
@@ -46,94 +46,153 @@ import com.influxdb.v3.client.PointValues;
  * This class is thread-safe.
  */
 @ThreadSafe
-final class VectorSchemaRootConverter {
+public final class VectorSchemaRootConverter {
 
-    static final VectorSchemaRootConverter INSTANCE = new VectorSchemaRootConverter();
+    private static final Logger LOG = Logger.getLogger(VectorSchemaRootConverter.class.getName());
+
+    public static final VectorSchemaRootConverter INSTANCE = new VectorSchemaRootConverter();
 
     /**
      * Converts a given row of data from a VectorSchemaRoot object to PointValues.
      *
      * @param rowNumber    the index of the row to be converted
-     * @param vector       the VectorSchemaRoot object containing the data
      * @param fieldVectors the list of FieldVector objects representing the data columns
      * @return the converted PointValues object
      */
     @Nonnull
     PointValues toPointValues(final int rowNumber,
-                              @Nonnull final VectorSchemaRoot vector,
                               @Nonnull final List<FieldVector> fieldVectors) {
         PointValues p = new PointValues();
-        for (int i = 0; i < fieldVectors.size(); i++) {
-            var schema = vector.getSchema().getFields().get(i);
-            var value = fieldVectors.get(i).getObject(rowNumber);
-            var name = schema.getName();
-            var metaType = schema.getMetadata().get("iox::column::type");
+        for (FieldVector fieldVector : fieldVectors) {
+            var field = fieldVector.getField();
+            var value = fieldVector.getObject(rowNumber);
+            var fieldName = field.getName();
+            var metaType = field.getMetadata().get("iox::column::type");
 
             if (value instanceof Text) {
                 value = value.toString();
             }
 
-            if ((Objects.equals(name, "measurement")
-                    || Objects.equals(name, "iox::measurement"))
+            if ((Objects.equals(fieldName, "measurement")
+                    || Objects.equals(fieldName, "iox::measurement"))
                     && value instanceof String) {
                 p.setMeasurement((String) value);
                 continue;
             }
 
             if (metaType == null) {
-                if (Objects.equals(name, "time") && (value instanceof Long || value instanceof LocalDateTime)) {
-                    setTimestamp(value, schema, p);
+                if (Objects.equals(fieldName, "time") && (value instanceof Long || value instanceof LocalDateTime)) {
+                    var timeNano = NanosecondConverter.getTimestampNano(value, field);
+                    p.setTimestamp(timeNano, WritePrecision.NS);
                 } else {
                     // just push as field If you don't know what type is it
-                    p.setField(name, value);
+                    p.setField(fieldName, value);
                 }
 
                 continue;
             }
 
-            String[] parts = metaType.split("::");
-            String valueType = parts[2];
-
+            String valueType = metaType.split("::")[2];
+            Object mappedValue = getMappedValue(field, value);
             if ("field".equals(valueType)) {
-                p.setField(name, value);
+                p.setField(fieldName, mappedValue);
             } else if ("tag".equals(valueType) && value instanceof String) {
-                p.setTag(name, (String) value);
+                p.setTag(fieldName, (String) mappedValue);
             } else if ("timestamp".equals(valueType)) {
-                setTimestamp(value, schema, p);
+                p.setTimestamp((BigInteger) mappedValue, WritePrecision.NS);
             }
         }
         return p;
     }
 
-    private void setTimestamp(@Nonnull final Object value,
-                              @Nonnull final Field schema,
-                              @Nonnull final PointValues pointValues) {
-        if (value instanceof Long) {
-            if (schema.getFieldType().getType() instanceof ArrowType.Timestamp) {
-                ArrowType.Timestamp type = (ArrowType.Timestamp) schema.getFieldType().getType();
-                TimeUnit timeUnit;
-                switch (type.getUnit()) {
-                    case SECOND:
-                        timeUnit = TimeUnit.SECONDS;
-                        break;
-                    case MILLISECOND:
-                        timeUnit = TimeUnit.MILLISECONDS;
-                        break;
-                    case MICROSECOND:
-                        timeUnit = TimeUnit.MICROSECONDS;
-                        break;
-                    default:
-                    case NANOSECOND:
-                        timeUnit = TimeUnit.NANOSECONDS;
-                        break;
-                }
-                long nanoseconds = TimeUnit.NANOSECONDS.convert((Long) value, timeUnit);
-                pointValues.setTimestamp(Instant.ofEpochSecond(0, nanoseconds));
-            } else {
-                pointValues.setTimestamp(Instant.ofEpochMilli((Long) value));
-            }
-        } else if (value instanceof LocalDateTime) {
-            pointValues.setTimestamp(((LocalDateTime) value).toInstant(ZoneOffset.UTC));
+    /**
+     * Function to cast value return base on metadata from InfluxDB.
+     *
+     * @param field the Field object from Arrow
+     * @param value the value to cast
+     * @return the value with the correct type
+     */
+    public Object getMappedValue(@Nonnull final Field field, @Nullable final Object value) {
+        if (value == null) {
+            return null;
         }
+
+        var fieldName = field.getName();
+        if ("measurement".equals(fieldName) || "iox::measurement".equals(fieldName)) {
+            return value.toString();
+        }
+
+        var metaType = field.getMetadata().get("iox::column::type");
+        if (metaType == null) {
+            if ("time".equals(fieldName) && (value instanceof Long || value instanceof LocalDateTime)) {
+                return NanosecondConverter.getTimestampNano(value, field);
+            } else {
+                return value;
+            }
+        }
+
+        String[] parts = metaType.split("::");
+        String valueType = parts[2];
+        if ("field".equals(valueType)) {
+            switch (metaType) {
+                case "iox::column_type::field::integer":
+                case "iox::column_type::field::uinteger":
+                    if (value instanceof Number) {
+                        return TypeCasting.toLongValue(value);
+                    } else {
+                        LOG.warning(String.format("Value %s is not an Long", value));
+                        return value;
+                    }
+                case "iox::column_type::field::float":
+                    if (value instanceof Number) {
+                        return TypeCasting.toDoubleValue(value);
+                    } else {
+                        LOG.warning(String.format("Value %s is not a Double", value));
+                        return value;
+                    }
+                case "iox::column_type::field::string":
+                    if (value instanceof Text || value instanceof String) {
+                        return TypeCasting.toStringValue(value);
+                    } else {
+                        LOG.warning(String.format("Value %s is not a String", value));
+                        return value;
+                    }
+                case "iox::column_type::field::boolean":
+                    if (value instanceof Boolean) {
+                        return value;
+                    } else {
+                        LOG.warning(String.format("Value %s is not a Boolean", value));
+                        return value;
+                    }
+                default:
+                    return value;
+            }
+        } else if ("timestamp".equals(valueType) || Objects.equals(fieldName, "time")) {
+            return NanosecondConverter.getTimestampNano(value, field);
+        } else {
+            return TypeCasting.toStringValue(value);
+        }
+    }
+
+    /**
+     * Get array of values from VectorSchemaRoot.
+     *
+     * @param vector    The data return from InfluxDB.
+     * @param rowNumber The row number of data
+     * @return  An array of Objects represents a row of data
+     */
+    public Object[] getArrayObjectFromVectorSchemaRoot(@Nonnull final VectorSchemaRoot vector, final int rowNumber) {
+        List<FieldVector> fieldVectors = vector.getFieldVectors();
+        int columnSize = fieldVectors.size();
+        var row = new Object[columnSize];
+        for (int i = 0; i < columnSize; i++) {
+            FieldVector fieldVector = fieldVectors.get(i);
+            row[i] = getMappedValue(
+                    fieldVector.getField(),
+                    fieldVector.getObject(rowNumber)
+            );
+        }
+
+        return row;
     }
 }
