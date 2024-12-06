@@ -182,10 +182,11 @@ public final class VectorSchemaRootConverter {
      * @return  An array of Objects represents a row of data
      */
     public Object[] getArrayObjectFromVectorSchemaRoot(@Nonnull final VectorSchemaRoot vector, final int rowNumber) {
-        int columnSize = vector.getFieldVectors().size();
+        List<FieldVector> fieldVectors = vector.getFieldVectors();
+        int columnSize = fieldVectors.size();
         var row = new Object[columnSize];
         for (int i = 0; i < columnSize; i++) {
-            FieldVector fieldVector = vector.getVector(i);
+            FieldVector fieldVector = fieldVectors.get(i);
             row[i] = getMappedValue(
                     fieldVector.getField(),
                     fieldVector.getObject(rowNumber)
