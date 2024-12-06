@@ -111,7 +111,7 @@ public final class VectorSchemaRootConverter {
      *
      * @param field the Field object from Arrow
      * @param value the value to cast
-     * @return the casted value
+     * @return the value with the correct type
      */
     public Object getMappedValue(@Nonnull final Field field, @Nullable final Object value) {
         if (value == null) {
@@ -141,28 +141,28 @@ public final class VectorSchemaRootConverter {
                     if (value instanceof Number) {
                         return TypeCasting.toLongValue(value);
                     } else {
-                        LOG.warning(String.format("Value of %s is not an Integer", fieldName));
+                        LOG.warning(String.format("Value %s is not an Long", value));
                         return value;
                     }
                 case "iox::column_type::field::float":
                     if (value instanceof Number) {
                         return TypeCasting.toDoubleValue(value);
                     } else {
-                        LOG.warning(String.format("Value of %s is not a Double", fieldName));
+                        LOG.warning(String.format("Value %s is not a Double", value));
                         return value;
                     }
                 case "iox::column_type::field::string":
                     if (value instanceof Text || value instanceof String) {
                         return TypeCasting.toStringValue(value);
                     } else {
-                        LOG.warning(String.format("Value of %s is not a String", fieldName));
+                        LOG.warning(String.format("Value %s is not a String", value));
                         return value;
                     }
                 case "iox::column_type::field::boolean":
                     if (value instanceof Boolean) {
-                        return (Boolean) value;
+                        return value;
                     } else {
-                        LOG.warning(String.format("Value of %s is not a Boolean", fieldName));
+                        LOG.warning(String.format("Value %s is not a Boolean", value));
                         return value;
                     }
                 default:
@@ -180,18 +180,19 @@ public final class VectorSchemaRootConverter {
      *
      * @param vector    The data return from InfluxDB.
      * @param rowNumber The row number of data
-     * @return  An array of Objects represent for a row of data
+     * @return  An array of Objects represents a row of data
      */
-    public Object[] getArrayObjectFromVectorSchemaRoot(final VectorSchemaRoot vector, final int rowNumber) {
-        List<Object> row = new ArrayList<>();
-        for (FieldVector fieldVector : vector.getFieldVectors()) {
-            var value = getMappedValue(
+    public Object[] getArrayObjectFromVectorSchemaRoot(@Nonnull final VectorSchemaRoot vector, final int rowNumber) {
+        int columnSize = vector.getFieldVectors().size();
+        var row = new Object[columnSize];
+        for (int i = 0; i < columnSize; i++) {
+            FieldVector fieldVector = vector.getVector(i);
+            row[i] = getMappedValue(
                     fieldVector.getField(),
                     fieldVector.getObject(rowNumber)
             );
-            row.add(value);
         }
 
-        return row.toArray();
+        return row;
     }
 }

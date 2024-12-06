@@ -126,6 +126,7 @@ public final class NanosecondConverter {
      * @param field the arrow field metadata
      * @return the time in nanosecond
      */
+    @Nullable
     public static BigInteger getTimestampNano(@Nonnull final Object value, @Nonnull final Field field) {
         BigInteger result = null;
 
@@ -162,7 +163,8 @@ public final class NanosecondConverter {
         return result;
     }
 
-    private static BigInteger convertInstantToNano(final Instant instant) {
+    @Nullable
+    private static BigInteger convertInstantToNano(@Nonnull final Instant instant) {
         var writePrecision = WritePrecision.NS;
         BigInteger convertedTime = NanosecondConverter.convert(instant, writePrecision);
         return NanosecondConverter.convertToNanos(convertedTime, writePrecision);
