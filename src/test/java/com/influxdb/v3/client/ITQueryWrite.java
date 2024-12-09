@@ -230,21 +230,6 @@ class ITQueryWrite {
     Motivated by EAR 5718, useful exception INVALID_ARGUMENT was being masked by
     INTERNAL: http2 exception - Header size exceeded max allowed size (10240).
      */
-    public String makeLengthyTag(final int length, final int maxPartLength, final byte separator) {
-        final String legalVals = "0123456789abcdefghijklmnopqrstuvwxyz";
-        byte[] bytes = new byte[length];
-        int nextPartAddress = 0;
-        for (int i = 0; i < length; i++) {
-            if (i == nextPartAddress) {
-                bytes[i] = separator;
-                nextPartAddress = i + (int) (Math.random() * (maxPartLength - 3));
-            } else {
-                bytes[i] = legalVals.getBytes()[(int) (Math.random() * legalVals.length())];
-            }
-        }
-        return new String(bytes);
-    }
-
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
@@ -317,5 +302,20 @@ class ITQueryWrite {
                 System.getenv("TESTING_INFLUXDB_URL"),
                 System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
                 System.getenv("TESTING_INFLUXDB_DATABASE"));
+    }
+
+    private String makeLengthyTag(final int length, final int maxPartLength, final byte separator) {
+        final String legalVals = "0123456789abcdefghijklmnopqrstuvwxyz";
+        byte[] bytes = new byte[length];
+        int nextPartAddress = 0;
+        for (int i = 0; i < length; i++) {
+            if (i == nextPartAddress) {
+                bytes[i] = separator;
+                nextPartAddress = i + (int) (Math.random() * (maxPartLength - 3));
+            } else {
+                bytes[i] = legalVals.getBytes()[(int) (Math.random() * legalVals.length())];
+            }
+        }
+        return new String(bytes);
     }
 }
