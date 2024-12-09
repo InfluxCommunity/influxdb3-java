@@ -24,7 +24,6 @@ package com.influxdb.v3.client.internal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -181,19 +180,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                   @Nonnull final Map<String, Object> parameters,
                                   @Nonnull final QueryOptions options) {
         return queryData(query, parameters, options)
-                .flatMap(vector -> {
-                    List<FieldVector> fieldVectors = vector.getFieldVectors();
-                    return IntStream
-                            .range(0, vector.getRowCount())
-                            .mapToObj(rowNumber -> {
-
-                                ArrayList<Object> row = new ArrayList<>();
-                                for (FieldVector fieldVector : fieldVectors) {
-                                    row.add(fieldVector.getObject(rowNumber));
-                                }
-                                return row.toArray();
-                            });
-                });
+                .flatMap(vector -> IntStream.range(0, vector.getRowCount())
+                                        .mapToObj(rowNumber ->
+                                        VectorSchemaRootConverter.INSTANCE
+                                                                 .getArrayObjectFromVectorSchemaRoot(
+                                                                         vector,
+                                                                         rowNumber
+                                                                 )));
     }
 
     @Nonnull
@@ -225,7 +218,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                     return IntStream
                             .range(0, vector.getRowCount())
                             .mapToObj(row ->
-                                    VectorSchemaRootConverter.INSTANCE.toPointValues(row, vector, fieldVectors));
+                                    VectorSchemaRootConverter.INSTANCE.toPointValues(row, fieldVectors));
                 });
     }
 
