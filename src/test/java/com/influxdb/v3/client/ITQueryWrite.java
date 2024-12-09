@@ -21,14 +21,18 @@
  */
 package com.influxdb.v3.client;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.arrow.flight.CallStatus;
+import org.apache.arrow.flight.FlightRuntimeException;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
@@ -222,11 +226,96 @@ class ITQueryWrite {
         }
     }
 
+    /*
+    Motivated by EAR 5718, useful exception INVALID_ARGUMENT was being masked by
+    INTERNAL: http2 exception - Header size exceeded max allowed size (10240).
+     */
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void handleFlightRuntimeException() throws IOException {
+        Instant now = Instant.now();
+        String measurement = String.format(
+          "/%d/test/com/influxdb/v3/client/ITQueryWrite/handleFlightRuntimeException", now.toEpochMilli()
+        );
+
+        client = getInstance();
+
+        int extraTagLength = 512;
+        Map<String, String> extraTags = new HashMap<String, String>();
+        for (int i = 0; i < 22; i++) {
+            extraTags.put(makeLengthyTag(extraTagLength, 64, (byte) '/'), "extra-tag-" + i);
+        }
+
+        Point p = Point.measurement(measurement)
+          .setTag("id", "thx1138")
+          .setTag("model", "xc11")
+          .setTags(extraTags)
+          .setFloatField("speed", 3.14)
+          .setFloatField("bearing", 3.14 * 0.5)
+          .setIntegerField("ticks", 42)
+          .setStringField("location", "/earth/4/12/9/15/1")
+          .setTimestamp(now);
+
+        try {
+            client.writePoint(p);
+        } catch (InfluxDBApiException idbae) {
+            Assertions.fail(idbae);
+        }
+
+        String faultyQuery = String.format("SELECT * FROM \"%s\" WHERE idx = 'thx1138'", measurement);
+
+        try (Stream<Object[]> stream = client.query(faultyQuery)) {
+            stream.forEach(row -> {
+                for (Object o : row) {
+                    System.out.print(o + " ");
+                }
+                System.out.print("\n");
+            });
+        } catch (FlightRuntimeException fre) {
+            Assertions.assertThat(fre.getMessage()).doesNotContain("http2 exception");
+            Assertions.assertThat(fre.status().code()).isNotEqualTo(CallStatus.INTERNAL.code());
+            Assertions.assertThat(fre.status().code()).
+              as(String.format("Flight runtime exception was UNAVAILABLE.  "
+                  + "Target test case was not fully tested.  "
+                  + "Check limits of test account and target database %s.",
+                System.getenv("TESTING_INFLUXDB_DATABASE")))
+              .isNotEqualTo(CallStatus.UNAVAILABLE.code());
+            Assertions.assertThat(fre.status().code()).
+              as("Flight runtime exception was UNAUTHENTICATED.  "
+                + "Target test case was not fully tested. Check test account token.")
+              .isNotEqualTo(CallStatus.UNAUTHENTICATED.code());
+            return;
+        } catch (Exception e) {
+            Assertions.fail(String.format("FlightRuntimeException should have been thrown.  "
+              + "Instead received %s.", e));
+        }
+
+        Assertions.fail("FlightRuntimeException should have been thrown.  Instead final query passed.");
+
+    }
+
     @NotNull
     private static InfluxDBClient getInstance() {
         return InfluxDBClient.getInstance(
                 System.getenv("TESTING_INFLUXDB_URL"),
                 System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
                 System.getenv("TESTING_INFLUXDB_DATABASE"));
+    }
+
+    private String makeLengthyTag(final int length, final int maxPartLength, final byte separator) {
+        final String legalVals = "0123456789abcdefghijklmnopqrstuvwxyz";
+        byte[] bytes = new byte[length];
+        int nextPartAddress = 0;
+        for (int i = 0; i < length; i++) {
+            if (i == nextPartAddress) {
+                bytes[i] = separator;
+                nextPartAddress = i + (int) (Math.random() * (maxPartLength - 3));
+            } else {
+                bytes[i] = legalVals.getBytes()[(int) (Math.random() * legalVals.length())];
+            }
+        }
+        return new String(bytes);
     }
 }
