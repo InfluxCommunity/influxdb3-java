@@ -191,19 +191,19 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Nonnull
     @Override
-    public Stream<Map<String, Object>> queryRows(@Nonnull String query) {
+    public Stream<Map<String, Object>> queryRows(@Nonnull final String query) {
         return queryRows(query, NO_PARAMETERS, QueryOptions.DEFAULTS);
     }
 
     @Nonnull
     @Override
-    public Stream<Map<String, Object>> queryRows(@Nonnull String query, @Nonnull Map<String, Object> parameters) {
+    public Stream<Map<String, Object>> queryRows(@Nonnull final String query, @Nonnull final Map<String, Object> parameters) {
         return queryRows(query, parameters, QueryOptions.DEFAULTS);
     }
 
     @Nonnull
     @Override
-    public Stream<Map<String, Object>> queryRows(@Nonnull String query, @Nonnull QueryOptions options) {
+    public Stream<Map<String, Object>> queryRows(@Nonnull final String query, @Nonnull final QueryOptions options) {
         return queryRows(query, NO_PARAMETERS, options);
     }
 

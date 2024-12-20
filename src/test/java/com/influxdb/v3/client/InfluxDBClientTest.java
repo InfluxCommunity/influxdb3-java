@@ -223,7 +223,8 @@ public class InfluxDBClientTest {
                           Assertions.assertThat(map.get("isActive")).isEqualTo(true);
 
                           Assertions.assertThat(map.get("time").getClass()).isEqualTo(BigInteger.class);
-                          Assertions.assertThat(map.get("time")).isEqualTo(BigInteger.valueOf(timestamp * 1_000_000_000));
+                          Assertions.assertThat(map.get("time"))
+                                    .isEqualTo(BigInteger.valueOf(timestamp * 1_000_000_000));
                       });
             }
         }

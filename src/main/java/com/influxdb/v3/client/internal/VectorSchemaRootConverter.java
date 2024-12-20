@@ -205,7 +205,7 @@ public final class VectorSchemaRootConverter {
      * @param rowNumber The row number of data
      * @return  A Map represents a row of data
      */
-    public Map<String, Object> getMapFromVectorSchemaRoot(VectorSchemaRoot vector, int rowNumber) {
+    public Map<String, Object> getMapFromVectorSchemaRoot(@Nonnull final VectorSchemaRoot vector, final int rowNumber) {
         Map<String, Object> row = new HashMap<>();
         for (FieldVector fieldVector : vector.getFieldVectors()) {
             Object mappedValue = getMappedValue(
