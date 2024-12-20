@@ -138,7 +138,7 @@ public class InfluxDBClientTest {
             String uuid = UUID.randomUUID().toString();
             long timestamp = Instant.now().getEpochSecond();
             String record = String.format(
-                    "host10,tag=empty "
+                    "host12,tag=empty "
                             + "name=\"intel\","
                             + "mem_total=2048,"
                             + "disk_free=100i,"
@@ -151,7 +151,7 @@ public class InfluxDBClientTest {
             client.writeRecord(record, new WriteOptions(null, WritePrecision.S, null));
 
             Map<String, Object> parameters = Map.of("testId", uuid);
-            String sql = "Select * from host10 where \"testId\"=$testId";
+            String sql = "Select * from host12 where \"testId\"=$testId";
             try (Stream<Object[]> stream = client.query(sql, parameters)) {
                 stream.findFirst()
                       .ifPresent(objects -> {
@@ -167,8 +167,63 @@ public class InfluxDBClientTest {
                           Assertions.assertThat(objects[3].getClass()).isEqualTo(String.class);
                           Assertions.assertThat(objects[3]).isEqualTo("intel");
 
+                          Assertions.assertThat(objects[4].getClass()).isEqualTo(String.class);
+                          Assertions.assertThat(objects[4]).isEqualTo("empty");
+
                           Assertions.assertThat(objects[7].getClass()).isEqualTo(BigInteger.class);
                           Assertions.assertThat(objects[7]).isEqualTo(BigInteger.valueOf(timestamp * 1_000_000_000));
+                      });
+            }
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testQueryRows() throws Exception {
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+                System.getenv("TESTING_INFLUXDB_URL"),
+                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+                System.getenv("TESTING_INFLUXDB_DATABASE"),
+                null)) {
+            String uuid = UUID.randomUUID().toString();
+            long timestamp = Instant.now().getEpochSecond();
+            String record = String.format(
+                    "host12,tag=tagValue "
+                            + "name=\"intel\","
+                            + "mem_total=2048,"
+                            + "disk_free=100i,"
+                            + "temperature=100.86,"
+                            + "isActive=true,"
+                            + "testId=\"%s\" %d",
+                    uuid,
+                    timestamp
+            );
+            client.writeRecord(record, new WriteOptions(null, WritePrecision.S, null));
+
+            Map<String, Object> parameters = Map.of("testId", uuid);
+            String sql = "Select * from host12 where \"testId\"=$testId";
+            try (Stream<Map<String, Object>> stream = client.queryRows(sql, parameters)) {
+                stream.findFirst()
+                      .ifPresent(map -> {
+                          Assertions.assertThat(map.get("tag").getClass()).isEqualTo(String.class);
+                          Assertions.assertThat(map.get("tag")).isEqualTo("tagValue");
+
+                          Assertions.assertThat(map.get("name").getClass()).isEqualTo(String.class);
+                          Assertions.assertThat(map.get("name")).isEqualTo("intel");
+
+                          Assertions.assertThat(map.get("mem_total").getClass()).isEqualTo(Double.class);
+                          Assertions.assertThat(map.get("mem_total")).isEqualTo(2048.0);
+
+                          Assertions.assertThat(map.get("disk_free").getClass()).isEqualTo(Long.class);
+                          Assertions.assertThat(map.get("disk_free")).isEqualTo(100L);
+
+                          Assertions.assertThat(map.get("isActive").getClass()).isEqualTo(Boolean.class);
+                          Assertions.assertThat(map.get("isActive")).isEqualTo(true);
+
+                          Assertions.assertThat(map.get("time").getClass()).isEqualTo(BigInteger.class);
+                          Assertions.assertThat(map.get("time")).isEqualTo(BigInteger.valueOf(timestamp * 1_000_000_000));
                       });
             }
         }
