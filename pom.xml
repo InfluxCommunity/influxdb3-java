@@ -88,7 +88,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty-handler.version>4.1.115.Final</netty-handler.version>
+        <netty-handler.version>4.1.116.Final</netty-handler.version>
         <junit-jupiter.version>5.11.4</junit-jupiter.version>
 
         <plugin.surefire.version>3.5.2</plugin.surefire.version>
