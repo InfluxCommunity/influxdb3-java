@@ -23,7 +23,7 @@ package com.influxdb.v3.client.internal;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -206,7 +206,7 @@ public final class VectorSchemaRootConverter {
      * @return  A Map represents a row of data
      */
     public Map<String, Object> getMapFromVectorSchemaRoot(@Nonnull final VectorSchemaRoot vector, final int rowNumber) {
-        Map<String, Object> row = new HashMap<>();
+        Map<String, Object> row = new LinkedHashMap<>();
         for (FieldVector fieldVector : vector.getFieldVectors()) {
             Object mappedValue = getMappedValue(
                     fieldVector.getField(),
