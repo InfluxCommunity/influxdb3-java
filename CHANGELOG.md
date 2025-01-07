@@ -9,6 +9,10 @@
 3. [#233](https://github.com/InfluxCommunity/influxdb3-java/pull/233): More detailed documentation about timestamp handling for query and write functions
 4. [#236](https://github.com/InfluxCommunity/influxdb3-java/pull/236): Supports Java 21.
 
+### Features
+
+1. [#209](https://github.com/InfluxCommunity/influxdb3-java/pull/209) Add function return row as a map
+
 ## 1.0.0 [2024-12-11]
 
 ### Features
