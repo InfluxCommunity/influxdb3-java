@@ -207,7 +207,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.query("select * from cpu where host=$host",;
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host",
      *                                                 Map.of("host", "server-a"), options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
@@ -215,7 +215,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the query string to execute, cannot be null
+     * @param query the query string to execute, cannot be null
      * @return Batches of rows returned by the query
      */
     @Nonnull
@@ -226,7 +226,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.query("select * from cpu where host=$host",;
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host",
      *                                                 Map.of("host", "server-a"), options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
@@ -234,7 +234,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the query string to execute, cannot be null
+     * @param query the query string to execute, cannot be null
      * @param parameters query named parameters
      * @return Batches of rows returned by the query
      */
@@ -246,7 +246,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.query("select * from cpu where host=$host",;
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host",
      *                                                 Map.of("host", "server-a"), options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
@@ -254,7 +254,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * });
      * </pre>
      *
-     * @param query      the query string to execute, cannot be null
+     * @param query the query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
      */
@@ -266,7 +266,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.query("select * from cpu where host=$host",;
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host",
      *                                                 Map.of("host", "server-a"), options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
