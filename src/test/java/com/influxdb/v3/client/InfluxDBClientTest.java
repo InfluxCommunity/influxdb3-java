@@ -229,7 +229,8 @@ public class InfluxDBClientTest {
             }
 
             Map<String, Object> parameters = Map.of("testId", uuid);
-            String sql = String.format("Select * from %s where \"testId\"=$testId order by time", measurement); // Result set much be ordered by time
+            // Result set much be ordered by time
+            String sql = String.format("Select * from %s where \"testId\"=$testId order by time", measurement);
             try (Stream<Map<String, Object>> stream = client.queryRows(sql, parameters)) {
                 List<Map<String, Object>> results = stream.collect(Collectors.toList());
                 for (int i = 0; i <= 9; i++) {
