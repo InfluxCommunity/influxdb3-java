@@ -205,7 +205,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host", Map.of("host", "server-a"))) {
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host",
+     *                                                                      Map.of("host", "server-a"))) {
      *      rows.forEach(row -&gt; {
      *          // process row
      *      })
@@ -224,7 +225,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=intel", options)) {
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=intel",
+     *                                                                      options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
      *      })
@@ -243,7 +245,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
      * <pre>
-     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host", Map.of("host", "server-a"), options)) {
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host",
+     *                                                                      Map.of("host", "server-a"), options)) {
      *      rows.forEach(row -&gt; {
      *          // process row
      *      })
