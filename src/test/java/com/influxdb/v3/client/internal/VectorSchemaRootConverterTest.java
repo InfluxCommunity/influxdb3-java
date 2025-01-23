@@ -214,7 +214,7 @@ class VectorSchemaRootConverterTest {
             Assertions.assertThat(diskFree.getClass()).isEqualTo(Long.class);
 
             Double temperature = (Double) pointValues.getField("temperature");
-            Assertions.assertThat(temperature).isEqualTo(100.8766f);
+            Assertions.assertThat(temperature).isEqualTo(100.8766);
             Assertions.assertThat(temperature.getClass()).isEqualTo(Double.class);
 
             String name = (String) pointValues.getField("name");
@@ -224,6 +224,21 @@ class VectorSchemaRootConverterTest {
             Boolean isActive = (Boolean) pointValues.getField("isActive");
             Assertions.assertThat(isActive).isEqualTo(true);
             Assertions.assertThat(isActive.getClass()).isEqualTo(Boolean.class);
+        }
+    }
+
+    @Test
+    void testGetMapFromVectorSchemaRoot() {
+        try (VectorSchemaRoot root = VectorSchemaRootUtils.generateVectorSchemaRoot()) {
+            Map<String, Object> map = VectorSchemaRootConverter.INSTANCE.getMapFromVectorSchemaRoot(root, 0);
+
+            Assertions.assertThat(map).hasSize(7);
+            Assertions.assertThat(map.get("measurement")).isEqualTo("host");
+            Assertions.assertThat(map.get("mem_total")).isEqualTo(2048L);
+            Assertions.assertThat(map.get("temperature")).isEqualTo(100.8766);
+            Assertions.assertThat(map.get("isActive")).isEqualTo(true);
+            Assertions.assertThat(map.get("name")).isEqualTo("intel");
+            Assertions.assertThat(map.get("time")).isEqualTo(BigInteger.valueOf(123_456L * 1_000_000));
         }
     }
 
