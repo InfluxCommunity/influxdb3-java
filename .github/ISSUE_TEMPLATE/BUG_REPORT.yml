@@ -27,7 +27,7 @@ body:
       label: Code sample to reproduce problem
       description: Provide a code sample that reproduces the problem
       value: |
-        ```csharp
+        ```java
         ```
     validations:
       required: true
