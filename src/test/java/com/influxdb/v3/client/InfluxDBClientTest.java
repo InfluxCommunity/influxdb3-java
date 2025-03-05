@@ -22,20 +22,67 @@
 package com.influxdb.v3.client;
 
 import java.math.BigInteger;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import io.grpc.HttpConnectProxiedSocketAddress;
+import io.grpc.ProxyDetector;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
 public class InfluxDBClientTest {
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    void testQueryProxy() throws Exception {
+        URI queryProxyUri = new URI("http://127.0.0.1:10000");
+        URI uri = new URI(System.getenv("TESTING_INFLUXDB_URL"));
+
+        ProxyDetector proxyDetector = (targetServerAddress) -> {
+            InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
+            if (uri.getHost().equals(targetAddress.getHostString())) {
+                return HttpConnectProxiedSocketAddress.newBuilder()
+                        .setProxyAddress(new InetSocketAddress(queryProxyUri.getHost(), queryProxyUri.getPort()))
+                        .setTargetAddress(targetAddress)
+                        .build();
+            }
+            return null;
+        };
+        ProxySelector proxy = ProxySelector.of(new InetSocketAddress(queryProxyUri.getHost(), queryProxyUri.getPort()));
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(uri.toString())
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .proxy(proxy)
+                .queryApiProxy(proxyDetector)
+                .build();
+
+        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
+        influxDBClient.writePoint(
+                Point.measurement("test1")
+                        .setField("field", "field1")
+        );
+
+        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
+            stream.findFirst()
+                    .ifPresent(pointValues -> {
+                        Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
+                    });
+        }
+    }
 
     @Test
     void requiredHost() {
@@ -102,10 +149,10 @@ public class InfluxDBClientTest {
         Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
 
         try (InfluxDBClient client = InfluxDBClient.getInstance(
-          "http://localhost:8086",
-          "MY-TOKEN".toCharArray(),
-          "MY-DATABASE",
-          defaultTags)) {
+                "http://localhost:8086",
+                "MY-TOKEN".toCharArray(),
+                "MY-DATABASE",
+                defaultTags)) {
             Assertions.assertThat(client).isNotNull();
         }
     }

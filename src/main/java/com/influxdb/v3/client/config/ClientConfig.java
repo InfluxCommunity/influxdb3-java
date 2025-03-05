@@ -36,6 +36,8 @@ import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.grpc.ProxyDetector;
+
 import com.influxdb.v3.client.write.WritePrecision;
 
 /**
@@ -58,6 +60,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *          disable server certificate validation for HTTPS connections
  *     </li>
  *     <li><code>proxy</code> - HTTP proxy selector</li>
+ *     <li><code>queryApiProxy</code> - HTTP query detector</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
  * </ul>
@@ -97,6 +100,7 @@ public final class ClientConfig {
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
     private final ProxySelector proxy;
+    private final ProxyDetector queryApiProxy;
     private final Authenticator authenticator;
     private final Map<String, String> headers;
 
@@ -220,6 +224,16 @@ public final class ClientConfig {
     }
 
     /**
+     * Gets the proxy for query api.
+     *
+     * @return the proxy, may be null
+     */
+    @Nullable
+    public ProxyDetector getQueryApiProxy() {
+        return queryApiProxy;
+    }
+
+    /**
      * Gets the (proxy) authenticator.
      *
      * @return the (proxy) authenticator
@@ -269,6 +283,7 @@ public final class ClientConfig {
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
                 && Objects.equals(proxy, that.proxy)
+                && Objects.equals(queryApiProxy, that.queryApiProxy)
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers);
     }
@@ -278,7 +293,7 @@ public final class ClientConfig {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
           database, writePrecision, gzipThreshold,
           timeout, allowHttpRedirects, disableServerCertificateValidation,
-          proxy, authenticator, headers,
+          proxy, queryApiProxy, authenticator, headers,
           defaultTags);
     }
 
@@ -294,6 +309,7 @@ public final class ClientConfig {
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
                 .add("proxy=" + proxy)
+                .add("queryApiProxy=" + queryApiProxy)
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
@@ -318,6 +334,7 @@ public final class ClientConfig {
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
         private ProxySelector proxy;
+        private ProxyDetector queryApiProxy;
         private Authenticator authenticator;
         private Map<String, String> headers;
 
@@ -477,6 +494,19 @@ public final class ClientConfig {
         public Builder proxy(@Nullable final ProxySelector proxy) {
 
             this.proxy = proxy;
+            return this;
+        }
+
+        /**
+         * Sets the proxy detector for query api. Default is 'null'.
+         *
+         * @param proxy Proxy detector.
+         * @return this
+         */
+        @Nonnull
+        public Builder queryApiProxy(@Nullable final ProxyDetector proxy) {
+
+            this.queryApiProxy = proxy;
             return this;
         }
 
@@ -658,6 +688,7 @@ public final class ClientConfig {
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
         proxy = builder.proxy;
+        queryApiProxy = builder.queryApiProxy;
         authenticator = builder.authenticator;
         headers = builder.headers;
     }
