@@ -148,40 +148,8 @@ final class FlightSqlClient implements AutoCloseable {
                 break;
             }
             case LocationSchemes.GRPC_DOMAIN_SOCKET: {
-                // The implementation is platform-specific, so we have to find the classes at runtime
                 nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
-                try {
-                    try {
-                        // Linux
-                        nettyChannelBuilder.channelType(
-                                Class.forName("io.netty.channel.epoll.EpollDomainSocketChannel")
-                                        .asSubclass(ServerChannel.class));
-                        final EventLoopGroup elg =
-                                Class.forName("io.netty.channel.epoll.EpollEventLoopGroup")
-                                        .asSubclass(EventLoopGroup.class)
-                                        .getDeclaredConstructor()
-                                        .newInstance();
-                        nettyChannelBuilder.eventLoopGroup(elg);
-                    } catch (ClassNotFoundException e) {
-                        // BSD
-                        nettyChannelBuilder.channelType(
-                                Class.forName("io.netty.channel.kqueue.KQueueDomainSocketChannel")
-                                        .asSubclass(ServerChannel.class));
-                        final EventLoopGroup elg =
-                                Class.forName("io.netty.channel.kqueue.KQueueEventLoopGroup")
-                                        .asSubclass(EventLoopGroup.class)
-                                        .getDeclaredConstructor()
-                                        .newInstance();
-                        nettyChannelBuilder.eventLoopGroup(elg);
-                    }
-                } catch (ClassNotFoundException
-                         | InstantiationException
-                         | IllegalAccessException
-                         | NoSuchMethodException
-                         | InvocationTargetException e) {
-                    throw new UnsupportedOperationException(
-                            "Could not find suitable Netty native transport implementation for domain socket address.");
-                }
+                setChannelTypeAndEventLoop(nettyChannelBuilder);
                 break;
             }
             default:
@@ -194,7 +162,7 @@ final class FlightSqlClient implements AutoCloseable {
 
             SslContextBuilder sslContextBuilder;
             SslContext sslContext;
-            if(config.getGrpcSslContext() != null) {
+            if (config.getGrpcSslContext() != null) {
                 sslContext = config.getGrpcSslContext();
                 nettyChannelBuilder.sslContext(sslContext);
             } else {
@@ -223,7 +191,6 @@ final class FlightSqlClient implements AutoCloseable {
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
     }
 
-
     @Nonnull
     private Location createLocation(@Nonnull final ClientConfig config) {
         try {
@@ -251,6 +218,42 @@ final class FlightSqlClient implements AutoCloseable {
             }
         }
         return new HeaderCallOption(metadata);
+    }
+
+    private void setChannelTypeAndEventLoop(NettyChannelBuilder nettyChannelBuilder) {
+        // The implementation is platform-specific, so we have to find the classes at runtime
+        try {
+            try {
+                // Linux
+                nettyChannelBuilder.channelType(
+                        Class.forName("io.netty.channel.epoll.EpollDomainSocketChannel")
+                                .asSubclass(ServerChannel.class));
+                final EventLoopGroup elg =
+                        Class.forName("io.netty.channel.epoll.EpollEventLoopGroup")
+                                .asSubclass(EventLoopGroup.class)
+                                .getDeclaredConstructor()
+                                .newInstance();
+                nettyChannelBuilder.eventLoopGroup(elg);
+            } catch (ClassNotFoundException e) {
+                // BSD
+                nettyChannelBuilder.channelType(
+                        Class.forName("io.netty.channel.kqueue.KQueueDomainSocketChannel")
+                                .asSubclass(ServerChannel.class));
+                final EventLoopGroup elg =
+                        Class.forName("io.netty.channel.kqueue.KQueueEventLoopGroup")
+                                .asSubclass(EventLoopGroup.class)
+                                .getDeclaredConstructor()
+                                .newInstance();
+                nettyChannelBuilder.eventLoopGroup(elg);
+            }
+        } catch (ClassNotFoundException
+                 | InstantiationException
+                 | IllegalAccessException
+                 | NoSuchMethodException
+                 | InvocationTargetException e) {
+            throw new UnsupportedOperationException(
+                    "Could not find suitable Netty native transport implementation for domain socket address.");
+        }
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {
