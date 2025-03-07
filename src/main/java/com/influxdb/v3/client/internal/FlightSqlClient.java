@@ -47,6 +47,7 @@ import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.apache.arrow.flight.FlightClient;
@@ -94,11 +95,7 @@ final class FlightSqlClient implements AutoCloseable {
             defaultHeaders.putAll(config.getHeaders());
         }
 
-        this.client = Objects.requireNonNullElseGet(client, () -> config.getQueryApiProxy() != null
-                ?
-                createFlightWithQueryProxy(config)
-                :
-                createFlightClient(config));
+        this.client = createFlightClient(config);
     }
 
     @Nonnull
@@ -142,17 +139,8 @@ final class FlightSqlClient implements AutoCloseable {
     @Nonnull
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
         Location location = createLocation(config);
-
-        return FlightClient.builder()
-                .location(location)
-                .allocator(new RootAllocator(Long.MAX_VALUE))
-                .verifyServer(!config.getDisableServerCertificateValidation())
-                .build();
-    }
-
-    public FlightClient createFlightWithQueryProxy(@Nonnull final ClientConfig config) {
         final NettyChannelBuilder nettyChannelBuilder;
-        Location location = createLocation(config);
+
         switch (location.getUri().getScheme()) {
             case LocationSchemes.GRPC:
             case LocationSchemes.GRPC_INSECURE:
@@ -205,17 +193,24 @@ final class FlightSqlClient implements AutoCloseable {
         if (LocationSchemes.GRPC_TLS.equals(location.getUri().getScheme())) {
             nettyChannelBuilder.useTransportSecurity();
 
-            final SslContextBuilder sslContextBuilder = GrpcSslContexts.forClient();
-
-            if (config.getDisableServerCertificateValidation()) {
-                sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+            SslContextBuilder sslContextBuilder;
+            SslContext sslContext;
+            if(config.getGrpcSslContext() != null) {
+                sslContext = config.getGrpcSslContext();
+                nettyChannelBuilder.sslContext(sslContext);
+            } else {
+                sslContextBuilder = GrpcSslContexts.forClient();
+                if (config.getDisableServerCertificateValidation()) {
+                    sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+                }
+                try {
+                    nettyChannelBuilder.sslContext(sslContextBuilder.build());
+                } catch (SSLException e) {
+                    throw new RuntimeException(e);
+                }
             }
-
-            try {
-                nettyChannelBuilder.sslContext(sslContextBuilder.build());
-            } catch (SSLException e) {
-                throw new RuntimeException(e);
-            }
+        } else {
+            nettyChannelBuilder.usePlaintext();
         }
 
         if (config.getQueryApiProxy() != null) {
@@ -228,6 +223,7 @@ final class FlightSqlClient implements AutoCloseable {
 
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
     }
+
 
     @Nonnull
     private Location createLocation(@Nonnull final ClientConfig config) {

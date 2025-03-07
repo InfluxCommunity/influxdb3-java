@@ -35,8 +35,10 @@ import java.util.StringJoiner;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.net.ssl.SSLContext;
 
 import io.grpc.ProxyDetector;
+import io.netty.handler.ssl.SslContext;
 
 import com.influxdb.v3.client.write.WritePrecision;
 
@@ -103,6 +105,8 @@ public final class ClientConfig {
     private final ProxyDetector queryApiProxy;
     private final Authenticator authenticator;
     private final Map<String, String> headers;
+    private final SslContext grpcSslContext;
+    private final SSLContext sslContext;
 
     /**
      * Gets URL of the InfluxDB server.
@@ -253,6 +257,17 @@ public final class ClientConfig {
         return headers;
     }
 
+
+    @Nullable
+    public SslContext getGrpcSslContext() {
+        return grpcSslContext;
+    }
+
+    @Nullable
+    public SSLContext getSslContext() {
+        return sslContext;
+    }
+
     /**
      * Validates the configuration properties.
      */
@@ -285,7 +300,9 @@ public final class ClientConfig {
                 && Objects.equals(proxy, that.proxy)
                 && Objects.equals(queryApiProxy, that.queryApiProxy)
                 && Objects.equals(authenticator, that.authenticator)
-                && Objects.equals(headers, that.headers);
+                && Objects.equals(headers, that.headers)
+                && Objects.equals(grpcSslContext, that.grpcSslContext)
+                && Objects.equals(sslContext, that.sslContext);
     }
 
     @Override
@@ -294,7 +311,7 @@ public final class ClientConfig {
           database, writePrecision, gzipThreshold,
           timeout, allowHttpRedirects, disableServerCertificateValidation,
           proxy, queryApiProxy, authenticator, headers,
-          defaultTags);
+          defaultTags, grpcSslContext, sslContext);
     }
 
     @Override
@@ -313,6 +330,8 @@ public final class ClientConfig {
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
+                .add("grpcSslContext=" + grpcSslContext)
+                .add("sslContext=" + sslContext)
                 .toString();
     }
 
@@ -337,6 +356,8 @@ public final class ClientConfig {
         private ProxyDetector queryApiProxy;
         private Authenticator authenticator;
         private Map<String, String> headers;
+        private SslContext grpcSslContext;
+        private SSLContext sslContext;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -553,6 +574,20 @@ public final class ClientConfig {
             return this;
         }
 
+        @Nonnull
+        public Builder grpcSslContext(@Nullable final SslContext grpcSslContext) {
+
+            this.grpcSslContext = grpcSslContext;
+            return this;
+        }
+
+        @Nonnull
+        public Builder sslContext(@Nullable final SSLContext sslContext) {
+
+            this.sslContext = sslContext;
+            return this;
+        }
+
         /**
          * Build an instance of {@code ClientConfig}.
          *
@@ -691,5 +726,7 @@ public final class ClientConfig {
         queryApiProxy = builder.queryApiProxy;
         authenticator = builder.authenticator;
         headers = builder.headers;
+        grpcSslContext = builder.grpcSslContext;
+        sslContext = builder.sslContext;
     }
 }
