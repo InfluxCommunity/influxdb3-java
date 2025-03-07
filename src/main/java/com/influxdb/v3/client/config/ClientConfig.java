@@ -257,12 +257,21 @@ public final class ClientConfig {
         return headers;
     }
 
-
+    /**
+     * Gets SslContext object from grpc
+     *
+     * @return the SslContext object
+     */
     @Nullable
     public SslContext getGrpcSslContext() {
         return grpcSslContext;
     }
 
+    /**
+     * Gets SSLContext object
+     *
+     * @return the SSLContext object
+     */
     @Nullable
     public SSLContext getSslContext() {
         return sslContext;
@@ -574,6 +583,12 @@ public final class ClientConfig {
             return this;
         }
 
+        /**
+         * Sets SslContext for grpc client. Default is 'null'.
+         *
+         * @param grpcSslContext The SSLContext
+         * @return this
+         */
         @Nonnull
         public Builder grpcSslContext(@Nullable final SslContext grpcSslContext) {
 
@@ -581,6 +596,12 @@ public final class ClientConfig {
             return this;
         }
 
+        /**
+         * Sets SSLContext for rest client. Default is 'null'.
+         *
+         * @param sslContext The SSLContext
+         * @return this
+         */
         @Nonnull
         public Builder sslContext(@Nullable final SSLContext sslContext) {
 
