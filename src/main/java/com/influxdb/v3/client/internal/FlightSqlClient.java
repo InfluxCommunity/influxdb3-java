@@ -139,22 +139,20 @@ final class FlightSqlClient implements AutoCloseable {
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
         Location location = createLocation(config);
 
-        final NettyChannelBuilder nettyChannelBuilder;
-        switch (location.getUri().getScheme()) {
-            case LocationSchemes.GRPC:
-            case LocationSchemes.GRPC_INSECURE:
-            case LocationSchemes.GRPC_TLS: {
-                nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
-                break;
-            }
-            case LocationSchemes.GRPC_DOMAIN_SOCKET: {
-                nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
-                setChannelTypeAndEventLoop(nettyChannelBuilder);
-                break;
-            }
-            default:
-                throw new IllegalArgumentException(
-                        "Scheme is not supported: " + location.getUri().getScheme());
+        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
+        var validSchemas = List.of(
+                LocationSchemes.GRPC,
+                LocationSchemes.GRPC_INSECURE,
+                LocationSchemes.GRPC_TLS,
+                LocationSchemes.GRPC_DOMAIN_SOCKET
+        );
+        if (!validSchemas.contains(location.getUri().getScheme())) {
+            throw new IllegalArgumentException(
+                    "Scheme is not supported: " + location.getUri().getScheme());
+        }
+
+        if (location.getUri().getScheme().equals(LocationSchemes.GRPC_DOMAIN_SOCKET)) {
+            setChannelTypeAndEventLoop(nettyChannelBuilder);
         }
 
         if (LocationSchemes.GRPC_TLS.equals(location.getUri().getScheme())) {
