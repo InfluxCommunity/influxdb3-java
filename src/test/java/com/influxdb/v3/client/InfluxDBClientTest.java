@@ -25,14 +25,18 @@ import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 
 import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.ProxyDetector;
+import io.netty.handler.ssl.SslContext;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -42,6 +46,25 @@ import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
 public class InfluxDBClientTest {
+
+    @Test
+    void testCustomSslContext() throws NoSuchAlgorithmException, SSLException {
+        // Test for java.net SslContext
+        ClientConfig.Builder builder = new ClientConfig.Builder();
+        ClientConfig clientConfig = builder.sslContext(null).build();
+        Assertions.assertThat(clientConfig.getSslContext()).isNull();
+
+        clientConfig = builder.sslContext(SSLContext.getDefault()).build();
+        Assertions.assertThat(clientConfig.getSslContext()).isNotNull();
+
+        // Test for grpc SslContext
+        ClientConfig.Builder builder1 = new ClientConfig.Builder();
+        ClientConfig clientConfig1 = builder1.grpcSslContext(null).build();
+        Assertions.assertThat(clientConfig1.getGrpcSslContext()).isNull();
+
+        clientConfig1 = builder1.grpcSslContext(SslContext.newClientContext()).build();
+        Assertions.assertThat(clientConfig1.getGrpcSslContext()).isNotNull();
+    }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
