@@ -258,7 +258,7 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets SslContext object from grpc
+     * Gets SslContext object from grpc.
      *
      * @return the SslContext object
      */
@@ -268,7 +268,7 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets SSLContext object
+     * Gets SSLContext object.
      *
      * @return the SSLContext object
      */
