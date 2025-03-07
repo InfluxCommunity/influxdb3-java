@@ -138,8 +138,8 @@ final class FlightSqlClient implements AutoCloseable {
     @Nonnull
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
         Location location = createLocation(config);
-        final NettyChannelBuilder nettyChannelBuilder;
 
+        final NettyChannelBuilder nettyChannelBuilder;
         switch (location.getUri().getScheme()) {
             case LocationSchemes.GRPC:
             case LocationSchemes.GRPC_INSECURE:
@@ -220,7 +220,7 @@ final class FlightSqlClient implements AutoCloseable {
         return new HeaderCallOption(metadata);
     }
 
-    private void setChannelTypeAndEventLoop(NettyChannelBuilder nettyChannelBuilder) {
+    private void setChannelTypeAndEventLoop(@Nonnull final NettyChannelBuilder nettyChannelBuilder) {
         // The implementation is platform-specific, so we have to find the classes at runtime
         try {
             try {
