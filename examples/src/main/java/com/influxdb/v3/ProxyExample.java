@@ -54,6 +54,6 @@ public class ProxyExample {
         }
     }
 
-    private ProxyExample()
+    private ProxyExample(){}
 }
 
