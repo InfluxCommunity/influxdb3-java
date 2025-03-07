@@ -14,6 +14,7 @@ import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.config.ClientConfig;
 
 public class ProxyExample {
+
     public static void main(final String[] args) throws Exception {
         // Run docker-compose.yml file to start Envoy proxy
 
@@ -52,5 +53,7 @@ public class ProxyExample {
                     });
         }
     }
+
+    private ProxyExample()
 }
 
