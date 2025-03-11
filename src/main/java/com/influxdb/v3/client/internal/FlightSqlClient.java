@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -36,14 +37,24 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.net.ssl.SSLException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.Metadata;
+import io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.NettyChannelBuilder;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.apache.arrow.flight.FlightClient;
+import org.apache.arrow.flight.FlightGrpcUtils;
 import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.HeaderCallOption;
 import org.apache.arrow.flight.Location;
+import org.apache.arrow.flight.LocationSchemes;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.grpc.MetadataAdapter;
 import org.apache.arrow.memory.RootAllocator;
@@ -82,8 +93,6 @@ final class FlightSqlClient implements AutoCloseable {
         if (config.getHeaders() != null) {
             defaultHeaders.putAll(config.getHeaders());
         }
-
-        Package mainPackage = RestClient.class.getPackage();
 
         this.client = (client != null) ? client : createFlightClient(config);
     }
@@ -130,11 +139,54 @@ final class FlightSqlClient implements AutoCloseable {
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
         Location location = createLocation(config);
 
-        return FlightClient.builder()
-                .location(location)
-                .allocator(new RootAllocator(Long.MAX_VALUE))
-                .verifyServer(!config.getDisableServerCertificateValidation())
-                .build();
+        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
+        var validSchemas = List.of(
+                LocationSchemes.GRPC,
+                LocationSchemes.GRPC_INSECURE,
+                LocationSchemes.GRPC_TLS,
+                LocationSchemes.GRPC_DOMAIN_SOCKET
+        );
+        if (!validSchemas.contains(location.getUri().getScheme())) {
+            throw new IllegalArgumentException(
+                    "Scheme is not supported: " + location.getUri().getScheme());
+        }
+
+        if (location.getUri().getScheme().equals(LocationSchemes.GRPC_DOMAIN_SOCKET)) {
+            setChannelTypeAndEventLoop(nettyChannelBuilder);
+        }
+
+        if (LocationSchemes.GRPC_TLS.equals(location.getUri().getScheme())) {
+            nettyChannelBuilder.useTransportSecurity();
+
+            SslContextBuilder sslContextBuilder;
+            SslContext sslContext;
+            if (config.getGrpcSslContext() != null) {
+                sslContext = config.getGrpcSslContext();
+                nettyChannelBuilder.sslContext(sslContext);
+            } else {
+                sslContextBuilder = GrpcSslContexts.forClient();
+                if (config.getDisableServerCertificateValidation()) {
+                    sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+                }
+                try {
+                    nettyChannelBuilder.sslContext(sslContextBuilder.build());
+                } catch (SSLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } else {
+            nettyChannelBuilder.usePlaintext();
+        }
+
+        if (config.getQueryApiProxy() != null) {
+            nettyChannelBuilder.proxyDetector(config.getQueryApiProxy());
+        }
+
+        nettyChannelBuilder.maxTraceEvents(0)
+                .maxInboundMessageSize(Integer.MAX_VALUE)
+                .maxInboundMetadataSize(Integer.MAX_VALUE);
+
+        return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
     }
 
     @Nonnull
@@ -164,6 +216,42 @@ final class FlightSqlClient implements AutoCloseable {
             }
         }
         return new HeaderCallOption(metadata);
+    }
+
+    private void setChannelTypeAndEventLoop(@Nonnull final NettyChannelBuilder nettyChannelBuilder) {
+        // The implementation is platform-specific, so we have to find the classes at runtime
+        try {
+            try {
+                // Linux
+                nettyChannelBuilder.channelType(
+                        Class.forName("io.netty.channel.epoll.EpollDomainSocketChannel")
+                                .asSubclass(ServerChannel.class));
+                final EventLoopGroup elg =
+                        Class.forName("io.netty.channel.epoll.EpollEventLoopGroup")
+                                .asSubclass(EventLoopGroup.class)
+                                .getDeclaredConstructor()
+                                .newInstance();
+                nettyChannelBuilder.eventLoopGroup(elg);
+            } catch (ClassNotFoundException e) {
+                // BSD
+                nettyChannelBuilder.channelType(
+                        Class.forName("io.netty.channel.kqueue.KQueueDomainSocketChannel")
+                                .asSubclass(ServerChannel.class));
+                final EventLoopGroup elg =
+                        Class.forName("io.netty.channel.kqueue.KQueueEventLoopGroup")
+                                .asSubclass(EventLoopGroup.class)
+                                .getDeclaredConstructor()
+                                .newInstance();
+                nettyChannelBuilder.eventLoopGroup(elg);
+            }
+        } catch (ClassNotFoundException
+                 | InstantiationException
+                 | IllegalAccessException
+                 | NoSuchMethodException
+                 | InvocationTargetException e) {
+            throw new UnsupportedOperationException(
+                    "Could not find suitable Netty native transport implementation for domain socket address.");
+        }
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {

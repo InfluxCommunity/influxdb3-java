@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  envoy:
+    image: envoyproxy/envoy:v1.26-latest
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - "10000:10000"
+    environment:
+      - ENVOY_UID=0
+

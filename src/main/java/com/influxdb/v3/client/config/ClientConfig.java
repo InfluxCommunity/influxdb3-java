@@ -35,6 +35,10 @@ import java.util.StringJoiner;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.net.ssl.SSLContext;
+
+import io.grpc.ProxyDetector;
+import io.netty.handler.ssl.SslContext;
 
 import com.influxdb.v3.client.write.WritePrecision;
 
@@ -58,6 +62,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *          disable server certificate validation for HTTPS connections
  *     </li>
  *     <li><code>proxy</code> - HTTP proxy selector</li>
+ *     <li><code>queryApiProxy</code> - HTTP query detector</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
  * </ul>
@@ -97,8 +102,11 @@ public final class ClientConfig {
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
     private final ProxySelector proxy;
+    private final ProxyDetector queryApiProxy;
     private final Authenticator authenticator;
     private final Map<String, String> headers;
+    private final SslContext grpcSslContext;
+    private final SSLContext sslContext;
 
     /**
      * Gets URL of the InfluxDB server.
@@ -220,6 +228,16 @@ public final class ClientConfig {
     }
 
     /**
+     * Gets the proxy for query api.
+     *
+     * @return the proxy, may be null
+     */
+    @Nullable
+    public ProxyDetector getQueryApiProxy() {
+        return queryApiProxy;
+    }
+
+    /**
      * Gets the (proxy) authenticator.
      *
      * @return the (proxy) authenticator
@@ -237,6 +255,26 @@ public final class ClientConfig {
     @Nullable
     public Map<String, String> getHeaders() {
         return headers;
+    }
+
+    /**
+     * Gets SslContext object from grpc.
+     *
+     * @return the SslContext object
+     */
+    @Nullable
+    public SslContext getGrpcSslContext() {
+        return grpcSslContext;
+    }
+
+    /**
+     * Gets SSLContext object.
+     *
+     * @return the SSLContext object
+     */
+    @Nullable
+    public SSLContext getSslContext() {
+        return sslContext;
     }
 
     /**
@@ -269,8 +307,11 @@ public final class ClientConfig {
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
                 && Objects.equals(proxy, that.proxy)
+                && Objects.equals(queryApiProxy, that.queryApiProxy)
                 && Objects.equals(authenticator, that.authenticator)
-                && Objects.equals(headers, that.headers);
+                && Objects.equals(headers, that.headers)
+                && Objects.equals(grpcSslContext, that.grpcSslContext)
+                && Objects.equals(sslContext, that.sslContext);
     }
 
     @Override
@@ -278,8 +319,8 @@ public final class ClientConfig {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
           database, writePrecision, gzipThreshold,
           timeout, allowHttpRedirects, disableServerCertificateValidation,
-          proxy, authenticator, headers,
-          defaultTags);
+          proxy, queryApiProxy, authenticator, headers,
+          defaultTags, grpcSslContext, sslContext);
     }
 
     @Override
@@ -294,9 +335,12 @@ public final class ClientConfig {
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
                 .add("proxy=" + proxy)
+                .add("queryApiProxy=" + queryApiProxy)
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
+                .add("grpcSslContext=" + grpcSslContext)
+                .add("sslContext=" + sslContext)
                 .toString();
     }
 
@@ -318,8 +362,11 @@ public final class ClientConfig {
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
         private ProxySelector proxy;
+        private ProxyDetector queryApiProxy;
         private Authenticator authenticator;
         private Map<String, String> headers;
+        private SslContext grpcSslContext;
+        private SSLContext sslContext;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -481,6 +528,19 @@ public final class ClientConfig {
         }
 
         /**
+         * Sets the proxy detector for query api. Default is 'null'.
+         *
+         * @param proxy Proxy detector.
+         * @return this
+         */
+        @Nonnull
+        public Builder queryApiProxy(@Nullable final ProxyDetector proxy) {
+
+            this.queryApiProxy = proxy;
+            return this;
+        }
+
+        /**
          * Sets the proxy authenticator. Default is 'null'.
          *
          * @param authenticator Proxy authenticator. Ignored if 'proxy' is not set.
@@ -520,6 +580,32 @@ public final class ClientConfig {
         public Builder headers(@Nullable final Map<String, String> headers) {
 
             this.headers = headers;
+            return this;
+        }
+
+        /**
+         * Sets SslContext for grpc client. Default is 'null'.
+         *
+         * @param grpcSslContext The SSLContext
+         * @return this
+         */
+        @Nonnull
+        public Builder grpcSslContext(@Nullable final SslContext grpcSslContext) {
+
+            this.grpcSslContext = grpcSslContext;
+            return this;
+        }
+
+        /**
+         * Sets SSLContext for rest client. Default is 'null'.
+         *
+         * @param sslContext The SSLContext
+         * @return this
+         */
+        @Nonnull
+        public Builder sslContext(@Nullable final SSLContext sslContext) {
+
+            this.sslContext = sslContext;
             return this;
         }
 
@@ -658,7 +744,10 @@ public final class ClientConfig {
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
         proxy = builder.proxy;
+        queryApiProxy = builder.queryApiProxy;
         authenticator = builder.authenticator;
         headers = builder.headers;
+        grpcSslContext = builder.grpcSslContext;
+        sslContext = builder.sslContext;
     }
 }
