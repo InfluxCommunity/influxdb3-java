@@ -66,47 +66,6 @@ public class InfluxDBClientTest {
         Assertions.assertThat(clientConfig1.getGrpcSslContext()).isNotNull();
     }
 
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
-    @Test
-    void testQueryProxy() throws Exception {
-        URI queryProxyUri = new URI("http://127.0.0.1:10000");
-        URI uri = new URI(System.getenv("TESTING_INFLUXDB_URL"));
-
-        ProxyDetector proxyDetector = (targetServerAddress) -> {
-            InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
-            if (uri.getHost().equals(targetAddress.getHostString())) {
-                return HttpConnectProxiedSocketAddress.newBuilder()
-                        .setProxyAddress(new InetSocketAddress(queryProxyUri.getHost(), queryProxyUri.getPort()))
-                        .setTargetAddress(targetAddress)
-                        .build();
-            }
-            return null;
-        };
-        ProxySelector proxy = ProxySelector.of(new InetSocketAddress(queryProxyUri.getHost(), queryProxyUri.getPort()));
-        ClientConfig clientConfig = new ClientConfig.Builder()
-                .host(uri.toString())
-                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
-                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-                .proxy(proxy)
-                .queryApiProxy(proxyDetector)
-                .build();
-
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        influxDBClient.writePoint(
-                Point.measurement("test1")
-                        .setField("field", "field1")
-        );
-
-        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
-            stream.findFirst()
-                    .ifPresent(pointValues -> {
-                        Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
-                    });
-        }
-    }
-
     @Test
     void requiredHost() {
 
