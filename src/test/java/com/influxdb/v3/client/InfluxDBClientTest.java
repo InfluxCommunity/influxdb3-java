@@ -22,9 +22,6 @@
 package com.influxdb.v3.client;
 
 import java.math.BigInteger;
-import java.net.InetSocketAddress;
-import java.net.ProxySelector;
-import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Map;
@@ -34,8 +31,6 @@ import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 
-import io.grpc.HttpConnectProxiedSocketAddress;
-import io.grpc.ProxyDetector;
 import io.netty.handler.ssl.SslContext;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
