@@ -21,11 +21,19 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.io.FileInputStream;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -33,6 +41,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -98,8 +107,10 @@ final class RestClient implements AutoCloseable {
         this.defaultHeaders = config.getHeaders() != null ? Map.copyOf(config.getHeaders()) : null;
 
         // proxy
-        if (config.getProxy() != null) {
-            builder.proxy(config.getProxy());
+        if (config.getProxyUrl() != null) {
+            URI uri = URI.create(config.getProxyUrl());
+            ProxySelector proxy = ProxySelector.of(new InetSocketAddress(uri.getHost(), uri.getPort()));
+            builder.proxy(proxy);
             if (config.getAuthenticator() != null) {
                 builder.authenticator(config.getAuthenticator());
             }
@@ -107,15 +118,15 @@ final class RestClient implements AutoCloseable {
 
         if (baseUrl.startsWith("https")) {
             try {
-                SSLContext sslContext;
-                sslContext = SSLContext.getInstance("TLS");
-                SSLContext customeSslContext = config.getSslContext();
-                if (customeSslContext == null && config.getDisableServerCertificateValidation()) {
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                if (config.getDisableServerCertificateValidation()) {
                     sslContext.init(null, TRUST_ALL_CERTS, new SecureRandom());
                     builder.sslContext(sslContext);
-                } else {
-                    sslContext.init(null, null, new SecureRandom());
-                    builder.sslContext(customeSslContext != null ? customeSslContext : sslContext);
+                }
+
+                if (config.certificateFilePath() != null && !config.getDisableServerCertificateValidation()) {
+                    X509TrustManager x509TrustManager = getX509TrustManagerFromFile(config.certificateFilePath());
+                    sslContext.init(null, new X509TrustManager[]{x509TrustManager}, new SecureRandom());
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -219,6 +230,36 @@ final class RestClient implements AutoCloseable {
 
             String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
             throw new InfluxDBApiHttpException(message, response.headers(), response.statusCode());
+        }
+    }
+
+    private X509TrustManager getX509TrustManagerFromFile(@Nonnull String filePath) {
+        try {
+            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(null);
+
+            FileInputStream fis = new FileInputStream(filePath);
+            List<? extends Certificate> certificates = new ArrayList<Certificate>(
+                    CertificateFactory.getInstance("X.509")
+                            .generateCertificates(fis)
+            );
+
+            for (int i = 0; i < certificates.size(); i++) {
+                Certificate cert = certificates.get(i);
+                trustStore.setCertificateEntry("alias" + i, cert);
+            }
+
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(trustStore);
+            X509TrustManager x509TrustManager = null;
+            for (TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
+                if (trustManager instanceof X509TrustManager) {
+                    x509TrustManager = (X509TrustManager) trustManager;
+                }
+            }
+            return x509TrustManager;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

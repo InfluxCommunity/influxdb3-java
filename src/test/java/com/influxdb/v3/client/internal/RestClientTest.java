@@ -279,7 +279,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host("http://foo.com:8086")
-                .proxy(ProxySelector.of((InetSocketAddress) mockServer.toProxyAddress().address()))
+                .proxyUrl(String.format("http://%s:%s", mockServer.getHostName(), mockServer.getPort()))
                 .build());
 
         restClient.request("ping", HttpMethod.GET, null, null, null);
@@ -298,7 +298,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host("http://foo.com:8086")
-                .proxy(ProxySelector.of((InetSocketAddress) mockServer.toProxyAddress().address()))
+                .proxyUrl(String.format("http://%s:%s", mockServer.getHostName(), mockServer.getPort()))
                 .authenticator(new Authenticator() {
                     @Override
                     protected PasswordAuthentication getPasswordAuthentication() {

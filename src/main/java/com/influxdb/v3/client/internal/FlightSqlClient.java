@@ -21,7 +21,10 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -41,12 +44,13 @@ import javax.net.ssl.SSLException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.Metadata;
+import io.grpc.ProxyDetector;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
-import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.apache.arrow.flight.FlightClient;
@@ -159,27 +163,32 @@ final class FlightSqlClient implements AutoCloseable {
             nettyChannelBuilder.useTransportSecurity();
 
             SslContextBuilder sslContextBuilder;
-            SslContext sslContext;
-            if (config.getGrpcSslContext() != null) {
-                sslContext = config.getGrpcSslContext();
-                nettyChannelBuilder.sslContext(sslContext);
+            sslContextBuilder = GrpcSslContexts.forClient();
+            if (!config.getDisableServerCertificateValidation()) {
+                if (config.certificateFilePath() != null) {
+                    try (FileInputStream fileInputStream = new FileInputStream(config.certificateFilePath())) {
+                        sslContextBuilder.trustManager(fileInputStream);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             } else {
-                sslContextBuilder = GrpcSslContexts.forClient();
-                if (config.getDisableServerCertificateValidation()) {
-                    sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-                }
-                try {
-                    nettyChannelBuilder.sslContext(sslContextBuilder.build());
-                } catch (SSLException e) {
-                    throw new RuntimeException(e);
-                }
+                sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
             }
+
+            try {
+                nettyChannelBuilder.sslContext(sslContextBuilder.build());
+            } catch (SSLException e) {
+                throw new RuntimeException(e);
+            }
+
         } else {
             nettyChannelBuilder.usePlaintext();
         }
 
-        if (config.getQueryApiProxy() != null) {
-            nettyChannelBuilder.proxyDetector(config.getQueryApiProxy());
+        if (config.getProxyUrl() != null) {
+            ProxyDetector proxyDetector = createProxyDetector(config.getProxyUrl());
+            nettyChannelBuilder.proxyDetector(proxyDetector);
         }
 
         nettyChannelBuilder.maxTraceEvents(0)
@@ -252,6 +261,20 @@ final class FlightSqlClient implements AutoCloseable {
             throw new UnsupportedOperationException(
                     "Could not find suitable Netty native transport implementation for domain socket address.");
         }
+    }
+
+    private ProxyDetector createProxyDetector(@Nonnull String url) {
+        URI proxyUri = URI.create(url);
+        return (targetServerAddress) -> {
+            InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
+            if (proxyUri.getHost().equals(targetAddress.getHostString())) {
+                return HttpConnectProxiedSocketAddress.newBuilder()
+                        .setProxyAddress(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()))
+                        .setTargetAddress(targetAddress)
+                        .build();
+            }
+            return null;
+        };
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {

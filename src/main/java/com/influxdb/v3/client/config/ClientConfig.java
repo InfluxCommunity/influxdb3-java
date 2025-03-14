@@ -23,7 +23,6 @@ package com.influxdb.v3.client.config;
 
 import java.net.Authenticator;
 import java.net.MalformedURLException;
-import java.net.ProxySelector;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
@@ -35,10 +34,6 @@ import java.util.StringJoiner;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.net.ssl.SSLContext;
-
-import io.grpc.ProxyDetector;
-import io.netty.handler.ssl.SslContext;
 
 import com.influxdb.v3.client.write.WritePrecision;
 
@@ -61,16 +56,17 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
  *     </li>
- *     <li><code>proxy</code> - HTTP proxy selector</li>
+ *     <li><code>proxyUrl</code> - Proxy url for query api and write api</li>
  *     <li><code>queryApiProxy</code> - HTTP query detector</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
+ *     <li><code>certificateFilePath</code> - Path to the stored certificates file</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
  * <pre>
  * ClientConfig config = new ClientConfig.Builder()
- *     .host("https://us-east-1-1.aws.cloud2.influxdata.com")
+ *     .host("<a href="https://us-east-1-1.aws.cloud2.influxdata.com">https://us-east-1-1.aws.cloud2.influxdata.com</a>")
  *     .token("my-token".toCharArray())
  *     .database("my-database")
  *     .writePrecision(WritePrecision.S)
@@ -89,7 +85,8 @@ import com.influxdb.v3.client.write.WritePrecision;
  * Immutable class.
  */
 public final class ClientConfig {
-
+    //todo check if main use proxySelector for backward compality
+    //todo check comments
     private final String host;
     private final char[] token;
     private final String authScheme;
@@ -101,12 +98,10 @@ public final class ClientConfig {
     private final Duration timeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
-    private final ProxySelector proxy;
-    private final ProxyDetector queryApiProxy;
+    private final String proxyUrl;
     private final Authenticator authenticator;
     private final Map<String, String> headers;
-    private final SslContext grpcSslContext;
-    private final SSLContext sslContext;
+    private final String certificateFilePath;
 
     /**
      * Gets URL of the InfluxDB server.
@@ -218,23 +213,23 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets the proxy.
+     * Gets the proxy url.
      *
-     * @return the proxy, may be null
+     * @return the proxy url, may be null
      */
     @Nullable
-    public ProxySelector getProxy() {
-        return proxy;
+    public String getProxyUrl() {
+        return proxyUrl;
     }
 
     /**
-     * Gets the proxy for query api.
+     * Gets certificates file path
      *
-     * @return the proxy, may be null
+     * @return the certificates file path, may be null
      */
     @Nullable
-    public ProxyDetector getQueryApiProxy() {
-        return queryApiProxy;
+    public String certificateFilePath() {
+        return certificateFilePath;
     }
 
     /**
@@ -255,26 +250,6 @@ public final class ClientConfig {
     @Nullable
     public Map<String, String> getHeaders() {
         return headers;
-    }
-
-    /**
-     * Gets SslContext object from grpc.
-     *
-     * @return the SslContext object
-     */
-    @Nullable
-    public SslContext getGrpcSslContext() {
-        return grpcSslContext;
-    }
-
-    /**
-     * Gets SSLContext object.
-     *
-     * @return the SSLContext object
-     */
-    @Nullable
-    public SSLContext getSslContext() {
-        return sslContext;
     }
 
     /**
@@ -306,21 +281,19 @@ public final class ClientConfig {
                 && Objects.equals(timeout, that.timeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
-                && Objects.equals(proxy, that.proxy)
-                && Objects.equals(queryApiProxy, that.queryApiProxy)
+                && Objects.equals(proxyUrl, that.proxyUrl)
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
-                && Objects.equals(grpcSslContext, that.grpcSslContext)
-                && Objects.equals(sslContext, that.sslContext);
+                && Objects.equals(certificateFilePath, that.certificateFilePath);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
-          database, writePrecision, gzipThreshold,
-          timeout, allowHttpRedirects, disableServerCertificateValidation,
-          proxy, queryApiProxy, authenticator, headers,
-          defaultTags, grpcSslContext, sslContext);
+                database, writePrecision, gzipThreshold,
+                timeout, allowHttpRedirects, disableServerCertificateValidation,
+                proxyUrl, authenticator, headers,
+                defaultTags, certificateFilePath);
     }
 
     @Override
@@ -334,13 +307,11 @@ public final class ClientConfig {
                 .add("timeout=" + timeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
-                .add("proxy=" + proxy)
-                .add("queryApiProxy=" + queryApiProxy)
+                .add("proxy=" + proxyUrl)
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
-                .add("grpcSslContext=" + grpcSslContext)
-                .add("sslContext=" + sslContext)
+                .add("certificateFilePath=" + certificateFilePath)
                 .toString();
     }
 
@@ -361,12 +332,10 @@ public final class ClientConfig {
         private Duration timeout;
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
-        private ProxySelector proxy;
-        private ProxyDetector queryApiProxy;
+        private String proxyUrl;
         private Authenticator authenticator;
         private Map<String, String> headers;
-        private SslContext grpcSslContext;
-        private SSLContext sslContext;
+        private String certificateFilePath;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -515,28 +484,15 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets the proxy selector. Default is 'null'.
+         * Sets the proxy url. Default is 'null'.
          *
-         * @param proxy Proxy selector.
+         * @param proxyUrl Proxy url.
          * @return this
          */
         @Nonnull
-        public Builder proxy(@Nullable final ProxySelector proxy) {
+        public Builder proxyUrl(@Nullable final String proxyUrl) {
 
-            this.proxy = proxy;
-            return this;
-        }
-
-        /**
-         * Sets the proxy detector for query api. Default is 'null'.
-         *
-         * @param proxy Proxy detector.
-         * @return this
-         */
-        @Nonnull
-        public Builder queryApiProxy(@Nullable final ProxyDetector proxy) {
-
-            this.queryApiProxy = proxy;
+            this.proxyUrl = proxyUrl;
             return this;
         }
 
@@ -558,7 +514,7 @@ public final class ClientConfig {
          * such as tracing headers. To add custom headers use following code:
          * <pre>
          * ClientConfig config = new ClientConfig.Builder()
-         *     .host("https://us-east-1-1.aws.cloud2.influxdata.com")
+         *     .host("<a href="https://us-east-1-1.aws.cloud2.influxdata.com">https://us-east-1-1.aws.cloud2.influxdata.com</a>")
          *     .token("my-token".toCharArray())
          *     .database("my-database")
          *     .headers(Map.of("X-Tracing-Id", "123"))
@@ -584,28 +540,15 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets SslContext for grpc client. Default is 'null'.
+         * Sets certificate file path. Default is 'null'.
          *
-         * @param grpcSslContext The SSLContext
+         * @param certificateFilePath The certificate file path
          * @return this
          */
         @Nonnull
-        public Builder grpcSslContext(@Nullable final SslContext grpcSslContext) {
+        public Builder certificateFilePath(@Nullable final String certificateFilePath) {
 
-            this.grpcSslContext = grpcSslContext;
-            return this;
-        }
-
-        /**
-         * Sets SSLContext for rest client. Default is 'null'.
-         *
-         * @param sslContext The SSLContext
-         * @return this
-         */
-        @Nonnull
-        public Builder sslContext(@Nullable final SSLContext sslContext) {
-
-            this.sslContext = sslContext;
+            this.certificateFilePath = certificateFilePath;
             return this;
         }
 
@@ -743,11 +686,9 @@ public final class ClientConfig {
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
-        proxy = builder.proxy;
-        queryApiProxy = builder.queryApiProxy;
+        proxyUrl = builder.proxyUrl;
         authenticator = builder.authenticator;
         headers = builder.headers;
-        grpcSslContext = builder.grpcSslContext;
-        sslContext = builder.sslContext;
+        certificateFilePath = builder.certificateFilePath;
     }
 }

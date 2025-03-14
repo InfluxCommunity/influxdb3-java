@@ -28,10 +28,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 
-import io.netty.handler.ssl.SslContext;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -42,23 +40,45 @@ import com.influxdb.v3.client.write.WritePrecision;
 
 public class InfluxDBClientTest {
 
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void testCustomSslContext() throws NoSuchAlgorithmException, SSLException {
-        // Test for java.net SslContext
+    void testQueryProxy() {
+        String proxyUrl = "http://127.0.0.1:10000";
+
+        //todo remove
+        //todo add test for proxy and certificates path
+//        String certificateFilePath = "/Users/home/Downloads/influxdb3-java/src/test/java/com/influxdb/v3/client/valid-certificates.pem";
+
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .proxyUrl(proxyUrl)
+//                .certificateFilePath(certificateFilePath)
+                .build();
+
+        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
+        influxDBClient.writePoint(
+                Point.measurement("test1")
+                        .setField("field", "field1")
+        );
+
+        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
+            stream.findFirst()
+                    .ifPresent(pointValues -> {
+                        Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
+                    });
+        }
+    }
+
+    @Test
+    void withProxyUrl() throws NoSuchAlgorithmException, SSLException {
         ClientConfig.Builder builder = new ClientConfig.Builder();
-        ClientConfig clientConfig = builder.sslContext(null).build();
-        Assertions.assertThat(clientConfig.getSslContext()).isNull();
-
-        clientConfig = builder.sslContext(SSLContext.getDefault()).build();
-        Assertions.assertThat(clientConfig.getSslContext()).isNotNull();
-
-        // Test for grpc SslContext
-        ClientConfig.Builder builder1 = new ClientConfig.Builder();
-        ClientConfig clientConfig1 = builder1.grpcSslContext(null).build();
-        Assertions.assertThat(clientConfig1.getGrpcSslContext()).isNull();
-
-        clientConfig1 = builder1.grpcSslContext(SslContext.newClientContext()).build();
-        Assertions.assertThat(clientConfig1.getGrpcSslContext()).isNotNull();
+        builder.proxyUrl("http://127.0.0.1:10000");
+        ClientConfig clientConfig = builder.build();
+        Assertions.assertThat(clientConfig.getProxyUrl()).isEqualTo("http://127.0.0.1:10000");
     }
 
     @Test
