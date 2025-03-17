@@ -22,13 +22,11 @@
 package com.influxdb.v3.client;
 
 import java.math.BigInteger;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
-import javax.net.ssl.SSLException;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -44,19 +42,18 @@ public class InfluxDBClientTest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void testQueryProxy() {
+    void testQueryProxyAndSslCertificate() {
         String proxyUrl = "http://127.0.0.1:10000";
 
-        //todo remove
-        //todo add test for proxy and certificates path
-//        String certificateFilePath = "/Users/home/Downloads/influxdb3-java/src/test/java/com/influxdb/v3/client/valid-certificates.pem";
+        // This is real certificate downloaded from https://cloud2.influxdata.com
+        String certificateFilePath = "src/test/java/com/influxdb/v3/client/testdata/valid-certificates.pem";
 
         ClientConfig clientConfig = new ClientConfig.Builder()
                 .host(System.getenv("TESTING_INFLUXDB_URL"))
                 .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
                 .proxyUrl(proxyUrl)
-//                .certificateFilePath(certificateFilePath)
+                .certificateFilePath(certificateFilePath)
                 .build();
 
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
@@ -74,11 +71,21 @@ public class InfluxDBClientTest {
     }
 
     @Test
-    void withProxyUrl() throws NoSuchAlgorithmException, SSLException {
+    void withProxyUrl() {
+        String proxyUrl = "http://127.0.0.1:10000";
         ClientConfig.Builder builder = new ClientConfig.Builder();
-        builder.proxyUrl("http://127.0.0.1:10000");
+        builder.proxyUrl(proxyUrl);
         ClientConfig clientConfig = builder.build();
-        Assertions.assertThat(clientConfig.getProxyUrl()).isEqualTo("http://127.0.0.1:10000");
+        Assertions.assertThat(clientConfig.getProxyUrl()).isEqualTo(proxyUrl);
+    }
+
+    @Test
+    void withCertificateFilePath() {
+        String path = "/path/to/cert";
+        ClientConfig.Builder builder = new ClientConfig.Builder();
+        builder.certificateFilePath(path);
+        ClientConfig clientConfig = builder.build();
+        Assertions.assertThat(clientConfig.certificateFilePath()).isEqualTo(path);
     }
 
     @Test
