@@ -41,26 +41,14 @@ public final class ProxyExample {
     public static void main(final String[] args) throws Exception {
         // Run docker-compose.yml file to start Envoy proxy
 
-        URI queryProxyUri = new URI("proxyUrl");
-        URI uri = new URI(System.getenv("url"));
-
-        ProxyDetector proxyDetector = (targetServerAddress) -> {
-            InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
-            if (uri.getHost().equals(targetAddress.getHostString())) {
-                return HttpConnectProxiedSocketAddress.newBuilder()
-                        .setProxyAddress(new InetSocketAddress(queryProxyUri.getHost(), queryProxyUri.getPort()))
-                        .setTargetAddress(targetAddress)
-                        .build();
-            }
-            return null;
-        };
-        ProxySelector proxy = ProxySelector.of(new InetSocketAddress(queryProxyUri.getHost(), queryProxyUri.getPort()));
+        String proxyUrl = "http://127.0.0.1:10000";
+        String certificateFilePath = "src/test/java/com/influxdb/v3/client/testdata/valid-certificates.pem";
         ClientConfig clientConfig = new ClientConfig.Builder()
-                .host(uri.toString())
-                .token(System.getenv("token").toCharArray())
-                .database(System.getenv("database"))
-                .proxy(proxy)
-                .queryApiProxy(proxyDetector)
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .proxyUrl(proxyUrl)
+                .certificateFilePath(certificateFilePath)
                 .build();
 
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
@@ -72,7 +60,7 @@ public final class ProxyExample {
         try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
             stream.findFirst()
                     .ifPresent(pointValues -> {
-                        // do something
+                        Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
                     });
         }
     }

@@ -249,7 +249,9 @@ final class RestClient implements AutoCloseable {
                 trustStore.setCertificateEntry("alias" + i, cert);
             }
 
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+                    TrustManagerFactory.getDefaultAlgorithm()
+            );
             trustManagerFactory.init(trustStore);
             X509TrustManager x509TrustManager = null;
             for (TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
