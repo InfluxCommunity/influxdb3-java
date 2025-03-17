@@ -66,7 +66,9 @@ import com.influxdb.v3.client.write.WritePrecision;
  * If you want to create a client with custom configuration, you can use following code:
  * <pre>
  * ClientConfig config = new ClientConfig.Builder()
- *     .host("<a href="https://us-east-1-1.aws.cloud2.influxdata.com">https://us-east-1-1.aws.cloud2.influxdata.com</a>")
+ *     .host("<a href="https://us-east-1-1.aws.cloud2.influxdata.com">
+ *         https://us-east-1-1.aws.cloud2.influxdata.com
+ *         </a>")
  *     .token("my-token".toCharArray())
  *     .database("my-database")
  *     .writePrecision(WritePrecision.S)
@@ -223,7 +225,7 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets certificates file path
+     * Gets certificates file path.
      *
      * @return the certificates file path, may be null
      */
@@ -514,7 +516,9 @@ public final class ClientConfig {
          * such as tracing headers. To add custom headers use following code:
          * <pre>
          * ClientConfig config = new ClientConfig.Builder()
-         *     .host("<a href="https://us-east-1-1.aws.cloud2.influxdata.com">https://us-east-1-1.aws.cloud2.influxdata.com</a>")
+         *     .host("<a href="https://us-east-1-1.aws.cloud2.influxdata.com">
+         *         https://us-east-1-1.aws.cloud2.influxdata.com
+         *         </a>")
          *     .token("my-token".toCharArray())
          *     .database("my-database")
          *     .headers(Map.of("X-Tracing-Id", "123"))

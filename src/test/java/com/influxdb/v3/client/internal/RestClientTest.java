@@ -22,9 +22,7 @@
 package com.influxdb.v3.client.internal;
 
 import java.net.Authenticator;
-import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
-import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.time.Duration;

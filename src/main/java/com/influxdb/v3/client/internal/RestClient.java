@@ -233,7 +233,7 @@ final class RestClient implements AutoCloseable {
         }
     }
 
-    private X509TrustManager getX509TrustManagerFromFile(@Nonnull String filePath) {
+    private X509TrustManager getX509TrustManagerFromFile(@Nonnull final String filePath) {
         try {
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
             trustStore.load(null);
