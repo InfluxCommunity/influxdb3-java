@@ -21,13 +21,7 @@
  */
 package com.influxdb.v3;
 
-import java.net.InetSocketAddress;
-import java.net.ProxySelector;
-import java.net.URI;
 import java.util.stream.Stream;
-
-import io.grpc.HttpConnectProxiedSocketAddress;
-import io.grpc.ProxyDetector;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.Point;
