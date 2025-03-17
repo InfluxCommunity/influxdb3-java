@@ -25,7 +25,7 @@ jobs:
             echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/envoy-keyring.gpg] https://apt.envoyproxy.io focal main" | sudo tee /etc/apt/sources.list.d/envoy.list
             sudo apt-get update
             sudo apt-get install envoy
-            envoy --version
+            envoy -c .circleci/envoy.yaml
       - run:
           name: "Running tests"
           command: |
