@@ -19,6 +19,14 @@ jobs:
             - &cache-key maven-cache_v1-<< parameters.maven-image >>-{{ checksum "pom.xml" }}
             - maven-cache_v3-<< parameters.maven-image >>-
       - run:
+          name: "Run Envoy"
+          command: |
+            curl -sL 'https://apt.envoyproxy.io/signing.key | sudo gpg --dearmor -o /etc/apt/keyrings/envoy-keyring.gpg'
+            sudo apt-get update
+            sudo apt-get install envoy
+            echo "helllo"
+            envoy --version
+      - run:
           name: "Running tests"
           command: |
             mvn -B -U clean install -DargLine="@{argLine} << parameters.arg-line >>"
