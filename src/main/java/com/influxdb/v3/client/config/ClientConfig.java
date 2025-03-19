@@ -57,6 +57,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
  *     </li>
+ *     <li><code>proxy</code> - HTTP proxy selector</li>
  *     <li><code>proxyUrl</code> - Proxy url for query api and write api</li>
  *     <li><code>queryApiProxy</code> - HTTP query detector</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
@@ -105,7 +106,7 @@ public final class ClientConfig {
     private final String certificateFilePath;
 
     /**
-     * @deprecated use {@link #proxyUrl}
+     * Deprecated use {@link #proxyUrl}
      */
     @Deprecated
     private final ProxySelector proxy;
@@ -510,7 +511,7 @@ public final class ClientConfig {
          *
          * @param proxy Proxy selector.
          * @return this
-         * @deprecated use {@link #proxyUrl}
+         * Deprecated use {@link #proxyUrl}
          */
         @Nonnull
         public Builder proxy(@Nullable final ProxySelector proxy) {
