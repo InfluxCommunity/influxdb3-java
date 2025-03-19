@@ -224,7 +224,7 @@ public final class ClientConfig {
      * Gets the proxy.
      *
      * @return the proxy, may be null
-     * @derepcated use {@link #proxyUrl}
+     * Deprecated use {@link #proxyUrl}
      */
     @Nullable
     @Deprecated
