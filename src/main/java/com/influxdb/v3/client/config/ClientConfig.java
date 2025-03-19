@@ -106,7 +106,7 @@ public final class ClientConfig {
     private final String certificateFilePath;
 
     /**
-     * Deprecated use {@link #proxyUrl}
+     * Deprecated use {@link #proxyUrl}.
      */
     @Deprecated
     private final ProxySelector proxy;

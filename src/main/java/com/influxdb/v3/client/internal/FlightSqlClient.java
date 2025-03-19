@@ -24,7 +24,6 @@ package com.influxdb.v3.client.internal;
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
-import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
