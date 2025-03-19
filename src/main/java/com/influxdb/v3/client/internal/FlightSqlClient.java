@@ -178,7 +178,7 @@ final class FlightSqlClient implements AutoCloseable {
         }
 
         if (config.getProxy() != null) {
-            LOG.warn("proxy property is deprecated, use proxyUrl property instead");
+            LOG.warn("proxy property will not work in query api, use proxyUrl property instead");
         }
 
         nettyChannelBuilder.maxTraceEvents(0)
