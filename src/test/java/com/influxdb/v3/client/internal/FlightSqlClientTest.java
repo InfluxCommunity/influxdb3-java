@@ -21,7 +21,6 @@
  */
 package com.influxdb.v3.client.internal;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.Map;
