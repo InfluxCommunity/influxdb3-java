@@ -24,6 +24,7 @@ package com.influxdb.v3.client.internal;
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -63,11 +64,15 @@ import org.apache.arrow.flight.grpc.MetadataAdapter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.query.QueryType;
 
 final class FlightSqlClient implements AutoCloseable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FlightSqlClient.class);
 
     private final FlightClient client;
 
@@ -170,6 +175,10 @@ final class FlightSqlClient implements AutoCloseable {
         if (config.getProxyUrl() != null) {
             ProxyDetector proxyDetector = createProxyDetector(config.getHost(), config.getProxyUrl());
             nettyChannelBuilder.proxyDetector(proxyDetector);
+        }
+
+        if (config.getProxy() != null) {
+            LOG.warn("proxy property is deprecated, use proxyUrl property instead");
         }
 
         nettyChannelBuilder.maxTraceEvents(0)

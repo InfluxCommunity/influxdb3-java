@@ -23,6 +23,7 @@ package com.influxdb.v3.client.config;
 
 import java.net.Authenticator;
 import java.net.MalformedURLException;
+import java.net.ProxySelector;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
@@ -87,8 +88,6 @@ import com.influxdb.v3.client.write.WritePrecision;
  * Immutable class.
  */
 public final class ClientConfig {
-    //todo check if main use proxySelector for backward compality
-    //todo check comments
     private final String host;
     private final char[] token;
     private final String authScheme;
@@ -104,6 +103,12 @@ public final class ClientConfig {
     private final Authenticator authenticator;
     private final Map<String, String> headers;
     private final String certificateFilePath;
+
+    /**
+     * @deprecated use {@link #proxyUrl}
+     */
+    @Deprecated
+    private final ProxySelector proxy;
 
     /**
      * Gets URL of the InfluxDB server.
@@ -215,6 +220,18 @@ public final class ClientConfig {
     }
 
     /**
+     * Gets the proxy.
+     *
+     * @return the proxy, may be null
+     * @derepcated use {@link #proxyUrl}
+     */
+    @Nullable
+    @Deprecated
+    public ProxySelector getProxy() {
+        return proxy;
+    }
+
+    /**
      * Gets the proxy url.
      *
      * @return the proxy url, may be null
@@ -283,6 +300,7 @@ public final class ClientConfig {
                 && Objects.equals(timeout, that.timeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
+                && Objects.equals(proxy, that.proxy)
                 && Objects.equals(proxyUrl, that.proxyUrl)
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
@@ -294,7 +312,7 @@ public final class ClientConfig {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
                 database, writePrecision, gzipThreshold,
                 timeout, allowHttpRedirects, disableServerCertificateValidation,
-                proxyUrl, authenticator, headers,
+                proxy, proxyUrl, authenticator, headers,
                 defaultTags, certificateFilePath);
     }
 
@@ -309,7 +327,8 @@ public final class ClientConfig {
                 .add("timeout=" + timeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
-                .add("proxy=" + proxyUrl)
+                .add("proxy=" + proxy)
+                .add("proxyUrl=" + proxyUrl)
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
@@ -334,6 +353,7 @@ public final class ClientConfig {
         private Duration timeout;
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
+        private ProxySelector proxy;
         private String proxyUrl;
         private Authenticator authenticator;
         private Map<String, String> headers;
@@ -482,6 +502,20 @@ public final class ClientConfig {
         public Builder disableServerCertificateValidation(@Nullable final Boolean disableServerCertificateValidation) {
 
             this.disableServerCertificateValidation = disableServerCertificateValidation;
+            return this;
+        }
+
+        /**
+         * Sets the proxy selector. Default is 'null'.
+         *
+         * @param proxy Proxy selector.
+         * @return this
+         * @deprecated use {@link #proxyUrl}
+         */
+        @Nonnull
+        public Builder proxy(@Nullable final ProxySelector proxy) {
+
+            this.proxy = proxy;
             return this;
         }
 
@@ -690,6 +724,7 @@ public final class ClientConfig {
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
+        proxy = builder.proxy;
         proxyUrl = builder.proxyUrl;
         authenticator = builder.authenticator;
         headers = builder.headers;

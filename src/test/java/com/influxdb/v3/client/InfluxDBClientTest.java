@@ -154,10 +154,10 @@ public class InfluxDBClientTest {
         Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
 
         try (InfluxDBClient client = InfluxDBClient.getInstance(
-                "http://localhost:8086",
-                "MY-TOKEN".toCharArray(),
-                "MY-DATABASE",
-                defaultTags)) {
+          "http://localhost:8086",
+          "MY-TOKEN".toCharArray(),
+          "MY-DATABASE",
+          defaultTags)) {
             Assertions.assertThat(client).isNotNull();
         }
     }

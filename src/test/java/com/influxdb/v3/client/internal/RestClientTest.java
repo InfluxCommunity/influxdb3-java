@@ -22,7 +22,9 @@
 package com.influxdb.v3.client.internal;
 
 import java.net.Authenticator;
+import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.time.Duration;
@@ -273,6 +275,24 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void proxy() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host("http://foo.com:8086")
+                .proxy(ProxySelector.of((InetSocketAddress) mockServer.toProxyAddress().address()))
+                .build());
+
+        restClient.request("ping", HttpMethod.GET, null, null, null);
+
+        RecordedRequest recordedRequest = mockServer.takeRequest();
+
+        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
+        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL); // server is used as proxy
+        Assertions.assertThat(recordedRequest.getRequestLine()).isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
+    }
+
+    @Test
+    public void proxyUrl() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
         restClient = new RestClient(new ClientConfig.Builder()

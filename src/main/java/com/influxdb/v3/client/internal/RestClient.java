@@ -106,11 +106,15 @@ final class RestClient implements AutoCloseable {
         // default headers
         this.defaultHeaders = config.getHeaders() != null ? Map.copyOf(config.getHeaders()) : null;
 
-        // proxy
         if (config.getProxyUrl() != null) {
             URI uri = URI.create(config.getProxyUrl());
             ProxySelector proxy = ProxySelector.of(new InetSocketAddress(uri.getHost(), uri.getPort()));
             builder.proxy(proxy);
+            if (config.getAuthenticator() != null) {
+                builder.authenticator(config.getAuthenticator());
+            }
+        } else if (config.getProxy() != null) {
+            builder.proxy(config.getProxy());
             if (config.getAuthenticator() != null) {
                 builder.authenticator(config.getAuthenticator());
             }
