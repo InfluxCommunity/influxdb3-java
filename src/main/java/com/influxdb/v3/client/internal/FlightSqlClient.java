@@ -22,7 +22,6 @@
 package com.influxdb.v3.client.internal;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -40,7 +39,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.net.ssl.SSLException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +49,7 @@ import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.ServerChannel;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.apache.arrow.flight.FlightClient;
@@ -140,7 +139,7 @@ final class FlightSqlClient implements AutoCloseable {
     }
 
     @Nonnull
-    private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
+    FlightClient createFlightClient(@Nonnull final ClientConfig config) {
         Location location = createLocation(config);
 
         final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
@@ -162,32 +161,14 @@ final class FlightSqlClient implements AutoCloseable {
         if (LocationSchemes.GRPC_TLS.equals(location.getUri().getScheme())) {
             nettyChannelBuilder.useTransportSecurity();
 
-            SslContextBuilder sslContextBuilder;
-            sslContextBuilder = GrpcSslContexts.forClient();
-            if (!config.getDisableServerCertificateValidation()) {
-                if (config.certificateFilePath() != null) {
-                    try (FileInputStream fileInputStream = new FileInputStream(config.certificateFilePath())) {
-                        sslContextBuilder.trustManager(fileInputStream);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            } else {
-                sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-            }
-
-            try {
-                nettyChannelBuilder.sslContext(sslContextBuilder.build());
-            } catch (SSLException e) {
-                throw new RuntimeException(e);
-            }
-
+            SslContext nettySslContext = createNettySslContext(config);
+            nettyChannelBuilder.sslContext(nettySslContext);
         } else {
             nettyChannelBuilder.usePlaintext();
         }
 
         if (config.getProxyUrl() != null) {
-            ProxyDetector proxyDetector = createProxyDetector(config.getProxyUrl());
+            ProxyDetector proxyDetector = createProxyDetector(config.getHost(), config.getProxyUrl());
             nettyChannelBuilder.proxyDetector(proxyDetector);
         }
 
@@ -196,6 +177,26 @@ final class FlightSqlClient implements AutoCloseable {
                 .maxInboundMetadataSize(Integer.MAX_VALUE);
 
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
+    }
+
+    @Nonnull
+    SslContext createNettySslContext(@Nonnull final ClientConfig config) {
+        try {
+            SslContextBuilder sslContextBuilder;
+            sslContextBuilder = GrpcSslContexts.forClient();
+            if (!config.getDisableServerCertificateValidation()) {
+                if (config.certificateFilePath() != null) {
+                    try (FileInputStream fileInputStream = new FileInputStream(config.certificateFilePath())) {
+                        sslContextBuilder.trustManager(fileInputStream);
+                    }
+                }
+            } else {
+                sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+            }
+            return sslContextBuilder.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Nonnull
@@ -263,11 +264,12 @@ final class FlightSqlClient implements AutoCloseable {
         }
     }
 
-    private ProxyDetector createProxyDetector(@Nonnull final String url) {
-        URI proxyUri = URI.create(url);
+    private ProxyDetector createProxyDetector(@Nonnull final String hostUrl, @Nonnull final String proxyUrl) {
+        URI proxyUri = URI.create(proxyUrl);
+        URI hostUri = URI.create(hostUrl);
         return (targetServerAddress) -> {
             InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
-            if (proxyUri.getHost().equals(targetAddress.getHostString())) {
+            if (hostUri.getHost().equals(targetAddress.getHostString())) {
                 return HttpConnectProxiedSocketAddress.newBuilder()
                         .setProxyAddress(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()))
                         .setTargetAddress(targetAddress)
