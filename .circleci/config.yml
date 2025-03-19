@@ -11,7 +11,7 @@ jobs:
         default: ""
     docker:
       - image: << parameters.maven-image >>
-      - image: sonnh96/influxdb3-java-envoy:0.0.1
+      - image: sonnh96/influxdb3-java-envoy:0.0.2
     steps:
       - checkout
       - restore_cache:
