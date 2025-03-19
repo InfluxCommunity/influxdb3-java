@@ -21,9 +21,12 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.Map;
 
+import io.grpc.ProxyDetector;
 import io.grpc.internal.GrpcUtil;
 import org.apache.arrow.flight.CallHeaders;
 import org.apache.arrow.flight.CallInfo;
@@ -269,6 +272,23 @@ public class FlightSqlClientTest {
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
             );
             Assertions.assertThat(incomingHeaders.get("X-Tracing-Id")).isEqualTo("987");
+        }
+    }
+
+    @Test
+    void createProxyDetector() {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host("https://localhost:80")
+                .build();
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
+            String hostUrl = "https://youtube.com";
+            String proxyUrl = "https://facebook.com";
+            ProxyDetector proxyDetector = flightSqlClient.createProxyDetector(hostUrl, proxyUrl);
+            Assertions.assertThat(proxyDetector.proxyFor(
+                    new InetSocketAddress("142.250.198.142", 80)
+            )).isNull();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

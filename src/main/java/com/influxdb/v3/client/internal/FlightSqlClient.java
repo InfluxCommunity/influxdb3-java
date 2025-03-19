@@ -272,7 +272,7 @@ final class FlightSqlClient implements AutoCloseable {
         }
     }
 
-    private ProxyDetector createProxyDetector(@Nonnull final String hostUrl, @Nonnull final String proxyUrl) {
+    ProxyDetector createProxyDetector(@Nonnull final String hostUrl, @Nonnull final String proxyUrl) {
         URI proxyUri = URI.create(proxyUrl);
         URI hostUri = URI.create(hostUrl);
         return (targetServerAddress) -> {
