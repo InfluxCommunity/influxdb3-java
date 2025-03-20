@@ -23,6 +23,7 @@ package com.influxdb.v3.client;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.Instant;
@@ -47,10 +48,12 @@ public class InfluxDBClientTest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
     void testQueryWithProxy() {
-        String proxyUrl = "http://127.0.0.1:10000";
+        InetSocketAddress proxyAddress = new InetSocketAddress("localhost", 10000);
+
         try {
             // Continue to run this test only if Envoy proxy is running in this address http://127.0.0.1:10000
-            URLConnection hpCon = new URL(proxyUrl).openConnection();
+            String url = String.format("http://%s:%d/", proxyAddress.getHostName(), proxyAddress.getPort());
+            URLConnection hpCon = new URL(url).openConnection();
             hpCon.connect();
         } catch (IOException e) {
             return;
@@ -60,7 +63,7 @@ public class InfluxDBClientTest {
                 .host(System.getenv("TESTING_INFLUXDB_URL"))
                 .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-                .proxyUrl(proxyUrl)
+                .proxyAddress(proxyAddress)
                 .build();
 
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
@@ -128,12 +131,12 @@ public class InfluxDBClientTest {
     }
 
     @Test
-    void withProxyUrl() {
-        String proxyUrl = "http://127.0.0.1:10000";
+    void withProxyAddress() {
+        InetSocketAddress proxyAddress = new InetSocketAddress("127.0.0.1", 10000);
         ClientConfig.Builder builder = new ClientConfig.Builder();
-        builder.proxyUrl(proxyUrl);
+        builder.proxyAddress(proxyAddress);
         ClientConfig clientConfig = builder.build();
-        Assertions.assertThat(clientConfig.getProxyUrl()).isEqualTo(proxyUrl);
+        Assertions.assertThat(clientConfig.getProxyAddress()).isEqualTo(proxyAddress);
     }
 
     @Test

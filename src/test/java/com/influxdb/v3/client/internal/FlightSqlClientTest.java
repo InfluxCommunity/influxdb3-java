@@ -281,8 +281,8 @@ public class FlightSqlClientTest {
                 .build();
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
             String hostUrl = "https://youtube.com";
-            String proxyUrl = "https://facebook.com";
-            ProxyDetector proxyDetector = flightSqlClient.createProxyDetector(hostUrl, proxyUrl);
+            InetSocketAddress proxyAddress = new InetSocketAddress("localhost", 10000);
+            ProxyDetector proxyDetector = flightSqlClient.createProxyDetector(hostUrl, proxyAddress);
             Assertions.assertThat(proxyDetector.proxyFor(
                     new InetSocketAddress("142.250.198.142", 80)
             )).isNull();

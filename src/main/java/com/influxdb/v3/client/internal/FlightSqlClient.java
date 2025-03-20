@@ -171,13 +171,13 @@ final class FlightSqlClient implements AutoCloseable {
             nettyChannelBuilder.usePlaintext();
         }
 
-        if (config.getProxyUrl() != null) {
-            ProxyDetector proxyDetector = createProxyDetector(config.getHost(), config.getProxyUrl());
+        if (config.getProxyAddress() != null) {
+            ProxyDetector proxyDetector = createProxyDetector(config.getHost(), config.getProxyAddress());
             nettyChannelBuilder.proxyDetector(proxyDetector);
         }
 
         if (config.getProxy() != null) {
-            LOG.warn("proxy property will not work in query api, use proxyUrl property instead");
+            LOG.warn("proxy property in ClientConfig will not work in query api, use proxyAddress property instead");
         }
 
         nettyChannelBuilder.maxTraceEvents(0)
@@ -272,14 +272,13 @@ final class FlightSqlClient implements AutoCloseable {
         }
     }
 
-    ProxyDetector createProxyDetector(@Nonnull final String hostUrl, @Nonnull final String proxyUrl) {
-        URI proxyUri = URI.create(proxyUrl);
+    ProxyDetector createProxyDetector(@Nonnull final String hostUrl, @Nonnull final InetSocketAddress proxyAddress) {
         URI hostUri = URI.create(hostUrl);
         return (targetServerAddress) -> {
             InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
             if (hostUri.getHost().equals(targetAddress.getHostString())) {
                 return HttpConnectProxiedSocketAddress.newBuilder()
-                        .setProxyAddress(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()))
+                        .setProxyAddress(proxyAddress)
                         .setTargetAddress(targetAddress)
                         .build();
             }

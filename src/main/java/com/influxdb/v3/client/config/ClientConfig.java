@@ -22,6 +22,7 @@
 package com.influxdb.v3.client.config;
 
 import java.net.Authenticator;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ProxySelector;
 import java.net.URL;
@@ -58,7 +59,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *          disable server certificate validation for HTTPS connections
  *     </li>
  *     <li><code>proxy</code> - HTTP proxy selector</li>
- *     <li><code>proxyUrl</code> - Proxy url for query api and write api</li>
+ *     <li><code>proxyAddress</code> - Proxy address for query api and write api</li>
  *     <li><code>queryApiProxy</code> - HTTP query detector</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
@@ -100,13 +101,13 @@ public final class ClientConfig {
     private final Duration timeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
-    private final String proxyUrl;
+    private final InetSocketAddress proxyAddress;
     private final Authenticator authenticator;
     private final Map<String, String> headers;
     private final String certificateFilePath;
 
     /**
-     * Deprecated use {@link #proxyUrl}.
+     * Deprecated use {@link #proxyAddress}.
      */
     @Deprecated
     private final ProxySelector proxy;
@@ -224,7 +225,7 @@ public final class ClientConfig {
      * Gets the proxy.
      *
      * @return the proxy, may be null
-     * Deprecated use {@link #proxyUrl}
+     * Deprecated use {@link #proxyAddress}
      */
     @Nullable
     @Deprecated
@@ -233,13 +234,13 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets the proxy url.
+     * Gets the proxy address.
      *
-     * @return the proxy url, may be null
+     * @return the proxy address, may be null
      */
     @Nullable
-    public String getProxyUrl() {
-        return proxyUrl;
+    public InetSocketAddress getProxyAddress() {
+        return proxyAddress;
     }
 
     /**
@@ -302,7 +303,7 @@ public final class ClientConfig {
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
                 && Objects.equals(proxy, that.proxy)
-                && Objects.equals(proxyUrl, that.proxyUrl)
+                && Objects.equals(proxyAddress, that.proxyAddress)
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
                 && Objects.equals(certificateFilePath, that.certificateFilePath);
@@ -313,7 +314,7 @@ public final class ClientConfig {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
                 database, writePrecision, gzipThreshold,
                 timeout, allowHttpRedirects, disableServerCertificateValidation,
-                proxy, proxyUrl, authenticator, headers,
+                proxy, proxyAddress, authenticator, headers,
                 defaultTags, certificateFilePath);
     }
 
@@ -329,7 +330,7 @@ public final class ClientConfig {
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
                 .add("proxy=" + proxy)
-                .add("proxyUrl=" + proxyUrl)
+                .add("proxyAddress=" + proxyAddress)
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
@@ -355,7 +356,7 @@ public final class ClientConfig {
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
         private ProxySelector proxy;
-        private String proxyUrl;
+        private InetSocketAddress proxyAddress;
         private Authenticator authenticator;
         private Map<String, String> headers;
         private String certificateFilePath;
@@ -511,7 +512,7 @@ public final class ClientConfig {
          *
          * @param proxy Proxy selector.
          * @return this
-         * Deprecated use {@link #proxyUrl}
+         * Deprecated use {@link #proxyAddress}
          */
         @Nonnull
         public Builder proxy(@Nullable final ProxySelector proxy) {
@@ -521,15 +522,15 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets the proxy url. Default is 'null'.
+         * Sets the proxyAddress. Default is 'null'.
          *
-         * @param proxyUrl Proxy url.
+         * @param proxyAddress Proxy address.
          * @return this
          */
         @Nonnull
-        public Builder proxyUrl(@Nullable final String proxyUrl) {
+        public Builder proxyAddress(@Nullable final InetSocketAddress proxyAddress) {
 
-            this.proxyUrl = proxyUrl;
+            this.proxyAddress = proxyAddress;
             return this;
         }
 
@@ -726,7 +727,7 @@ public final class ClientConfig {
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
         proxy = builder.proxy;
-        proxyUrl = builder.proxyUrl;
+        proxyAddress = builder.proxyAddress;
         authenticator = builder.authenticator;
         headers = builder.headers;
         certificateFilePath = builder.certificateFilePath;

@@ -22,9 +22,7 @@
 package com.influxdb.v3.client.internal;
 
 import java.io.FileInputStream;
-import java.net.InetSocketAddress;
 import java.net.ProxySelector;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -106,9 +104,8 @@ final class RestClient implements AutoCloseable {
         // default headers
         this.defaultHeaders = config.getHeaders() != null ? Map.copyOf(config.getHeaders()) : null;
 
-        if (config.getProxyUrl() != null) {
-            URI uri = URI.create(config.getProxyUrl());
-            ProxySelector proxy = ProxySelector.of(new InetSocketAddress(uri.getHost(), uri.getPort()));
+        if (config.getProxyAddress() != null) {
+            ProxySelector proxy = ProxySelector.of(config.getProxyAddress());
             builder.proxy(proxy);
             if (config.getAuthenticator() != null) {
                 builder.authenticator(config.getAuthenticator());

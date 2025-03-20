@@ -292,12 +292,12 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void proxyUrl() throws InterruptedException {
+    public void proxyAddress() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host("http://foo.com:8086")
-                .proxyUrl(String.format("http://%s:%s", mockServer.getHostName(), mockServer.getPort()))
+                .proxyAddress(new InetSocketAddress(mockServer.getHostName(), mockServer.getPort()))
                 .build());
 
         restClient.request("ping", HttpMethod.GET, null, null, null);
@@ -316,7 +316,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host("http://foo.com:8086")
-                .proxyUrl(String.format("http://%s:%s", mockServer.getHostName(), mockServer.getPort()))
+                .proxyAddress(new InetSocketAddress(mockServer.getHostName(), mockServer.getPort()))
                 .authenticator(new Authenticator() {
                     @Override
                     protected PasswordAuthentication getPasswordAuthentication() {

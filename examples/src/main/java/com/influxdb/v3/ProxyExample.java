@@ -35,13 +35,13 @@ public final class ProxyExample {
     public static void main(final String[] args) throws Exception {
         // Run docker-compose.yml file to start Envoy proxy
 
-        String proxyUrl = "http://127.0.0.1:10000";
-        String certificateFilePath = "src/test/java/com/influxdb/v3/client/testdata/valid-certificates.pem";
+        String proxyAddress = new InetSocketAddress("localhost", 10000);
+        String certificateFilePath = "src/test/java/com/influxdb/v3/client/testdata/influxdb-certificate.pem";
         ClientConfig clientConfig = new ClientConfig.Builder()
                 .host(System.getenv("TESTING_INFLUXDB_URL"))
                 .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-                .proxyUrl(proxyUrl)
+                .proxyAddress(proxyAddress)
                 .certificateFilePath(certificateFilePath)
                 .build();
 
