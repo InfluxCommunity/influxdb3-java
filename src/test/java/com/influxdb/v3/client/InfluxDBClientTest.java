@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -281,7 +282,7 @@ public class InfluxDBClientTest {
         }
     }
 
-    private void assertGetdataSuccess(InfluxDBClient influxDBClient) throws Exception {
+    private void assertGetdataSuccess(@Nonnull final InfluxDBClient influxDBClient) throws Exception {
         influxDBClient.writePoint(
                 Point.measurement("test1")
                         .setField("field", "field1")
