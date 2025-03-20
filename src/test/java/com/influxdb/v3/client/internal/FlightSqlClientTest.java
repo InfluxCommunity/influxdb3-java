@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.Map;
 
+import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.ProxyDetector;
 import io.grpc.internal.GrpcUtil;
 import org.apache.arrow.flight.CallHeaders;
@@ -276,15 +277,23 @@ public class FlightSqlClientTest {
 
     @Test
     void createProxyDetector() {
+        String hostUrl = "https://localhost:80";
         ClientConfig clientConfig = new ClientConfig.Builder()
-                .host("https://localhost:80")
+                .host(hostUrl)
                 .build();
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
-            String hostUrl = "https://youtube.com";
             InetSocketAddress proxyAddress = new InetSocketAddress("localhost", 10000);
             ProxyDetector proxyDetector = flightSqlClient.createProxyDetector(hostUrl, proxyAddress);
             Assertions.assertThat(proxyDetector.proxyFor(
-                    new InetSocketAddress("142.250.198.142", 80)
+                    new InetSocketAddress("localhost", 80)
+            )).isEqualTo(HttpConnectProxiedSocketAddress.newBuilder()
+                    .setProxyAddress(proxyAddress)
+                    .setTargetAddress(new InetSocketAddress("localhost", 80))
+                    .build());
+
+            // Return null case
+            Assertions.assertThat(proxyDetector.proxyFor(
+                    new InetSocketAddress("123.2.3.1", 80)
             )).isNull();
         } catch (Exception e) {
             throw new RuntimeException(e);
