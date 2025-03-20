@@ -43,7 +43,7 @@ public class InfluxDBClientTest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
     void testQueryProxyAndSslCertificate() {
-        // This test need Envoy proxy to run as this address
+        // This test need Envoy proxy to run at this address
         String proxyUrl = "http://127.0.0.1:10000";
 
         // This is real certificate downloaded from https://cloud2.influxdata.com
