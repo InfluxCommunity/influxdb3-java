@@ -45,7 +45,7 @@ public class InfluxDBClientTest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void testQueryProxyAndSslCertificate() {
+    void testQueryWithProxy() {
         String proxyUrl = "http://127.0.0.1:10000";
         try {
             // Continue to run this test only if Envoy proxy is running in this address http://127.0.0.1:10000
@@ -55,15 +55,11 @@ public class InfluxDBClientTest {
             return;
         }
 
-        // This is real certificate downloaded from https://cloud2.influxdata.com
-        String certificateFilePath = "src/test/java/com/influxdb/v3/client/testdata/valid-certificates.pem";
-
         ClientConfig clientConfig = new ClientConfig.Builder()
                 .host(System.getenv("TESTING_INFLUXDB_URL"))
                 .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
                 .proxyUrl(proxyUrl)
-                .certificateFilePath(certificateFilePath)
                 .build();
 
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
@@ -78,6 +74,56 @@ public class InfluxDBClientTest {
                         Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
                     });
         }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    void correctSslCertificates() throws Exception {
+        // This is real certificate downloaded from https://cloud2.influxdata.com
+        String influxDBcertificateFile = "src/test/java/com/influxdb/v3/client/testdata/influxdb-certificate.pem";
+
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .certificateFilePath(influxDBcertificateFile)
+                .build();
+        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
+        assertGetdataSuccess(influxDBClient);
+    }
+
+    @Test
+    void wrongSslCertificate() {
+        String certificateFile = "src/test/java/com/influxdb/v3/client/testdata/docker.com.pem";
+
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .certificateFilePath(certificateFile)
+                .build();
+        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
+        Assertions.assertThatThrownBy(() -> assertGetdataSuccess(influxDBClient))
+                .hasMessageContaining("PKIX path building failed");
+    }
+
+    @Test
+    void disableServerCertificateValidation() throws Exception {
+        String wrongCertificateFile = "src/test/java/com/influxdb/v3/client/testdata/docker.com.pem";
+
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(System.getenv("TESTING_INFLUXDB_URL"))
+                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+                .disableServerCertificateValidation(true)
+                .certificateFilePath(wrongCertificateFile)
+                .build();
+
+        // Test succeeded with wrong certificate file because disableServerCertificateValidation is true
+        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
+        assertGetdataSuccess(influxDBClient);
     }
 
     @Test
@@ -232,6 +278,19 @@ public class InfluxDBClientTest {
                           Assertions.assertThat(objects[7]).isEqualTo(BigInteger.valueOf(timestamp * 1_000_000_000));
                       });
             }
+        }
+    }
+
+    private void assertGetdataSuccess(InfluxDBClient influxDBClient) throws Exception {
+        influxDBClient.writePoint(
+                Point.measurement("test1")
+                        .setField("field", "field1")
+        );
+        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
+            stream.findFirst()
+                    .ifPresent(pointValues -> {
+                        Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
+                    });
         }
     }
 }
