@@ -21,7 +21,10 @@
  */
 package com.influxdb.v3.client;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URL;
+import java.net.URLConnection;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Properties;
@@ -43,8 +46,14 @@ public class InfluxDBClientTest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
     void testQueryProxyAndSslCertificate() {
-        // This test need Envoy proxy to run at this address
         String proxyUrl = "http://127.0.0.1:10000";
+        try {
+            // Continue to run this test only if Envoy proxy is running in this address http://127.0.0.1:10000
+            URLConnection hpCon = new URL(proxyUrl).openConnection();
+            hpCon.connect();
+        } catch (IOException e) {
+            return;
+        }
 
         // This is real certificate downloaded from https://cloud2.influxdata.com
         String certificateFilePath = "src/test/java/com/influxdb/v3/client/testdata/valid-certificates.pem";
