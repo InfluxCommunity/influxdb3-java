@@ -77,7 +77,7 @@ final class FlightSqlClient implements AutoCloseable {
 
     private final Map<String, String> defaultHeaders = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final List<String> VALID_SCHEMAS = List.of(
+    private final List<String> validSchemas = List.of(
             LocationSchemes.GRPC,
             LocationSchemes.GRPC_INSECURE,
             LocationSchemes.GRPC_TLS,
@@ -153,7 +153,7 @@ final class FlightSqlClient implements AutoCloseable {
         Location location = createLocation(config);
 
         final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
-        if (!VALID_SCHEMAS.contains(location.getUri().getScheme())) {
+        if (!validSchemas.contains(location.getUri().getScheme())) {
             throw new IllegalArgumentException(
                     "Scheme is not supported: " + location.getUri().getScheme());
         }
@@ -277,7 +277,8 @@ final class FlightSqlClient implements AutoCloseable {
         URI proxyUri = URI.create(proxyUrl);
         return (targetServerAddress) -> {
             InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
-            if (targetUri.getHost().equals(targetAddress.getHostString()) && targetUri.getPort() == targetAddress.getPort()) {
+            if (targetUri.getHost().equals(targetAddress.getHostString())
+                    && targetUri.getPort() == targetAddress.getPort()) {
                 return HttpConnectProxiedSocketAddress.newBuilder()
                         .setProxyAddress(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()))
                         .setTargetAddress(targetAddress)
