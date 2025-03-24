@@ -77,6 +77,12 @@ final class FlightSqlClient implements AutoCloseable {
 
     private final Map<String, String> defaultHeaders = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final List<String> VALID_SCHEMAS = List.of(
+            LocationSchemes.GRPC,
+            LocationSchemes.GRPC_INSECURE,
+            LocationSchemes.GRPC_TLS,
+            LocationSchemes.GRPC_DOMAIN_SOCKET
+    );
 
     FlightSqlClient(@Nonnull final ClientConfig config) {
         this(config, null);
@@ -143,17 +149,11 @@ final class FlightSqlClient implements AutoCloseable {
     }
 
     @Nonnull
-    FlightClient createFlightClient(@Nonnull final ClientConfig config) {
+    private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
         Location location = createLocation(config);
 
         final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
-        var validSchemas = List.of(
-                LocationSchemes.GRPC,
-                LocationSchemes.GRPC_INSECURE,
-                LocationSchemes.GRPC_TLS,
-                LocationSchemes.GRPC_DOMAIN_SOCKET
-        );
-        if (!validSchemas.contains(location.getUri().getScheme())) {
+        if (!VALID_SCHEMAS.contains(location.getUri().getScheme())) {
             throw new IllegalArgumentException(
                     "Scheme is not supported: " + location.getUri().getScheme());
         }
@@ -171,13 +171,13 @@ final class FlightSqlClient implements AutoCloseable {
             nettyChannelBuilder.usePlaintext();
         }
 
-        if (config.getProxyAddress() != null) {
-            ProxyDetector proxyDetector = createProxyDetector(config.getHost(), config.getProxyAddress());
+        if (config.getProxyUrl() != null) {
+            ProxyDetector proxyDetector = createProxyDetector(config.getHost(), config.getProxyUrl());
             nettyChannelBuilder.proxyDetector(proxyDetector);
         }
 
         if (config.getProxy() != null) {
-            LOG.warn("proxy property in ClientConfig will not work in query api, use proxyAddress property instead");
+            LOG.warn("proxy property in ClientConfig will not work in query api, use proxyUrl property instead");
         }
 
         nettyChannelBuilder.maxTraceEvents(0)
@@ -193,8 +193,8 @@ final class FlightSqlClient implements AutoCloseable {
             SslContextBuilder sslContextBuilder;
             sslContextBuilder = GrpcSslContexts.forClient();
             if (!config.getDisableServerCertificateValidation()) {
-                if (config.certificateFilePath() != null) {
-                    try (FileInputStream fileInputStream = new FileInputStream(config.certificateFilePath())) {
+                if (config.sslRootsFilePath() != null) {
+                    try (FileInputStream fileInputStream = new FileInputStream(config.sslRootsFilePath())) {
                         sslContextBuilder.trustManager(fileInputStream);
                     }
                 }
@@ -272,13 +272,14 @@ final class FlightSqlClient implements AutoCloseable {
         }
     }
 
-    ProxyDetector createProxyDetector(@Nonnull final String hostUrl, @Nonnull final InetSocketAddress proxyAddress) {
-        URI hostUri = URI.create(hostUrl);
+    ProxyDetector createProxyDetector(@Nonnull final String targetUrl, @Nonnull final String proxyUrl) {
+        URI targetUri = URI.create(targetUrl);
+        URI proxyUri = URI.create(proxyUrl);
         return (targetServerAddress) -> {
             InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
-            if (hostUri.getHost().equals(targetAddress.getHostString())) {
+            if (targetUri.getHost().equals(targetAddress.getHostString()) && targetUri.getPort() == targetAddress.getPort()) {
                 return HttpConnectProxiedSocketAddress.newBuilder()
-                        .setProxyAddress(proxyAddress)
+                        .setProxyAddress(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()))
                         .setTargetAddress(targetAddress)
                         .build();
             }

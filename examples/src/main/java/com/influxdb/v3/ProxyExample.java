@@ -30,32 +30,31 @@ import com.influxdb.v3.client.config.ClientConfig;
 
 public final class ProxyExample {
 
-    private ProxyExample() { }
+    private ProxyExample() {
+    }
 
     public static void main(final String[] args) throws Exception {
         // Run docker-compose.yml file to start Envoy proxy
 
-        String proxyAddress = new InetSocketAddress("localhost", 10000);
-        String certificateFilePath = "src/test/java/com/influxdb/v3/client/testdata/influxdb-certificate.pem";
+        String proxyUrl = "http://localhost:10000";
+        String sslRootsFilePath = "src/test/java/com/influxdb/v3/client/testdata/influxdb-certificate.pem";
         ClientConfig clientConfig = new ClientConfig.Builder()
-                .host(System.getenv("TESTING_INFLUXDB_URL"))
-                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
-                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-                .proxyAddress(proxyAddress)
-                .certificateFilePath(certificateFilePath)
+                .host(System.getenv("INFLUXDB_URL"))
+                .token(System.getenv("INFLUXDB_TOKEN").toCharArray())
+                .database(System.getenv("INFLUXDB_DATABASE"))
+                .proxyUrl(proxyUrl)
+                .sslRootsFilePath(sslRootsFilePath)
                 .build();
 
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        influxDBClient.writePoint(
-                Point.measurement("test1")
-                        .setField("field", "field1")
-        );
+        Point point = Point.measurement("Home")
+                .setTag("room", "Kitchen")
+                .setField("temp", 12.7)
+                .setField("hum", 37);
+        influxDBClient.writePoint(point);
 
-        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
-            stream.findFirst()
-                    .ifPresent(pointValues -> {
-                        Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
-                    });
+        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM home")) {
+            stream.findFirst().ifPresent(System.out::println);
         }
     }
 }

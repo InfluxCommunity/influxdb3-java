@@ -22,7 +22,9 @@
 package com.influxdb.v3.client.internal;
 
 import java.io.FileInputStream;
+import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -104,8 +106,9 @@ final class RestClient implements AutoCloseable {
         // default headers
         this.defaultHeaders = config.getHeaders() != null ? Map.copyOf(config.getHeaders()) : null;
 
-        if (config.getProxyAddress() != null) {
-            ProxySelector proxy = ProxySelector.of(config.getProxyAddress());
+        if (config.getProxyUrl() != null) {
+            URI proxyUri = URI.create(config.getProxyUrl());
+            ProxySelector proxy = ProxySelector.of(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()));
             builder.proxy(proxy);
             if (config.getAuthenticator() != null) {
                 builder.authenticator(config.getAuthenticator());
@@ -120,11 +123,11 @@ final class RestClient implements AutoCloseable {
         if (baseUrl.startsWith("https")) {
             try {
                 SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, TRUST_ALL_CERTS, new SecureRandom());
-
-                if (config.certificateFilePath() != null && !config.getDisableServerCertificateValidation()) {
-                    X509TrustManager x509TrustManager = getX509TrustManagerFromFile(config.certificateFilePath());
+                if (config.sslRootsFilePath() != null && !config.getDisableServerCertificateValidation()) {
+                    X509TrustManager x509TrustManager = getX509TrustManagerFromFile(config.sslRootsFilePath());
                     sslContext.init(null, new X509TrustManager[]{x509TrustManager}, new SecureRandom());
+                } else {
+                    sslContext.init(null, TRUST_ALL_CERTS, new SecureRandom());
                 }
                 builder.sslContext(sslContext);
             } catch (Exception e) {

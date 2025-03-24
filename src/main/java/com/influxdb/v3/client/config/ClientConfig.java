@@ -22,7 +22,6 @@
 package com.influxdb.v3.client.config;
 
 import java.net.Authenticator;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.ProxySelector;
 import java.net.URL;
@@ -58,12 +57,10 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
  *     </li>
- *     <li><code>proxy</code> - HTTP proxy selector</li>
- *     <li><code>proxyAddress</code> - Proxy address for query api and write api</li>
- *     <li><code>queryApiProxy</code> - HTTP query detector</li>
+ *     <li><code>proxyUrl</code> - Proxy url for query api and write api</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
- *     <li><code>certificateFilePath</code> - Path to the stored certificates file</li>
+ *     <li><code>sslRootsFilePath</code> - Path to the stored certificates file in PEM format</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
@@ -76,7 +73,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     .database("my-database")
  *     .writePrecision(WritePrecision.S)
  *     .gzipThreshold(4096)
- *     .proxy(ProxySelector.of(new InetSocketAddress("proxy.local", 8888)))
+ *     .proxyUrl("http://localhost:10000")
  *     .build();
  *
  * try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
@@ -101,13 +98,13 @@ public final class ClientConfig {
     private final Duration timeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
-    private final InetSocketAddress proxyAddress;
+    private final String proxyUrl;
     private final Authenticator authenticator;
     private final Map<String, String> headers;
-    private final String certificateFilePath;
+    private final String sslRootsFilePath;
 
     /**
-     * Deprecated use {@link #proxyAddress}.
+     * Deprecated use {@link #proxyUrl}.
      */
     @Deprecated
     private final ProxySelector proxy;
@@ -225,7 +222,7 @@ public final class ClientConfig {
      * Gets the proxy.
      *
      * @return the proxy, may be null
-     * Deprecated use {@link #proxyAddress}
+     * Deprecated use {@link #proxyUrl}
      */
     @Nullable
     @Deprecated
@@ -234,13 +231,13 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets the proxy address.
+     * Gets the proxy url.
      *
-     * @return the proxy address, may be null
+     * @return the proxy url, may be null
      */
     @Nullable
-    public InetSocketAddress getProxyAddress() {
-        return proxyAddress;
+    public String getProxyUrl() {
+        return proxyUrl;
     }
 
     /**
@@ -249,8 +246,8 @@ public final class ClientConfig {
      * @return the certificates file path, may be null
      */
     @Nullable
-    public String certificateFilePath() {
-        return certificateFilePath;
+    public String sslRootsFilePath() {
+        return sslRootsFilePath;
     }
 
     /**
@@ -303,10 +300,10 @@ public final class ClientConfig {
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
                 && Objects.equals(proxy, that.proxy)
-                && Objects.equals(proxyAddress, that.proxyAddress)
+                && Objects.equals(proxyUrl, that.proxyUrl)
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
-                && Objects.equals(certificateFilePath, that.certificateFilePath);
+                && Objects.equals(sslRootsFilePath, that.sslRootsFilePath);
     }
 
     @Override
@@ -314,8 +311,8 @@ public final class ClientConfig {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
                 database, writePrecision, gzipThreshold,
                 timeout, allowHttpRedirects, disableServerCertificateValidation,
-                proxy, proxyAddress, authenticator, headers,
-                defaultTags, certificateFilePath);
+                proxy, proxyUrl, authenticator, headers,
+                defaultTags, sslRootsFilePath);
     }
 
     @Override
@@ -330,11 +327,11 @@ public final class ClientConfig {
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
                 .add("proxy=" + proxy)
-                .add("proxyAddress=" + proxyAddress)
+                .add("proxyUrl=" + proxyUrl)
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
-                .add("certificateFilePath=" + certificateFilePath)
+                .add("sslRootsFilePath=" + sslRootsFilePath)
                 .toString();
     }
 
@@ -356,10 +353,10 @@ public final class ClientConfig {
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
         private ProxySelector proxy;
-        private InetSocketAddress proxyAddress;
+        private String proxyUrl;
         private Authenticator authenticator;
         private Map<String, String> headers;
-        private String certificateFilePath;
+        private String sslRootsFilePath;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -512,7 +509,7 @@ public final class ClientConfig {
          *
          * @param proxy Proxy selector.
          * @return this
-         * Deprecated use {@link #proxyAddress}
+         * Deprecated use {@link #proxyUrl}
          */
         @Nonnull
         public Builder proxy(@Nullable final ProxySelector proxy) {
@@ -522,15 +519,15 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets the proxyAddress. Default is 'null'.
+         * Sets the proxy url. Default is 'null'.
          *
-         * @param proxyAddress Proxy address.
+         * @param proxyUrl Proxy url.
          * @return this
          */
         @Nonnull
-        public Builder proxyAddress(@Nullable final InetSocketAddress proxyAddress) {
+        public Builder proxyUrl(@Nullable final String proxyUrl) {
 
-            this.proxyAddress = proxyAddress;
+            this.proxyUrl = proxyUrl;
             return this;
         }
 
@@ -582,13 +579,13 @@ public final class ClientConfig {
         /**
          * Sets certificate file path. Default is 'null'.
          *
-         * @param certificateFilePath The certificate file path
+         * @param sslRootsFilePath The certificate file path
          * @return this
          */
         @Nonnull
-        public Builder certificateFilePath(@Nullable final String certificateFilePath) {
+        public Builder sslRootsFilePath(@Nullable final String sslRootsFilePath) {
 
-            this.certificateFilePath = certificateFilePath;
+            this.sslRootsFilePath = sslRootsFilePath;
             return this;
         }
 
@@ -727,9 +724,9 @@ public final class ClientConfig {
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
         proxy = builder.proxy;
-        proxyAddress = builder.proxyAddress;
+        proxyUrl = builder.proxyUrl;
         authenticator = builder.authenticator;
         headers = builder.headers;
-        certificateFilePath = builder.certificateFilePath;
+        sslRootsFilePath = builder.sslRootsFilePath;
     }
 }

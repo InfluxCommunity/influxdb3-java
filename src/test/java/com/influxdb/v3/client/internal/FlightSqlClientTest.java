@@ -277,17 +277,17 @@ public class FlightSqlClientTest {
 
     @Test
     void createProxyDetector() {
-        String hostUrl = "https://localhost:80";
+        String targetUrl = "https://localhost:80";
         ClientConfig clientConfig = new ClientConfig.Builder()
-                .host(hostUrl)
+                .host(targetUrl)
                 .build();
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
-            InetSocketAddress proxyAddress = new InetSocketAddress("localhost", 10000);
-            ProxyDetector proxyDetector = flightSqlClient.createProxyDetector(hostUrl, proxyAddress);
+            String proxyUrl = "http://localhost:10000";
+            ProxyDetector proxyDetector = flightSqlClient.createProxyDetector(targetUrl, proxyUrl);
             Assertions.assertThat(proxyDetector.proxyFor(
                     new InetSocketAddress("localhost", 80)
             )).isEqualTo(HttpConnectProxiedSocketAddress.newBuilder()
-                    .setProxyAddress(proxyAddress)
+                    .setProxyAddress(new InetSocketAddress("localhost", 10000))
                     .setTargetAddress(new InetSocketAddress("localhost", 80))
                     .build());
 
