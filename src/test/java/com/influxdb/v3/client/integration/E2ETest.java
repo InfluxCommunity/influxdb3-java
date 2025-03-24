@@ -56,7 +56,7 @@ public class E2ETest {
 
         try {
             // Continue to run this test only if Envoy proxy is running on this address http://localhost:10000
-            String url = String.format("http://%s:%d/", "localhost", 10000);
+            String url = String.format("http://%s:%d", "localhost", 10000);
             URLConnection hpCon = new URL(url).openConnection();
             hpCon.connect();
         } catch (Exception e) {
