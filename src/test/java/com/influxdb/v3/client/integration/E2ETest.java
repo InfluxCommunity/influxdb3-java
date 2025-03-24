@@ -22,6 +22,7 @@
 package com.influxdb.v3.client.integration;
 
 import java.math.BigInteger;
+import java.net.ConnectException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.Instant;
@@ -59,8 +60,10 @@ public class E2ETest {
             URLConnection hpCon = new URL(url).openConnection();
             hpCon.connect();
         } catch (Exception e) {
-            LOG.warning("Tests with proxy have been skipped because no proxy is running on " + proxyUrl);
-            return;
+            if (e instanceof ConnectException && e.getMessage().contains("Connection refused")) {
+                LOG.warning("Tests with proxy have been skipped because no proxy is running on " + proxyUrl);
+                return;
+            }
         }
 
         ClientConfig clientConfig = new ClientConfig.Builder()
