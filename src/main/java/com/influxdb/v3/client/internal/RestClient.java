@@ -123,12 +123,13 @@ final class RestClient implements AutoCloseable {
         if (baseUrl.startsWith("https")) {
             try {
                 SSLContext sslContext = SSLContext.getInstance("TLS");
-                if (config.sslRootsFilePath() != null && !config.getDisableServerCertificateValidation()) {
+                if (config.getDisableServerCertificateValidation()) {
+                    sslContext.init(null, TRUST_ALL_CERTS, new SecureRandom());
+                } else if (config.sslRootsFilePath() != null) {
                     X509TrustManager x509TrustManager = getX509TrustManagerFromFile(config.sslRootsFilePath());
                     sslContext.init(null, new X509TrustManager[]{x509TrustManager}, new SecureRandom());
-                } else {
-                    sslContext.init(null, TRUST_ALL_CERTS, new SecureRandom());
                 }
+                sslContext.init(null, null, new SecureRandom());
                 builder.sslContext(sslContext);
             } catch (Exception e) {
                 throw new RuntimeException(e);

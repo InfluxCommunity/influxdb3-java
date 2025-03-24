@@ -192,14 +192,12 @@ final class FlightSqlClient implements AutoCloseable {
         try {
             SslContextBuilder sslContextBuilder;
             sslContextBuilder = GrpcSslContexts.forClient();
-            if (!config.getDisableServerCertificateValidation()) {
-                if (config.sslRootsFilePath() != null) {
-                    try (FileInputStream fileInputStream = new FileInputStream(config.sslRootsFilePath())) {
-                        sslContextBuilder.trustManager(fileInputStream);
-                    }
-                }
-            } else {
+            if (config.getDisableServerCertificateValidation()) {
                 sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+            } else if (config.sslRootsFilePath() != null) {
+                try (FileInputStream fileInputStream = new FileInputStream(config.sslRootsFilePath())) {
+                    sslContextBuilder.trustManager(fileInputStream);
+                }
             }
             return sslContextBuilder.build();
         } catch (Exception e) {
