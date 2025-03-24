@@ -2,7 +2,7 @@
 
 ### Features
 
-1. [#229](https://github.com/InfluxCommunity/influxdb3-java/pull/229): Support proxy and ssl
+1. [#229](https://github.com/InfluxCommunity/influxdb3-java/pull/229): Support proxy and custom ssl root certificates
 
 ## 1.0.0 [2024-12-11]
 
