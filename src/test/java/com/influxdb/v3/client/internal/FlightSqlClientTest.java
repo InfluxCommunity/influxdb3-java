@@ -87,6 +87,23 @@ public class FlightSqlClientTest {
     }
 
     @Test
+    void flightSqlClient() throws Exception {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host("grpc+unix://tmp/dummy.sock")
+                .token("Token".toCharArray())
+                .build();
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
+            Assertions.assertThat(flightSqlClient).isNotNull();
+        }
+
+        FlightClient.Builder builder = FlightClient.builder(allocator, server.getLocation());
+        try (FlightClient flightClient = builder.build()) {
+            FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, flightClient);
+            Assertions.assertThat(flightSqlClient).isNotNull();
+        }
+    }
+
+    @Test
     public void invalidHost() {
         ClientConfig clientConfig = new ClientConfig.Builder()
                 .host("xyz://a bc")
