@@ -22,7 +22,6 @@
 package com.influxdb.v3.client.internal;
 
 import java.io.FileInputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -47,8 +46,6 @@ import io.grpc.Metadata;
 import io.grpc.ProxyDetector;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NettyChannelBuilder;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -77,12 +74,6 @@ final class FlightSqlClient implements AutoCloseable {
 
     private final Map<String, String> defaultHeaders = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final List<String> validSchemas = List.of(
-            LocationSchemes.GRPC,
-            LocationSchemes.GRPC_INSECURE,
-            LocationSchemes.GRPC_TLS,
-            LocationSchemes.GRPC_DOMAIN_SOCKET
-    );
 
     FlightSqlClient(@Nonnull final ClientConfig config) {
         this(config, null);
@@ -153,14 +144,6 @@ final class FlightSqlClient implements AutoCloseable {
         Location location = createLocation(config);
 
         final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
-        if (!validSchemas.contains(location.getUri().getScheme())) {
-            throw new IllegalArgumentException(
-                    "Scheme is not supported: " + location.getUri().getScheme());
-        }
-
-        if (location.getUri().getScheme().equals(LocationSchemes.GRPC_DOMAIN_SOCKET)) {
-            setChannelTypeAndEventLoop(nettyChannelBuilder);
-        }
 
         if (LocationSchemes.GRPC_TLS.equals(location.getUri().getScheme())) {
             nettyChannelBuilder.useTransportSecurity();
@@ -232,42 +215,6 @@ final class FlightSqlClient implements AutoCloseable {
             }
         }
         return new HeaderCallOption(metadata);
-    }
-
-    private void setChannelTypeAndEventLoop(@Nonnull final NettyChannelBuilder nettyChannelBuilder) {
-        // The implementation is platform-specific, so we have to find the classes at runtime
-        try {
-            try {
-                // Linux
-                nettyChannelBuilder.channelType(
-                        Class.forName("io.netty.channel.epoll.EpollDomainSocketChannel")
-                                .asSubclass(ServerChannel.class));
-                final EventLoopGroup elg =
-                        Class.forName("io.netty.channel.epoll.EpollEventLoopGroup")
-                                .asSubclass(EventLoopGroup.class)
-                                .getDeclaredConstructor()
-                                .newInstance();
-                nettyChannelBuilder.eventLoopGroup(elg);
-            } catch (ClassNotFoundException e) {
-                // BSD
-                nettyChannelBuilder.channelType(
-                        Class.forName("io.netty.channel.kqueue.KQueueDomainSocketChannel")
-                                .asSubclass(ServerChannel.class));
-                final EventLoopGroup elg =
-                        Class.forName("io.netty.channel.kqueue.KQueueEventLoopGroup")
-                                .asSubclass(EventLoopGroup.class)
-                                .getDeclaredConstructor()
-                                .newInstance();
-                nettyChannelBuilder.eventLoopGroup(elg);
-            }
-        } catch (ClassNotFoundException
-                 | InstantiationException
-                 | IllegalAccessException
-                 | NoSuchMethodException
-                 | InvocationTargetException e) {
-            throw new UnsupportedOperationException(
-                    "Could not find suitable Netty native transport implementation for domain socket address.");
-        }
     }
 
     ProxyDetector createProxyDetector(@Nonnull final String targetUrl, @Nonnull final String proxyUrl) {
