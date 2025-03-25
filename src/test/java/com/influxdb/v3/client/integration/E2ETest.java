@@ -43,6 +43,8 @@ import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
 public class E2ETest {
 
     private static final java.util.logging.Logger LOG = Logger.getLogger(E2ETest.class.getName());
@@ -62,6 +64,7 @@ public class E2ETest {
         } catch (Exception e) {
             if (e instanceof ConnectException && e.getMessage().contains("Connection refused")) {
                 LOG.warning("Tests with proxy have been skipped because no proxy is running on " + proxyUrl);
+                assumeFalse(e.getMessage().contains("Connection refused"));
                 return;
             }
         }
