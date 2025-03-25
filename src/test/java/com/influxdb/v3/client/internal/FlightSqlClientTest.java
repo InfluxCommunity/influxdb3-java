@@ -88,8 +88,9 @@ public class FlightSqlClientTest {
 
     @Test
     void flightSqlClient() throws Exception {
+        String correctHost = "grpc+unix://tmp/dummy.sock";
         ClientConfig clientConfig = new ClientConfig.Builder()
-                .host("grpc+unix://tmp/dummy.sock")
+                .host(correctHost)
                 .token("Token".toCharArray())
                 .build();
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
@@ -101,6 +102,13 @@ public class FlightSqlClientTest {
             FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, flightClient);
             Assertions.assertThat(flightSqlClient).isNotNull();
         }
+
+        var inCorrectHost = "grpc+unix://///tmp/dummy.sock";
+        ClientConfig clientConfig1 = new ClientConfig.Builder()
+                .host(inCorrectHost)
+                .token("Token".toCharArray())
+                .build();
+        Assertions.assertThatThrownBy(() -> new FlightSqlClient(clientConfig1));
     }
 
     @Test
