@@ -53,7 +53,7 @@ public final class ProxyExample {
                 .setField("hum", 37);
         influxDBClient.writePoint(point);
 
-        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM home")) {
+        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM Home")) {
             stream.findFirst().ifPresent(System.out::println);
         }
     }
