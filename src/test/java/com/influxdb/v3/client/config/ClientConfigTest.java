@@ -33,6 +33,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.apache.arrow.flight.FlightServer;
 import org.apache.arrow.flight.Location;
@@ -292,9 +293,8 @@ class ClientConfigTest {
             String query = "Select * from \"nothing\"";
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(builder.build())) {
                 try (Stream<PointValues> points = influxDBClient.queryPoints(query)) {
-                    Assertions.assertThatThrownBy(points::count)
-                            .isInstanceOf(FlightRuntimeException.class)
-                            .hasMessageContaining("gRPC message exceeds maximum size");
+                    FlightRuntimeException exception = Assertions.catchThrowableOfType(FlightRuntimeException.class, points::count);
+                    Assertions.assertThat(exception.status().code()).isEqualTo(CallStatus.RESOURCE_EXHAUSTED.code());
                 }
             }
 
