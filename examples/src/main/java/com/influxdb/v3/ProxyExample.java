@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3;
 
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
@@ -47,14 +48,24 @@ public final class ProxyExample {
                 .build();
 
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        Point point = Point.measurement("Home")
+        String testId = UUID.randomUUID().toString();
+        Point point = Point.measurement("My_Home")
                 .setTag("room", "Kitchen")
                 .setField("temp", 12.7)
-                .setField("hum", 37);
+                .setField("hum", 37)
+                .setField("testId", testId);
         influxDBClient.writePoint(point);
 
-        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM Home")) {
-            stream.findFirst().ifPresent(System.out::println);
+        String query = String.format("SELECT * FROM \"My_Home\" WHERE \"testId\" = '%s'", testId);
+        try (Stream<PointValues> stream = influxDBClient.queryPoints(query)) {
+            stream.findFirst().ifPresent(values -> {
+                assert values.getTimestamp() != null;
+                System.out.printf("room[%s]: %s, temp: %3.2f, hum: %d",
+                        new java.util.Date(values.getTimestamp().longValue() / 1000000),
+                        values.getTag("room"),
+                        (Double) values.getField("temp"),
+                        (Long) values.getField("hum"));
+            });
         }
     }
 }
