@@ -141,11 +141,10 @@ final class FlightSqlClient implements AutoCloseable {
 
     @Nonnull
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
-        Location location = createLocation(config);
+        URI uri = createLocation(config).getUri();
+        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forAddress(uri.getHost(), uri.getPort());
 
-        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
-
-        if (LocationSchemes.GRPC_TLS.equals(location.getUri().getScheme())) {
+        if (LocationSchemes.GRPC_TLS.equals(uri.getScheme())) {
             nettyChannelBuilder.useTransportSecurity();
 
             SslContext nettySslContext = createNettySslContext(config);
@@ -164,8 +163,10 @@ final class FlightSqlClient implements AutoCloseable {
         }
 
         nettyChannelBuilder.maxTraceEvents(0)
-                .maxInboundMessageSize(Integer.MAX_VALUE)
-                .maxInboundMetadataSize(Integer.MAX_VALUE);
+                .maxInboundMetadataSize(Integer.MAX_VALUE)
+                .maxInboundMessageSize(config.getMaxInboundMessageSize() != null ?
+                        config.getMaxInboundMessageSize() : Integer.MAX_VALUE
+                );
 
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
     }
