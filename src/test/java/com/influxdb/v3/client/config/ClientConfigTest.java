@@ -320,7 +320,9 @@ class ClientConfigTest {
     private NoOpFlightProducer simpleProducer(@Nonnull final VectorSchemaRoot vectorSchemaRoot) {
         return new NoOpFlightProducer() {
             @Override
-            public void getStream(CallContext context, Ticket ticket, ServerStreamListener listener) {
+            public void getStream(final CallContext context,
+                                  final Ticket ticket,
+                                  final ServerStreamListener listener) {
                 listener.start(vectorSchemaRoot);
                 if (listener.isReady()) {
                     listener.putNext();

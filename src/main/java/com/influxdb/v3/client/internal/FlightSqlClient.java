@@ -164,7 +164,8 @@ final class FlightSqlClient implements AutoCloseable {
 
         nettyChannelBuilder.maxTraceEvents(0)
                 .maxInboundMetadataSize(Integer.MAX_VALUE)
-                .maxInboundMessageSize(config.getMaxInboundMessageSize() != null ?
+                .maxInboundMessageSize(config.getMaxInboundMessageSize() != null
+                        ?
                         config.getMaxInboundMessageSize() : Integer.MAX_VALUE
                 );
 
