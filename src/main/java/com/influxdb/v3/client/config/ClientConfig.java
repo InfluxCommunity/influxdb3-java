@@ -57,10 +57,11 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
  *     </li>
- *     <li><code>proxyUrl</code> - Proxy url for query api and write api</li>
+ *     <li><code>proxyUrl</code> - proxy url for query api and write api</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
- *     <li><code>sslRootsFilePath</code> - Path to the stored certificates file in PEM format</li>
+ *     <li><code>sslRootsFilePath</code> - path to the stored certificates file in PEM format</li>
+ *      <li><code>maxInboundMessageSize</code> - RPC maximum inbound message size that the client can receive</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
@@ -102,6 +103,7 @@ public final class ClientConfig {
     private final Authenticator authenticator;
     private final Map<String, String> headers;
     private final String sslRootsFilePath;
+    private final Integer maxInboundMessageSize;
 
     /**
      * Deprecated use {@link #proxyUrl}.
@@ -241,6 +243,16 @@ public final class ClientConfig {
     }
 
     /**
+     * Gets rpc max message size client can receive.
+     *
+     * @return the size in Integer, may be null
+     */
+    @Nullable
+    public Integer getMaxInboundMessageSize() {
+        return maxInboundMessageSize;
+    }
+
+    /**
      * Gets certificates file path.
      *
      * @return the certificates file path, may be null
@@ -303,7 +315,8 @@ public final class ClientConfig {
                 && Objects.equals(proxyUrl, that.proxyUrl)
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
-                && Objects.equals(sslRootsFilePath, that.sslRootsFilePath);
+                && Objects.equals(sslRootsFilePath, that.sslRootsFilePath)
+                && Objects.equals(maxInboundMessageSize, that.maxInboundMessageSize);
     }
 
     @Override
@@ -312,7 +325,7 @@ public final class ClientConfig {
                 database, writePrecision, gzipThreshold,
                 timeout, allowHttpRedirects, disableServerCertificateValidation,
                 proxy, proxyUrl, authenticator, headers,
-                defaultTags, sslRootsFilePath);
+                defaultTags, sslRootsFilePath, maxInboundMessageSize);
     }
 
     @Override
@@ -332,6 +345,7 @@ public final class ClientConfig {
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
                 .add("sslRootsFilePath=" + sslRootsFilePath)
+                .add("maxInboundMessageSize=" + maxInboundMessageSize)
                 .toString();
     }
 
@@ -357,6 +371,7 @@ public final class ClientConfig {
         private Authenticator authenticator;
         private Map<String, String> headers;
         private String sslRootsFilePath;
+        private Integer maxInboundMessageSize;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -590,6 +605,19 @@ public final class ClientConfig {
         }
 
         /**
+         * Set rpc max message size client can receive. Default is 'null'.
+         *
+         * @param maxInboundMessageSize The size in Integer
+         * @return this
+         */
+        @Nonnull
+        public Builder maxInboundMessageSize(@Nullable final Integer maxInboundMessageSize) {
+
+            this.maxInboundMessageSize = maxInboundMessageSize;
+            return this;
+        }
+
+        /**
          * Build an instance of {@code ClientConfig}.
          *
          * @return the configuration for an {@code InfluxDBClient}.
@@ -728,5 +756,6 @@ public final class ClientConfig {
         authenticator = builder.authenticator;
         headers = builder.headers;
         sslRootsFilePath = builder.sslRootsFilePath;
+        maxInboundMessageSize = builder.maxInboundMessageSize;
     }
 }
