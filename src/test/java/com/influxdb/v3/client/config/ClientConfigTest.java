@@ -293,7 +293,9 @@ class ClientConfigTest {
             String query = "Select * from \"nothing\"";
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(builder.build())) {
                 try (Stream<PointValues> points = influxDBClient.queryPoints(query)) {
-                    FlightRuntimeException exception = Assertions.catchThrowableOfType(FlightRuntimeException.class, points::count);
+                    FlightRuntimeException exception = Assertions.catchThrowableOfType(
+                            FlightRuntimeException.class,
+                            points::count);
                     Assertions.assertThat(exception.status().code()).isEqualTo(CallStatus.RESOURCE_EXHAUSTED.code());
                 }
             }
