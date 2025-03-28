@@ -61,7 +61,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
  *     <li><code>sslRootsFilePath</code> - path to the stored certificates file in PEM format</li>
- *     <li><code>maxInboundMessageSize</code> - rpc max message size client can receive</li>
+ *      <li><code>maxInboundMessageSize</code> - RPC maximum inbound message size that the client can receive</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
