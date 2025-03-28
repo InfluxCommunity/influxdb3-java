@@ -289,7 +289,7 @@ class ClientConfigTest {
             ClientConfig.Builder builder = new ClientConfig.Builder()
                     .host(host)
                     .database("test")
-                    .maxInboundMessageSize(200); // Set very low message size for testing
+                    .maxInboundMessageSize(200); // Set very small message size for testing
             String query = "Select * from \"nothing\"";
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(builder.build())) {
                 try (Stream<PointValues> points = influxDBClient.queryPoints(query)) {
