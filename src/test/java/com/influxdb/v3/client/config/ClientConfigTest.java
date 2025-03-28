@@ -349,8 +349,8 @@ class ClientConfigTest {
             for (int i = 0; i < rowCount; i++) {
                 vector.set(i, "Value".getBytes(StandardCharsets.UTF_8));
             }
-            vectorSchemaRoot.setRowCount(rowCount);
         }
+        vectorSchemaRoot.setRowCount(rowCount);
 
         return vectorSchemaRoot;
     }
