@@ -162,12 +162,11 @@ final class FlightSqlClient implements AutoCloseable {
             LOG.warn("proxy property in ClientConfig will not work in query api, use proxyUrl property instead");
         }
 
+        int maxInboundMessageSize = config.getMaxInboundMessageSize() != null ?
+                config.getMaxInboundMessageSize() : Integer.MAX_VALUE;
         nettyChannelBuilder.maxTraceEvents(0)
                 .maxInboundMetadataSize(Integer.MAX_VALUE)
-                .maxInboundMessageSize(config.getMaxInboundMessageSize() != null
-                        ?
-                        config.getMaxInboundMessageSize() : Integer.MAX_VALUE
-                );
+                .maxInboundMessageSize(maxInboundMessageSize);
 
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
     }
