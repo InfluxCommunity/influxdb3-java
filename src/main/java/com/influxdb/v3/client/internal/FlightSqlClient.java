@@ -27,11 +27,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
@@ -49,6 +51,7 @@ import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.FlightGrpcUtils;
 import org.apache.arrow.flight.FlightStream;
@@ -106,7 +109,8 @@ final class FlightSqlClient implements AutoCloseable {
                                      @Nonnull final String database,
                                      @Nonnull final QueryType queryType,
                                      @Nonnull final Map<String, Object> queryParameters,
-                                     @Nonnull final Map<String, String> headers) {
+                                     @Nonnull final Map<String, String> headers,
+                                     final CallOption... callOption) {
 
         Map<String, Object> ticketData = new HashMap<>() {{
             put("database", database);
@@ -126,8 +130,10 @@ final class FlightSqlClient implements AutoCloseable {
         }
 
         HeaderCallOption headerCallOption = metadataHeader(headers);
+        CallOption[] callOptions = concatCallOptions(callOption, headerCallOption);
+
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
-        FlightStream stream = client.getStream(ticket, headerCallOption);
+        FlightStream stream = client.getStream(ticket, callOptions);
         FlightSqlIterator iterator = new FlightSqlIterator(stream);
 
         Spliterator<VectorSchemaRoot> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL);
@@ -162,13 +168,8 @@ final class FlightSqlClient implements AutoCloseable {
             LOG.warn("proxy property in ClientConfig will not work in query api, use proxyUrl property instead");
         }
 
-        int maxInboundMessageSize = config.getMaxInboundMessageSize() != null
-                ?
-                config.getMaxInboundMessageSize()
-                : Integer.MAX_VALUE;
         nettyChannelBuilder.maxTraceEvents(0)
-                .maxInboundMetadataSize(Integer.MAX_VALUE)
-                .maxInboundMessageSize(maxInboundMessageSize);
+                .maxInboundMetadataSize(Integer.MAX_VALUE);
 
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
     }
@@ -234,6 +235,16 @@ final class FlightSqlClient implements AutoCloseable {
             }
             return null;
         };
+    }
+
+    @Nullable
+    CallOption[] concatCallOptions(@Nullable final CallOption[] base, final CallOption... callOption) {
+        if (base == null || base.length == 0) {
+            return callOption;
+        }
+        List<CallOption> results = new ArrayList<>(List.of(base));
+        Arrays.stream(callOption).filter(Objects::nonNull).forEach(results::add);
+        return results.toArray(new CallOption[0]);
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {

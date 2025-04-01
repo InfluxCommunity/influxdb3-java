@@ -38,6 +38,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.netty.handler.codec.http.HttpMethod;
+import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
@@ -341,7 +342,9 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
         });
 
-        return flightSqlClient.execute(query, database, options.queryTypeSafe(), parameters, options.headersSafe());
+        GrpcCallOption grpcCallOption = options.grpcCallOption();
+        CallOption[] callOptions = grpcCallOption != null ? grpcCallOption.getCallOptionCallback() : null;
+        return flightSqlClient.execute(query, database, options.queryTypeSafe(), parameters, options.headersSafe(), callOptions);
     }
 
     @Nonnull
