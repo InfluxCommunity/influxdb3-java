@@ -28,6 +28,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.Arguments;
+import com.influxdb.v3.client.internal.GrpcCallOption;
 
 /**
  * Query API options.
@@ -61,6 +62,7 @@ public final class QueryOptions {
     private final String database;
     private final QueryType queryType;
     private final Map<String, String> headers;
+    private GrpcCallOption grpcCallOption;
 
     /**
      * Construct QueryAPI options. The query type is set to SQL.
@@ -142,6 +144,15 @@ public final class QueryOptions {
     @Nonnull
     public Map<String, String> headersSafe() {
         return headers;
+    }
+
+    public void setGrpcCallOption(@Nonnull final GrpcCallOption grpcCallOption) {
+        this.grpcCallOption = grpcCallOption;
+    }
+
+    @Nullable
+    public GrpcCallOption grpcCallOption() {
+        return grpcCallOption;
     }
 
     private boolean isNotDefined(final String option) {

@@ -21,11 +21,38 @@
  */
 package com.influxdb.v3.client.query;
 
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+
+import org.apache.arrow.flight.CallOption;
+import org.apache.arrow.flight.CallOptions;
+import org.apache.arrow.flight.CallStatus;
+import org.apache.arrow.flight.FlightRuntimeException;
+import org.apache.arrow.flight.FlightServer;
+import org.apache.arrow.flight.Location;
+import org.apache.arrow.flight.NoOpFlightProducer;
+import org.apache.arrow.flight.Ticket;
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.VarCharVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.internal.GrpcCallOption;
 
 class QueryOptionsTest {
 
@@ -72,5 +99,147 @@ class QueryOptionsTest {
 
         Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
         Assertions.assertThat(options.queryTypeSafe()).isEqualTo(QueryType.InfluxQL);
+    }
+
+    @Test
+    void setInboundMessageSizeSmall() throws Exception {
+        URI uri = URI.create("http://127.0.0.1:33333");
+        int rowCount = 100;
+        try (VectorSchemaRoot vectorSchemaRoot = generateVectorSchemaRoot(10, rowCount);
+             BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+             FlightServer flightServer = simpleFlightServer(uri, allocator, simpleProducer(vectorSchemaRoot))
+        ) {
+            flightServer.start();
+
+            String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
+            ClientConfig.Builder builder = new ClientConfig.Builder()
+                    .host(host)
+                    .database("test");
+
+            // Set very small message size for testing
+            GrpcCallOption grpcCallOption = new GrpcCallOption.Builder()
+                    .withMaxInboundMessageSize(200)
+                    .build();
+
+            QueryOptions queryOptions = new QueryOptions("test");
+            queryOptions.setGrpcCallOption(grpcCallOption);
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(builder.build())) {
+                try (Stream<PointValues> stream = influxDBClient.queryPoints(
+                        "Select * from \"nothing\"",
+                        queryOptions
+                )) {
+                    try {
+                        Assertions.assertThatThrownBy(stream::count);
+                    } catch (FlightRuntimeException e) {
+                        Assertions.assertThat(e.status().code()).isEqualTo(CallStatus.RESOURCE_EXHAUSTED.code());
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void setInboundMessageSizeLarge() throws Exception {
+        URI uri = URI.create("http://127.0.0.1:33333");
+        int rowCount = 100;
+        try (VectorSchemaRoot vectorSchemaRoot = generateVectorSchemaRoot(10, rowCount);
+             BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+             FlightServer flightServer = simpleFlightServer(uri, allocator, simpleProducer(vectorSchemaRoot))
+        ) {
+            flightServer.start();
+
+            String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
+            ClientConfig clientConfig = new ClientConfig.Builder()
+                    .host(host)
+                    .database("test")
+                    .build();
+
+            GrpcCallOption grpcCallOption = new GrpcCallOption.Builder()
+                    .withMaxInboundMessageSize(1024 * 1024 * 1024)
+                    .build();
+
+            QueryOptions queryOptions = new QueryOptions("test");
+            queryOptions.setGrpcCallOption(grpcCallOption);
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+                Assertions.assertThatNoException().isThrownBy(() -> {
+                    Stream<PointValues> stream = influxDBClient.queryPoints(
+                            "Select * from \"nothing\"",
+                            queryOptions);
+                    Assertions.assertThat(stream.count()).isEqualTo(rowCount);
+                    stream.close();
+                });
+            }
+        }
+    }
+
+    @Test
+    void grpcCallOption() {
+        GrpcCallOption.Builder builder = new GrpcCallOption.Builder();
+        builder.withMaxInboundMessageSize(1024);
+        builder.withMaxOutboundMessageSize(1024);
+        builder.withCompressorName("my-compressor");
+        builder.withDeadlineAfter(2, TimeUnit.HOURS);
+        builder.withExecutor(Runnable::run);
+        builder.withWaitForReady();
+
+        GrpcCallOption callOption = builder.build();
+        Assertions.assertThat(callOption.getMaxInboundMessageSize()).isEqualTo(1024);
+        Assertions.assertThat(callOption.getMaxOutboundMessageSize()).isEqualTo(1024);
+        Assertions.assertThat(callOption.getCompressorName()).isEqualTo("my-compressor");
+        Assertions.assertThat(callOption.getDeadlineAfter()).isNotNull();
+        Assertions.assertThat(callOption.getExecutor()).isNotNull();
+        Assertions.assertThat(callOption.getWaitForReady()).isTrue();
+
+        CallOption[] callBackArray = callOption.getCallOptionCallback();
+        Assertions.assertThat(callBackArray).isNotNull();
+        Assertions.assertThat(callBackArray.length).isEqualTo(6);
+        for (CallOption option : callBackArray) {
+            Assertions.assertThat(option).isInstanceOf(CallOptions.GrpcCallOption.class);
+        }
+    }
+
+    private FlightServer simpleFlightServer(@Nonnull final URI uri,
+                                            @Nonnull final BufferAllocator allocator,
+                                            @Nonnull final NoOpFlightProducer producer) throws Exception {
+        Location location = Location.forGrpcInsecure(uri.getHost(), uri.getPort());
+        return FlightServer.builder(allocator, location, producer).build();
+    }
+
+    private NoOpFlightProducer simpleProducer(@Nonnull final VectorSchemaRoot vectorSchemaRoot) {
+        return new NoOpFlightProducer() {
+            @Override
+            public void getStream(final CallContext context,
+                                  final Ticket ticket,
+                                  final ServerStreamListener listener) {
+                listener.start(vectorSchemaRoot);
+                if (listener.isReady()) {
+                    listener.putNext();
+                }
+                listener.completed();
+            }
+        };
+    }
+
+    private VectorSchemaRoot generateVectorSchemaRoot(final int fieldCount, final int rowCount) {
+        List<Field> fields = new ArrayList<>();
+        for (int i = 0; i < fieldCount; i++) {
+            Field field = new Field("field" + i, FieldType.nullable(new ArrowType.Utf8()), null);
+            fields.add(field);
+        }
+
+        Schema schema = new Schema(fields);
+        VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema, new RootAllocator(Long.MAX_VALUE));
+        for (Field field : fields) {
+            VarCharVector vector = (VarCharVector) vectorSchemaRoot.getVector(field);
+            vector.allocateNew(rowCount);
+            for (int i = 0; i < rowCount; i++) {
+                vector.set(i, "Value".getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        vectorSchemaRoot.setRowCount(rowCount);
+
+        return vectorSchemaRoot;
     }
 }
