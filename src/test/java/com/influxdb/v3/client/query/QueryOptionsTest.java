@@ -181,12 +181,38 @@ class QueryOptionsTest {
     }
 
     @Test
+    void setGrpcCallOption() {
+        Executor executor = Executors.newSingleThreadExecutor();
+        Deadline deadline = Deadline.after(2, TimeUnit.SECONDS);
+        String compressorName = "name";
+
+        GrpcCallOption grpcCallOption = new GrpcCallOption.Builder().withExecutor(executor)
+                .withMaxInboundMessageSize(1024)
+                .withMaxOutboundMessageSize(1024)
+                .withWaitForReady()
+                .withDeadline(deadline)
+                .withCompressorName(compressorName)
+                .build();
+
+        QueryOptions options = new QueryOptions("test");
+        options.setGrpcCallOption(grpcCallOption);
+        Assertions.assertThat(options.grpcCallOption()).isNotNull();
+        Assertions.assertThat(options.grpcCallOption().getMaxInboundMessageSize()).isEqualTo(1024);
+        Assertions.assertThat(options.grpcCallOption().getMaxOutboundMessageSize()).isEqualTo(1024);
+        Assertions.assertThat(options.grpcCallOption().getExecutor()).isEqualTo(executor);
+        Assertions.assertThat(options.grpcCallOption().getWaitForReady()).isTrue();
+        Assertions.assertThat(options.grpcCallOption().getCompressorName()).isEqualTo(compressorName);
+        Assertions.assertThat(options.grpcCallOption().getDeadline()).isEqualTo(deadline);
+
+    }
+
+    @Test
     void grpcCallOptionDefaultOptions() {
         QueryOptions queryOptions = new QueryOptions("test");
         queryOptions.setGrpcCallOption(new GrpcCallOption.Builder().build());
         Assertions.assertThat(queryOptions.grpcCallOption()).isNotNull();
         Assertions.assertThat(queryOptions.grpcCallOption()
-                        .getMaxInboundMessageSize()).isEqualTo(Integer.MAX_VALUE);
+                .getMaxInboundMessageSize()).isEqualTo(Integer.MAX_VALUE);
     }
 
     @Test
