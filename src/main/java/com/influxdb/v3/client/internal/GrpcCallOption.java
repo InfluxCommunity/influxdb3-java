@@ -89,7 +89,7 @@ public final class GrpcCallOption {
     }
 
     /**
-     * Returns the wait for ready flag
+     * Returns the wait for ready flag.
      *
      * @return the wait for ready flag
      */
@@ -130,8 +130,10 @@ public final class GrpcCallOption {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         GrpcCallOption that = (GrpcCallOption) o;
         return Objects.equals(deadLineAfter, that.deadLineAfter)
                 && Objects.equals(executor, that.executor)
@@ -154,14 +156,15 @@ public final class GrpcCallOption {
 
     @Override
     public String toString() {
-        return "GrpcCallOption{" +
-                "deadLineAfter=" + deadLineAfter +
-                ", executor=" + executor +
-                ", compressorName='" + compressorName + '\'' +
-                ", waitForReady=" + waitForReady +
-                ", maxInboundMessageSize=" + maxInboundMessageSize +
-                ", maxOutboundMessageSize=" + maxOutboundMessageSize +
-                '}';
+        return "GrpcCallOption{"
+                + "deadLineAfter=" + deadLineAfter
+                + ", executor=" + executor
+                + ", compressorName='" + compressorName
+                + '\''
+                + ", waitForReady=" + waitForReady
+                + ", maxInboundMessageSize=" + maxInboundMessageSize
+                + ", maxOutboundMessageSize=" + maxOutboundMessageSize
+                + '}';
     }
 
     public static final class Builder {
@@ -183,7 +186,7 @@ public final class GrpcCallOption {
         public Builder withDeadlineAfter(final long duration, @Nonnull final TimeUnit timeUnit) {
             var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
                 @Override
-                public <T extends AbstractStub<T>> T wrapStub(T stub) {
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
                     return stub.withDeadlineAfter(duration, timeUnit);
                 }
             };
@@ -201,7 +204,7 @@ public final class GrpcCallOption {
         public Builder withExecutor(@Nonnull final Executor executor) {
             var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
                 @Override
-                public <T extends AbstractStub<T>> T wrapStub(T stub) {
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
                     return stub.withExecutor(executor);
                 }
             };
@@ -223,7 +226,7 @@ public final class GrpcCallOption {
         public Builder withCompressorName(@Nonnull final String compressorName) {
             var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
                 @Override
-                public <T extends AbstractStub<T>> T wrapStub(T stub) {
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
                     return stub.withCompression(compressorName);
                 }
             };
@@ -243,7 +246,7 @@ public final class GrpcCallOption {
         public Builder withWaitForReady() {
             var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
                 @Override
-                public <T extends AbstractStub<T>> T wrapStub(T stub) {
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
                     return stub.withWaitForReady();
                 }
             };
@@ -261,7 +264,7 @@ public final class GrpcCallOption {
         public Builder withMaxInboundMessageSize(@Nonnull final Integer maxInboundMessageSize) {
             var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
                 @Override
-                public <T extends AbstractStub<T>> T wrapStub(T stub) {
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
                     return stub.withMaxInboundMessageSize(maxInboundMessageSize);
                 }
             };
@@ -278,7 +281,7 @@ public final class GrpcCallOption {
         public Builder withMaxOutboundMessageSize(@Nonnull final Integer maxOutboundMessageSize) {
             var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
                 @Override
-                public <T extends AbstractStub<T>> T wrapStub(T stub) {
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
                     return stub.withMaxOutboundMessageSize(maxOutboundMessageSize);
                 }
             };
