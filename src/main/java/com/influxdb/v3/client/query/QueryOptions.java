@@ -146,8 +146,51 @@ public final class QueryOptions {
         return headers;
     }
 
+    /**
+     * The grpcCallOption pass to this function will be merged with the default grpcCallOption.
+     * @param: the grpcCallOption
+     */
     public void setGrpcCallOption(@Nonnull final GrpcCallOption grpcCallOption) {
-        this.grpcCallOption = grpcCallOption;
+        GrpcCallOption.Builder builder = getDefaultGrpcCallOptsBuilder(grpcCallOption);
+
+        if (grpcCallOption.getMaxOutboundMessageSize() != null) {
+            builder.withMaxOutboundMessageSize(grpcCallOption.getMaxOutboundMessageSize());
+        }
+
+        if (grpcCallOption.getExecutor() != null) {
+            builder.withExecutor(grpcCallOption.getExecutor());
+        }
+
+        if (grpcCallOption.getWaitForReady() != null) {
+            builder.withWaitForReady();
+        }
+
+        if (grpcCallOption.getDeadline() != null) {
+            builder.withDeadline(grpcCallOption.getDeadline());
+        }
+
+        if (grpcCallOption.getCompressorName() != null) {
+            builder.withCompressorName(grpcCallOption.getCompressorName());
+        }
+
+        this.grpcCallOption = builder.build();
+    }
+
+    /**
+     * @param grpcCallOption the grpcCallOption.
+     * @return the default grpc builder with some default options
+     */
+    @Nonnull
+    private static GrpcCallOption.Builder getDefaultGrpcCallOptsBuilder(@Nonnull final GrpcCallOption grpcCallOption) {
+        GrpcCallOption.Builder builder = new GrpcCallOption.Builder();
+        if (grpcCallOption.getMaxInboundMessageSize() != null) {
+            builder.withMaxInboundMessageSize(grpcCallOption.getMaxInboundMessageSize());
+        } else {
+            // Set this for backward compatibility
+            builder.withMaxInboundMessageSize(Integer.MAX_VALUE);
+        }
+
+        return builder;
     }
 
     @Nullable
