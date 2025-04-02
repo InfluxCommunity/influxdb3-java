@@ -148,7 +148,7 @@ public final class QueryOptions {
 
     /**
      * The grpcCallOption pass to this function will be merged with the default grpcCallOption.
-     * @param: the grpcCallOption
+     * @param grpcCallOption the grpcCallOption
      */
     public void setGrpcCallOption(@Nonnull final GrpcCallOption grpcCallOption) {
         GrpcCallOption.Builder builder = getDefaultGrpcCallOptsBuilder(grpcCallOption);
@@ -193,6 +193,9 @@ public final class QueryOptions {
         return builder;
     }
 
+    /**
+     * @return grpc call options with some default options
+     */
     @Nullable
     public GrpcCallOption grpcCallOption() {
         return grpcCallOption;

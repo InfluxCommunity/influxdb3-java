@@ -166,6 +166,9 @@ public final class GrpcCallOption {
                 + '}';
     }
 
+    /**
+     * Builder for GrpcCallOption
+     */
     public static final class Builder {
         private Deadline deadline;
         private Executor executor;
