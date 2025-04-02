@@ -182,9 +182,11 @@ class QueryOptionsTest {
 
     @Test
     void grpcCallOptionDefaultOptions() {
-        GrpcCallOption grpcCallOption = new GrpcCallOption.Builder().build();
-        Assertions.assertThat(grpcCallOption.getMaxInboundMessageSize())
-                .isEqualTo(Integer.MAX_VALUE);
+        QueryOptions queryOptions = new QueryOptions("test");
+        queryOptions.setGrpcCallOption(new GrpcCallOption.Builder().build());
+        Assertions.assertThat(queryOptions.grpcCallOption()).isNotNull();
+        Assertions.assertThat(queryOptions.grpcCallOption()
+                        .getMaxInboundMessageSize()).isEqualTo(Integer.MAX_VALUE);
     }
 
     @Test
