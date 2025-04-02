@@ -25,10 +25,11 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.CallOptions;
 import org.apache.arrow.flight.CallStatus;
@@ -37,6 +38,7 @@ import org.apache.arrow.flight.FlightServer;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.NoOpFlightProducer;
 import org.apache.arrow.flight.Ticket;
+import org.apache.arrow.flight.impl.FlightServiceGrpc;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.VarCharVector;
@@ -176,28 +178,25 @@ class QueryOptionsTest {
 
     @Test
     void grpcCallOption() {
-        GrpcCallOption.Builder builder = new GrpcCallOption.Builder();
-        builder.withMaxInboundMessageSize(1024);
-        builder.withMaxOutboundMessageSize(1024);
-        builder.withCompressorName("my-compressor");
-        builder.withDeadlineAfter(2, TimeUnit.HOURS);
-        builder.withExecutor(Runnable::run);
-        builder.withWaitForReady();
-
-        GrpcCallOption callOption = builder.build();
-        Assertions.assertThat(callOption.getMaxInboundMessageSize()).isEqualTo(1024);
-        Assertions.assertThat(callOption.getMaxOutboundMessageSize()).isEqualTo(1024);
-        Assertions.assertThat(callOption.getCompressorName()).isEqualTo("my-compressor");
-        Assertions.assertThat(callOption.getDeadlineAfter()).isNotNull();
-        Assertions.assertThat(callOption.getExecutor()).isNotNull();
-        Assertions.assertThat(callOption.getWaitForReady()).isTrue();
-
-        CallOption[] callBackArray = callOption.getCallOptionCallback();
-        Assertions.assertThat(callBackArray).isNotNull();
-        Assertions.assertThat(callBackArray.length).isEqualTo(6);
-        for (CallOption option : callBackArray) {
-            Assertions.assertThat(option).isInstanceOf(CallOptions.GrpcCallOption.class);
+        GrpcCallOption grpcCallOption = new GrpcCallOption.Builder()
+                .withMaxInboundMessageSize(1024)
+                .withMaxOutboundMessageSize(1024)
+                .withCompressorName("my-compressor")
+                .withWaitForReady()
+                .build();
+        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 3333)
+                .usePlaintext()
+                .build();
+        FlightServiceGrpc.FlightServiceStub stub = FlightServiceGrpc.newStub(channel);
+        for (CallOption option : grpcCallOption.getCallOptionCallback()) {
+            stub = ((CallOptions.GrpcCallOption) option).wrapStub(stub);
         }
+
+        io.grpc.CallOptions stubCallOptions = stub.getCallOptions();
+        Assertions.assertThat(stubCallOptions.getMaxInboundMessageSize()).isEqualTo(grpcCallOption.getMaxInboundMessageSize());
+        Assertions.assertThat(stubCallOptions.getMaxOutboundMessageSize()).isEqualTo(grpcCallOption.getMaxOutboundMessageSize());
+        Assertions.assertThat(stubCallOptions.getCompressor()).isEqualTo(grpcCallOption.getCompressorName());
+        Assertions.assertThat(stubCallOptions.isWaitForReady()).isEqualTo(grpcCallOption.getWaitForReady());
     }
 
     private FlightServer simpleFlightServer(@Nonnull final URI uri,
