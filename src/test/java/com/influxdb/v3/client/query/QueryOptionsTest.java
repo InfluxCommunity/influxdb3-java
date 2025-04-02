@@ -25,9 +25,13 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import io.grpc.Deadline;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.apache.arrow.flight.CallOption;
@@ -178,11 +182,15 @@ class QueryOptionsTest {
 
     @Test
     void grpcCallOption() {
+        Executor executor = Executors.newSingleThreadExecutor();
+        Deadline deadline = Deadline.after(2, TimeUnit.SECONDS);
         GrpcCallOption grpcCallOption = new GrpcCallOption.Builder()
                 .withMaxInboundMessageSize(1024)
                 .withMaxOutboundMessageSize(1024)
                 .withCompressorName("my-compressor")
                 .withWaitForReady()
+                .withExecutor(executor)
+                .withDeadline(deadline)
                 .build();
         ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 3333)
                 .usePlaintext()
@@ -193,10 +201,14 @@ class QueryOptionsTest {
         }
 
         io.grpc.CallOptions stubCallOptions = stub.getCallOptions();
-        Assertions.assertThat(stubCallOptions.getMaxInboundMessageSize()).isEqualTo(grpcCallOption.getMaxInboundMessageSize());
-        Assertions.assertThat(stubCallOptions.getMaxOutboundMessageSize()).isEqualTo(grpcCallOption.getMaxOutboundMessageSize());
+        Assertions.assertThat(stubCallOptions.getMaxInboundMessageSize())
+                .isEqualTo(grpcCallOption.getMaxInboundMessageSize());
+        Assertions.assertThat(stubCallOptions.getMaxOutboundMessageSize())
+                .isEqualTo(grpcCallOption.getMaxOutboundMessageSize());
         Assertions.assertThat(stubCallOptions.getCompressor()).isEqualTo(grpcCallOption.getCompressorName());
         Assertions.assertThat(stubCallOptions.isWaitForReady()).isEqualTo(grpcCallOption.getWaitForReady());
+        Assertions.assertThat(stubCallOptions.getExecutor()).isEqualTo(grpcCallOption.getExecutor());
+        Assertions.assertThat(stubCallOptions.getDeadline()).isEqualTo(grpcCallOption.getDeadline());
     }
 
     private FlightServer simpleFlightServer(@Nonnull final URI uri,

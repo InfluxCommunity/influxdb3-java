@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -40,7 +39,7 @@ import org.apache.arrow.flight.CallOption;
  */
 public final class GrpcCallOption {
 
-    private final Deadline deadLineAfter;
+    private final Deadline deadline;
     private final Executor executor;
     private final String compressorName;
     private final Boolean waitForReady;
@@ -49,7 +48,7 @@ public final class GrpcCallOption {
     private final CallOption[] callOptionCallback;
 
     private GrpcCallOption(@Nonnull final Builder builder) {
-        this.deadLineAfter = builder.deadLineAfter;
+        this.deadline = builder.deadline;
         this.executor = builder.executor;
         this.compressorName = builder.compressorName;
         this.waitForReady = builder.waitForReady;
@@ -59,13 +58,13 @@ public final class GrpcCallOption {
     }
 
     /**
-     * Returns the deadline that is after the given duration from now.
+     * Returns the absolute deadline for a call.
      *
      * @return the Deadline object
      */
     @Nullable
-    public Deadline getDeadlineAfter() {
-        return deadLineAfter;
+    public Deadline getDeadline() {
+        return deadline;
     }
 
     /**
@@ -135,7 +134,7 @@ public final class GrpcCallOption {
             return false;
         }
         GrpcCallOption that = (GrpcCallOption) o;
-        return Objects.equals(deadLineAfter, that.deadLineAfter)
+        return Objects.equals(deadline, that.deadline)
                 && Objects.equals(executor, that.executor)
                 && Objects.equals(compressorName, that.compressorName)
                 && Objects.equals(waitForReady, that.waitForReady)
@@ -145,7 +144,7 @@ public final class GrpcCallOption {
 
     @Override
     public int hashCode() {
-        return Objects.hash(deadLineAfter,
+        return Objects.hash(deadline,
                 executor,
                 compressorName,
                 waitForReady,
@@ -157,7 +156,7 @@ public final class GrpcCallOption {
     @Override
     public String toString() {
         return "GrpcCallOption{"
-                + "deadLineAfter=" + deadLineAfter
+                + "deadline=" + deadline
                 + ", executor=" + executor
                 + ", compressorName='" + compressorName
                 + '\''
@@ -168,7 +167,7 @@ public final class GrpcCallOption {
     }
 
     public static final class Builder {
-        private Deadline deadLineAfter;
+        private Deadline deadline;
         private Executor executor;
         private String compressorName;
         private Boolean waitForReady;
@@ -177,20 +176,18 @@ public final class GrpcCallOption {
         private final List<CallOption> callOptions = new ArrayList<>();
 
         /**
-         * Sets a deadline that is after the given {@code duration} from
-         * now.
-         * @param duration The duration
-         * @param timeUnit The time unit
+         * Sets the absolute deadline for a rpc call.
+         * @param deadline The deadline
          * @return this
          */
-        public Builder withDeadlineAfter(final long duration, @Nonnull final TimeUnit timeUnit) {
+        public Builder withDeadline(final @Nonnull Deadline deadline) {
             var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
                 @Override
                 public <T extends AbstractStub<T>> T wrapStub(final T stub) {
-                    return stub.withDeadlineAfter(duration, timeUnit);
+                    return stub.withDeadline(deadline);
                 }
             };
-            this.deadLineAfter = Deadline.after(duration, timeUnit);
+            this.deadline = deadline;
             callOptions.add(callOption);
             return this;
         }
