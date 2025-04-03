@@ -58,7 +58,7 @@ import org.junit.jupiter.api.Test;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.config.ClientConfig;
-import com.influxdb.v3.client.internal.GrpcCallOption;
+import com.influxdb.v3.client.internal.GrpcCallOptions;
 
 class QueryOptionsTest {
 
@@ -123,7 +123,7 @@ class QueryOptionsTest {
                     .database("test");
 
             // Set very small message size for testing
-            GrpcCallOption grpcCallOption = new GrpcCallOption.Builder()
+            GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
                     .withMaxInboundMessageSize(200)
                     .build();
 
@@ -161,7 +161,7 @@ class QueryOptionsTest {
                     .database("test")
                     .build();
 
-            GrpcCallOption grpcCallOption = new GrpcCallOption.Builder()
+            GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
                     .withMaxInboundMessageSize(1024 * 1024 * 1024)
                     .build();
 
@@ -186,7 +186,7 @@ class QueryOptionsTest {
         Deadline deadline = Deadline.after(2, TimeUnit.SECONDS);
         String compressorName = "name";
 
-        GrpcCallOption grpcCallOption = new GrpcCallOption.Builder().withExecutor(executor)
+        GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder().withExecutor(executor)
                 .withMaxInboundMessageSize(1024)
                 .withMaxOutboundMessageSize(1024)
                 .withWaitForReady()
@@ -209,7 +209,7 @@ class QueryOptionsTest {
     @Test
     void grpcCallOptionDefaultOptions() {
         QueryOptions queryOptions = new QueryOptions("test");
-        queryOptions.setGrpcCallOption(new GrpcCallOption.Builder().build());
+        queryOptions.setGrpcCallOption(new GrpcCallOptions.Builder().build());
         Assertions.assertThat(queryOptions.grpcCallOption()).isNotNull();
         Assertions.assertThat(queryOptions.grpcCallOption()
                 .getMaxInboundMessageSize()).isEqualTo(Integer.MAX_VALUE);
@@ -219,7 +219,7 @@ class QueryOptionsTest {
     void grpcCallOption() {
         Executor executor = Executors.newSingleThreadExecutor();
         Deadline deadline = Deadline.after(2, TimeUnit.SECONDS);
-        GrpcCallOption grpcCallOption = new GrpcCallOption.Builder()
+        GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
                 .withMaxInboundMessageSize(1024)
                 .withMaxOutboundMessageSize(1024)
                 .withCompressorName("my-compressor")
@@ -231,7 +231,7 @@ class QueryOptionsTest {
                 .usePlaintext()
                 .build();
         FlightServiceGrpc.FlightServiceStub stub = FlightServiceGrpc.newStub(channel);
-        for (CallOption option : grpcCallOption.getCallOptionCallback()) {
+        for (CallOption option : grpcCallOption.getCallOptions()) {
             stub = ((CallOptions.GrpcCallOption) option).wrapStub(stub);
         }
 

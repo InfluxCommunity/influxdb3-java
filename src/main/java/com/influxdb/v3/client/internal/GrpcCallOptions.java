@@ -37,7 +37,7 @@ import org.apache.arrow.flight.CallOption;
 /**
  * The collection of runtime options for a new RPC call.
  */
-public final class GrpcCallOption {
+public final class GrpcCallOptions {
 
     private final Deadline deadline;
     private final Executor executor;
@@ -45,16 +45,16 @@ public final class GrpcCallOption {
     private final Boolean waitForReady;
     private final Integer maxInboundMessageSize;
     private final Integer maxOutboundMessageSize;
-    private final CallOption[] callOptionCallback;
+    private final CallOption[] callOptions;
 
-    private GrpcCallOption(@Nonnull final Builder builder) {
+    private GrpcCallOptions(@Nonnull final Builder builder) {
         this.deadline = builder.deadline;
         this.executor = builder.executor;
         this.compressorName = builder.compressorName;
         this.waitForReady = builder.waitForReady;
         this.maxInboundMessageSize = builder.maxInboundMessageSize;
         this.maxOutboundMessageSize = builder.maxOutboundMessageSize;
-        this.callOptionCallback = builder.callOptions.toArray(new CallOption[0]);
+        this.callOptions = builder.callOptions.toArray(new CallOption[0]);
     }
 
     /**
@@ -124,8 +124,8 @@ public final class GrpcCallOption {
      * @return the CallOption list
      */
     @Nonnull
-    public CallOption[] getCallOptionCallback() {
-        return callOptionCallback;
+    public CallOption[] getCallOptions() {
+        return callOptions;
     }
 
     @Override
@@ -133,7 +133,7 @@ public final class GrpcCallOption {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        GrpcCallOption that = (GrpcCallOption) o;
+        GrpcCallOptions that = (GrpcCallOptions) o;
         return Objects.equals(deadline, that.deadline)
                 && Objects.equals(executor, that.executor)
                 && Objects.equals(compressorName, that.compressorName)
@@ -174,7 +174,7 @@ public final class GrpcCallOption {
         private Executor executor;
         private String compressorName;
         private Boolean waitForReady;
-        private Integer maxInboundMessageSize;
+        private Integer maxInboundMessageSize = Integer.MAX_VALUE;
         private Integer maxOutboundMessageSize;
         private final List<CallOption> callOptions = new ArrayList<>();
 
@@ -184,14 +184,7 @@ public final class GrpcCallOption {
          * @return this
          */
         public Builder withDeadline(final @Nonnull Deadline deadline) {
-            var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
-                @Override
-                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
-                    return stub.withDeadline(deadline);
-                }
-            };
             this.deadline = deadline;
-            callOptions.add(callOption);
             return this;
         }
 
@@ -202,14 +195,7 @@ public final class GrpcCallOption {
          * @return this
          */
         public Builder withExecutor(@Nonnull final Executor executor) {
-            var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
-                @Override
-                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
-                    return stub.withExecutor(executor);
-                }
-            };
             this.executor = executor;
-            callOptions.add(callOption);
             return this;
         }
 
@@ -224,14 +210,7 @@ public final class GrpcCallOption {
          * @return this
          */
         public Builder withCompressorName(@Nonnull final String compressorName) {
-            var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
-                @Override
-                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
-                    return stub.withCompression(compressorName);
-                }
-            };
             this.compressorName = compressorName;
-            callOptions.add(callOption);
             return this;
         }
 
@@ -244,14 +223,7 @@ public final class GrpcCallOption {
          * @return this
          */
         public Builder withWaitForReady() {
-            var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
-                @Override
-                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
-                    return stub.withWaitForReady();
-                }
-            };
             this.waitForReady = true;
-            callOptions.add(callOption);
             return this;
         }
 
@@ -262,14 +234,7 @@ public final class GrpcCallOption {
          * @return this
          */
         public Builder withMaxInboundMessageSize(@Nonnull final Integer maxInboundMessageSize) {
-            var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
-                @Override
-                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
-                    return stub.withMaxInboundMessageSize(maxInboundMessageSize);
-                }
-            };
             this.maxInboundMessageSize = maxInboundMessageSize;
-            callOptions.add(callOption);
             return this;
         }
 
@@ -279,24 +244,106 @@ public final class GrpcCallOption {
          * @return this
          */
         public Builder withMaxOutboundMessageSize(@Nonnull final Integer maxOutboundMessageSize) {
-            var callOption = new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
+            this.maxOutboundMessageSize = maxOutboundMessageSize;
+            return this;
+        }
+
+        private org.apache.arrow.flight.CallOptions.GrpcCallOption createDeadlineCallOption(
+                final Deadline deadline) {
+            return new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
+                @Override
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
+                    return stub.withDeadline(deadline);
+                }
+            };
+        }
+
+        private org.apache.arrow.flight.CallOptions.GrpcCallOption createExecutorCallOption(
+                final Executor executor) {
+            return new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
+                @Override
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
+                    return stub.withExecutor(executor);
+                }
+            };
+        }
+
+        private org.apache.arrow.flight.CallOptions.GrpcCallOption createCompressionCallOption(
+                final String compressorName) {
+            return new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
+                @Override
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
+                    return stub.withCompression(compressorName);
+                }
+            };
+        }
+
+        private org.apache.arrow.flight.CallOptions.GrpcCallOption createWaitForReadyCallOption() {
+            return new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
+                @Override
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
+                    return stub.withWaitForReady();
+                }
+            };
+        }
+
+        private org.apache.arrow.flight.CallOptions.GrpcCallOption createMaxInboundMessageSizeCallOption(
+                final Integer maxInboundMessageSize) {
+            return new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
+                @Override
+                public <T extends AbstractStub<T>> T wrapStub(final T stub) {
+                    return stub.withMaxInboundMessageSize(maxInboundMessageSize);
+                }
+            };
+        }
+
+        private org.apache.arrow.flight.CallOptions.GrpcCallOption createMaxOutboundMessageSizeCallOption(
+                final Integer maxOutboundMessageSize) {
+            return new org.apache.arrow.flight.CallOptions.GrpcCallOption() {
                 @Override
                 public <T extends AbstractStub<T>> T wrapStub(final T stub) {
                     return stub.withMaxOutboundMessageSize(maxOutboundMessageSize);
                 }
             };
-            this.maxOutboundMessageSize = maxOutboundMessageSize;
-            callOptions.add(callOption);
-            return this;
         }
 
         /**
-         * Build an instance of GrpcCallOption.
+         * Build an instance of GrpcCallOptions.
          *
-         * @return the GrpcCallOption instance
+         * @return the GrpcCallOptions instance
          */
-        public GrpcCallOption build() {
-            return new GrpcCallOption(this);
+        public GrpcCallOptions build() {
+            if (deadline != null) {
+                var callOption = createDeadlineCallOption(deadline);
+                callOptions.add(callOption);
+            }
+
+            if (executor != null) {
+                var callOption = createExecutorCallOption(executor);
+                callOptions.add(callOption);
+            }
+
+            if (compressorName != null) {
+                var callOption = createCompressionCallOption(compressorName);
+                callOptions.add(callOption);
+            }
+
+            if (waitForReady != null) {
+                var callOption = createWaitForReadyCallOption();
+                callOptions.add(callOption);
+            }
+
+            if (maxInboundMessageSize != null) {
+                var callOption = createMaxInboundMessageSizeCallOption(maxInboundMessageSize);
+                callOptions.add(callOption);
+            }
+
+            if (maxOutboundMessageSize != null) {
+                var callOption = createMaxOutboundMessageSizeCallOption(maxOutboundMessageSize);
+                callOptions.add(callOption);
+            }
+
+            return new GrpcCallOptions(this);
         }
     }
 }

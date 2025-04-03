@@ -352,14 +352,15 @@ public class FlightSqlClientTest {
             Assertions.assertThat(callOptions).isNotNull();
             Assertions.assertThat(callOptions.length).isEqualTo(1);
 
-            GrpcCallOption grpcCallOption = new GrpcCallOption.Builder()
+            GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
                     .withMaxOutboundMessageSize(1)
                     .withCompressorName("gzip")
                     .build();
 
-            callOptions = flightSqlClient.concatCallOptions(grpcCallOption.getCallOptionCallback(), headerCallOption);
+            callOptions = flightSqlClient.concatCallOptions(grpcCallOption.getCallOptions(), headerCallOption);
             Assertions.assertThat(callOptions).isNotNull();
-            Assertions.assertThat(callOptions.length).isEqualTo(3);
+            // This equals to 4 because we always have a default maxInboundMessageSize
+            Assertions.assertThat(callOptions.length).isEqualTo(4);
         }
     }
 

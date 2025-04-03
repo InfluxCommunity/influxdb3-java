@@ -110,7 +110,7 @@ final class FlightSqlClient implements AutoCloseable {
                                      @Nonnull final QueryType queryType,
                                      @Nonnull final Map<String, Object> queryParameters,
                                      @Nonnull final Map<String, String> headers,
-                                     final CallOption... callOption) {
+                                     final CallOption... callOptions) {
 
         Map<String, Object> ticketData = new HashMap<>() {{
             put("database", database);
@@ -130,10 +130,10 @@ final class FlightSqlClient implements AutoCloseable {
         }
 
         HeaderCallOption headerCallOption = metadataHeader(headers);
-        CallOption[] callOptions = concatCallOptions(callOption, headerCallOption);
+        CallOption[] callOptionArray = concatCallOptions(callOptions, headerCallOption);
 
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
-        FlightStream stream = client.getStream(ticket, callOptions);
+        FlightStream stream = client.getStream(ticket, callOptionArray);
         FlightSqlIterator iterator = new FlightSqlIterator(stream);
 
         Spliterator<VectorSchemaRoot> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL);

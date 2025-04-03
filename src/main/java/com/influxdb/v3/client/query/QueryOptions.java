@@ -28,7 +28,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.Arguments;
-import com.influxdb.v3.client.internal.GrpcCallOption;
+import com.influxdb.v3.client.internal.GrpcCallOptions;
 
 /**
  * Query API options.
@@ -62,7 +62,7 @@ public final class QueryOptions {
     private final String database;
     private final QueryType queryType;
     private final Map<String, String> headers;
-    private GrpcCallOption grpcCallOption;
+    private GrpcCallOptions grpcCallOption;
 
     /**
      * Construct QueryAPI options. The query type is set to SQL.
@@ -147,57 +147,18 @@ public final class QueryOptions {
     }
 
     /**
-     * The grpcCallOption pass to this function will be merged with the default grpcCallOption.
+     * Sets the GrpcCallOptions object.
      * @param grpcCallOption the grpcCallOption
      */
-    public void setGrpcCallOption(@Nonnull final GrpcCallOption grpcCallOption) {
-        GrpcCallOption.Builder builder = getDefaultGrpcCallOptsBuilder(grpcCallOption);
-
-        if (grpcCallOption.getMaxOutboundMessageSize() != null) {
-            builder.withMaxOutboundMessageSize(grpcCallOption.getMaxOutboundMessageSize());
-        }
-
-        if (grpcCallOption.getExecutor() != null) {
-            builder.withExecutor(grpcCallOption.getExecutor());
-        }
-
-        if (grpcCallOption.getWaitForReady() != null) {
-            builder.withWaitForReady();
-        }
-
-        if (grpcCallOption.getDeadline() != null) {
-            builder.withDeadline(grpcCallOption.getDeadline());
-        }
-
-        if (grpcCallOption.getCompressorName() != null) {
-            builder.withCompressorName(grpcCallOption.getCompressorName());
-        }
-
-        this.grpcCallOption = builder.build();
+    public void setGrpcCallOption(@Nonnull final GrpcCallOptions grpcCallOption) {
+        this.grpcCallOption = grpcCallOption;
     }
 
     /**
-     * @param grpcCallOption the grpcCallOption.
-     * @return the default grpc builder with some default options
-     */
-    @Nonnull
-    private static GrpcCallOption.Builder getDefaultGrpcCallOptsBuilder(@Nonnull final GrpcCallOption grpcCallOption) {
-        GrpcCallOption.Builder builder = new GrpcCallOption.Builder();
-        if (grpcCallOption.getMaxInboundMessageSize() != null) {
-            builder.withMaxInboundMessageSize(grpcCallOption.getMaxInboundMessageSize());
-        } else {
-            // Set this for backward compatibility
-            builder.withMaxInboundMessageSize(Integer.MAX_VALUE);
-        }
-
-        return builder;
-    }
-
-    /**
-     * @return grpc call options with some default options
+     * @return the GrpcCallOptions object.
      */
     @Nullable
-    public GrpcCallOption grpcCallOption() {
+    public GrpcCallOptions grpcCallOption() {
         return grpcCallOption;
     }
 
