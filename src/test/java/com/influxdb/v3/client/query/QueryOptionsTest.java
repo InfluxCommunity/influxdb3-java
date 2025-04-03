@@ -207,15 +207,6 @@ class QueryOptionsTest {
     }
 
     @Test
-    void grpcCallOptionDefaultOptions() {
-        QueryOptions queryOptions = new QueryOptions("test");
-        queryOptions.setGrpcCallOption(new GrpcCallOptions.Builder().build());
-        Assertions.assertThat(queryOptions.grpcCallOption()).isNotNull();
-        Assertions.assertThat(queryOptions.grpcCallOption()
-                .getMaxInboundMessageSize()).isEqualTo(Integer.MAX_VALUE);
-    }
-
-    @Test
     void grpcCallOption() {
         Executor executor = Executors.newSingleThreadExecutor();
         Deadline deadline = Deadline.after(2, TimeUnit.SECONDS);

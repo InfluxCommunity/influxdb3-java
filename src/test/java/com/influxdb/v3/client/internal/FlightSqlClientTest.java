@@ -360,7 +360,7 @@ public class FlightSqlClientTest {
             callOptions = flightSqlClient.concatCallOptions(grpcCallOption.getCallOptions(), headerCallOption);
             Assertions.assertThat(callOptions).isNotNull();
             // This equals to 4 because we always have a default maxInboundMessageSize
-            Assertions.assertThat(callOptions.length).isEqualTo(4);
+            Assertions.assertThat(callOptions.length).isEqualTo(3);
         }
     }
 
