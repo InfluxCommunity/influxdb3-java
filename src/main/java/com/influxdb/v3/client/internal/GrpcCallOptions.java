@@ -155,7 +155,7 @@ public final class GrpcCallOptions {
 
     @Override
     public String toString() {
-        return "GrpcCallOption{"
+        return "GrpcCallOptions{"
                 + "deadline=" + deadline
                 + ", executor=" + executor
                 + ", compressorName='" + compressorName
