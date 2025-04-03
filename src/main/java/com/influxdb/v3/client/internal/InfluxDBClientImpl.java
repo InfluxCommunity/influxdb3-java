@@ -37,8 +37,10 @@ import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.grpc.stub.AbstractStub;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.arrow.flight.CallOption;
+import org.apache.arrow.flight.CallOptions;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
@@ -63,6 +65,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     private static final String DATABASE_REQUIRED_MESSAGE = "Please specify the 'Database' as a method parameter "
             + "or use default configuration at 'ClientConfig.database'.";
 
+    private static final CallOption[] EMPTY_CALL_OPTIONS = new CallOption[0];
     private static final Map<String, Object> NO_PARAMETERS = Map.of();
     private static final List<Class<?>> ALLOWED_NAMED_PARAMETER_TYPES = List.of(
             String.class,
@@ -342,17 +345,46 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
         });
 
-        GrpcCallOptions grpcCallOption = options.grpcCallOption();
-        CallOption[] callOptions = grpcCallOption != null ? grpcCallOption.getCallOptions() : null;
+        CallOption[] queryCallOptions = createQueryCallOptions(options);
         return flightSqlClient.execute(
                 query,
                 database,
                 options.queryTypeSafe(),
                 parameters,
                 options.headersSafe(),
-                callOptions
+                queryCallOptions
         );
     }
+
+    /**
+     * Creates an array of CallOption with some default CallOption.
+     *
+     * @param options the QueryOptions object
+     * @return the array of CallOption
+     */
+    @Nonnull
+    CallOption[] createQueryCallOptions(@Nonnull final QueryOptions options) {
+        GrpcCallOptions grpcCallOption = options.grpcCallOption();
+        CallOption[] callOptions = grpcCallOption != null ? grpcCallOption.getCallOptions() : EMPTY_CALL_OPTIONS;
+        if (grpcCallOption == null || grpcCallOption.getMaxInboundMessageSize() == null) {
+            callOptions = Stream.concat(
+                    Stream.of(maxInboundMessageCallOption()),
+                    Stream.of(callOptions))
+                    .toArray(CallOption[]::new);
+        }
+        return callOptions;
+    }
+
+    @Nonnull
+    private CallOption maxInboundMessageCallOption() {
+        return new CallOptions.GrpcCallOption() {
+            @Override
+            public <T extends AbstractStub<T>> T wrapStub(T stub) {
+                return stub.withMaxInboundMessageSize(Integer.MAX_VALUE);
+            }
+        };
+    }
+
 
     @Nonnull
     private byte[] gzipData(@Nonnull final byte[] data) throws IOException {

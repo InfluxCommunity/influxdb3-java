@@ -174,7 +174,7 @@ public final class GrpcCallOptions {
         private Executor executor;
         private String compressorName;
         private Boolean waitForReady;
-        private Integer maxInboundMessageSize = Integer.MAX_VALUE;
+        private Integer maxInboundMessageSize;
         private Integer maxOutboundMessageSize;
         private final List<CallOption> callOptions = new ArrayList<>();
 
