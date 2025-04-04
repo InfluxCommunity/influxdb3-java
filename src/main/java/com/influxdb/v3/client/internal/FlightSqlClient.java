@@ -27,13 +27,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
@@ -130,7 +128,7 @@ final class FlightSqlClient implements AutoCloseable {
         }
 
         HeaderCallOption headerCallOption = metadataHeader(headers);
-        CallOption[] callOptionArray = concatCallOptions(callOptions, headerCallOption);
+        CallOption[] callOptionArray = GrpcCallOptions.mergeCallOptions(callOptions, headerCallOption);
 
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
         FlightStream stream = client.getStream(ticket, callOptionArray);
@@ -235,16 +233,6 @@ final class FlightSqlClient implements AutoCloseable {
             }
             return null;
         };
-    }
-
-    @Nullable
-    CallOption[] concatCallOptions(@Nullable final CallOption[] base, final CallOption... callOption) {
-        if (base == null || base.length == 0) {
-            return callOption;
-        }
-        List<CallOption> results = new ArrayList<>(List.of(base));
-        Arrays.stream(callOption).filter(Objects::nonNull).forEach(results::add);
-        return results.toArray(new CallOption[0]);
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {

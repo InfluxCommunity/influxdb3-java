@@ -26,20 +26,16 @@ import java.net.URISyntaxException;
 import java.util.Map;
 
 import io.grpc.HttpConnectProxiedSocketAddress;
-import io.grpc.Metadata;
 import io.grpc.ProxyDetector;
 import io.grpc.internal.GrpcUtil;
 import org.apache.arrow.flight.CallHeaders;
 import org.apache.arrow.flight.CallInfo;
-import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.FlightClientMiddleware;
 import org.apache.arrow.flight.FlightServer;
-import org.apache.arrow.flight.HeaderCallOption;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.NoOpFlightProducer;
-import org.apache.arrow.flight.grpc.MetadataAdapter;
 import org.apache.arrow.memory.RootAllocator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
@@ -326,41 +322,6 @@ public class FlightSqlClientTest {
             )).isNull();
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @Test
-    void concatCallOptions() throws Exception {
-        ClientConfig clientConfig = new ClientConfig.Builder()
-                .host("https://localhost:80")
-                .build();
-        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
-            Assertions.assertThatNoException().isThrownBy(() -> {
-                CallOption[] results = flightSqlClient.concatCallOptions(null, null);
-                Assertions.assertThat(results).isNull();
-            });
-
-            MetadataAdapter metadata = new MetadataAdapter(new Metadata());
-            metadata.insert("key1", "value1");
-            HeaderCallOption headerCallOption = new HeaderCallOption(metadata);
-
-            CallOption[] callOptions = flightSqlClient.concatCallOptions(null, headerCallOption);
-            Assertions.assertThat(callOptions).isNotNull();
-            Assertions.assertThat(callOptions.length).isEqualTo(1);
-
-            callOptions = flightSqlClient.concatCallOptions(new CallOption[]{headerCallOption});
-            Assertions.assertThat(callOptions).isNotNull();
-            Assertions.assertThat(callOptions.length).isEqualTo(1);
-
-            GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
-                    .withMaxOutboundMessageSize(1)
-                    .withCompressorName("gzip")
-                    .build();
-
-            callOptions = flightSqlClient.concatCallOptions(grpcCallOption.getCallOptions(), headerCallOption);
-            Assertions.assertThat(callOptions).isNotNull();
-            // This equals to 4 because we always have a default maxInboundMessageSize
-            Assertions.assertThat(callOptions.length).isEqualTo(3);
         }
     }
 
