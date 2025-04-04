@@ -69,7 +69,8 @@ public final class GrpcCallOptions {
      * @param callOptions additional {@link CallOption} instances to be added, may also be null
      * @return a combined array containing all {@link CallOption} instances from both input arrays
      */
-    public static CallOption[] mergeCallOptions(@Nullable final CallOption[] baseCallOptions, final CallOption... callOptions) {
+    public static CallOption[] mergeCallOptions(@Nullable final CallOption[] baseCallOptions,
+                                                final CallOption... callOptions) {
         return Stream.concat(
                 Arrays.stream(Optional.ofNullable(baseCallOptions).orElse(new CallOption[0])),
                 Arrays.stream(Optional.ofNullable(callOptions).orElse(new CallOption[0]))
