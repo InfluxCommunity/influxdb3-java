@@ -22,9 +22,12 @@
 package com.influxdb.v3.client.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -55,6 +58,22 @@ public final class GrpcCallOptions {
         this.maxInboundMessageSize = builder.maxInboundMessageSize;
         this.maxOutboundMessageSize = builder.maxOutboundMessageSize;
         this.callOptions = builder.callOptions.toArray(new CallOption[0]);
+    }
+
+    /**
+     * Merges two arrays of {@link CallOption} into a single array. The method combines the elements
+     * from the baseCallOptions array and the additional callOptions array. If either of the input
+     * arrays is null, it will be treated as an empty array.
+     *
+     * @param baseCallOptions the base array of {@link CallOption} instances, may be null
+     * @param callOptions additional {@link CallOption} instances to be added, may also be null
+     * @return a combined array containing all {@link CallOption} instances from both input arrays
+     */
+    public static CallOption[] mergeCallOptions(@Nullable final CallOption[] baseCallOptions, final CallOption... callOptions) {
+        return Stream.concat(
+                Arrays.stream(Optional.ofNullable(baseCallOptions).orElse(new CallOption[0])),
+                Arrays.stream(Optional.ofNullable(callOptions).orElse(new CallOption[0]))
+        ).toArray(CallOption[]::new);
     }
 
     /**
@@ -179,7 +198,16 @@ public final class GrpcCallOptions {
         private final List<CallOption> callOptions = new ArrayList<>();
 
         /**
+         * Constructs a new instance of the Builder with default values.
+         * By default, the maximum inbound message size is set to the largest possible value.
+         */
+        public Builder() {
+            this.maxInboundMessageSize = Integer.MAX_VALUE;
+        }
+
+        /**
          * Sets the absolute deadline for a rpc call.
+         *
          * @param deadline The deadline
          * @return this
          */
@@ -191,6 +219,7 @@ public final class GrpcCallOptions {
         /**
          * Sets an {@code executor} to be used instead of the default
          * executor specified with {@link ManagedChannelBuilder#executor}.
+         *
          * @param executor The executor
          * @return this
          */
@@ -206,6 +235,7 @@ public final class GrpcCallOptions {
          * <p>It is only safe to call this if the server supports the compression format chosen. There is
          * no negotiation performed; if the server does not support the compression chosen, the call will
          * fail.
+         *
          * @param compressorName The compressor name
          * @return this
          */
@@ -220,6 +250,7 @@ public final class GrpcCallOptions {
          * available. This may dramatically increase the latency of the RPC, but avoids failing
          * "unnecessarily." The default queues the RPC until an attempt to connect has completed, but
          * fails RPCs without sending them if unable to connect.
+         *
          * @return this
          */
         public Builder withWaitForReady() {
@@ -230,6 +261,7 @@ public final class GrpcCallOptions {
         /**
          * Sets the maximum allowed message size acceptable from the remote peer.  If unset, this will
          * default to the value set on the {@link ManagedChannelBuilder#maxInboundMessageSize(int)}.
+         *
          * @param maxInboundMessageSize The max receive message size
          * @return this
          */
@@ -240,6 +272,7 @@ public final class GrpcCallOptions {
 
         /**
          * Sets the maximum allowed message size acceptable sent to the remote peer.
+         *
          * @param maxOutboundMessageSize The maximum message send size
          * @return this
          */
