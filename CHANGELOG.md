@@ -3,6 +3,7 @@
 ### Features
 
 1. [#229](https://github.com/InfluxCommunity/influxdb3-java/pull/229): Support proxy and custom ssl root certificates
+2. [#232](https://github.com/InfluxCommunity/influxdb3-java/pull/232): Allows users to set grpc options
 
 ## 1.0.0 [2024-12-11]
 

@@ -37,7 +37,10 @@ import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.grpc.stub.AbstractStub;
 import io.netty.handler.codec.http.HttpMethod;
+import org.apache.arrow.flight.CallOption;
+import org.apache.arrow.flight.CallOptions;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
@@ -341,8 +344,27 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
         });
 
-        return flightSqlClient.execute(query, database, options.queryTypeSafe(), parameters, options.headersSafe());
+        CallOption[] callOptions = options.grpcCallOption() != null ? options.grpcCallOption().getCallOptions() : null;
+        return flightSqlClient.execute(
+                query,
+                database,
+                options.queryTypeSafe(),
+                parameters,
+                options.headersSafe(),
+                callOptions
+        );
     }
+
+    @Nonnull
+    private CallOption maxInboundMessageCallOption() {
+        return new CallOptions.GrpcCallOption() {
+            @Override
+            public <T extends AbstractStub<T>> T wrapStub(final T stub) {
+                return stub.withMaxInboundMessageSize(Integer.MAX_VALUE);
+            }
+        };
+    }
+
 
     @Nonnull
     private byte[] gzipData(@Nonnull final byte[] data) throws IOException {

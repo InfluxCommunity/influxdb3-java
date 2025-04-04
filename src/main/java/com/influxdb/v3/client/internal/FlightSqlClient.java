@@ -49,6 +49,7 @@ import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.FlightGrpcUtils;
 import org.apache.arrow.flight.FlightStream;
@@ -106,7 +107,8 @@ final class FlightSqlClient implements AutoCloseable {
                                      @Nonnull final String database,
                                      @Nonnull final QueryType queryType,
                                      @Nonnull final Map<String, Object> queryParameters,
-                                     @Nonnull final Map<String, String> headers) {
+                                     @Nonnull final Map<String, String> headers,
+                                     final CallOption... callOptions) {
 
         Map<String, Object> ticketData = new HashMap<>() {{
             put("database", database);
@@ -126,8 +128,10 @@ final class FlightSqlClient implements AutoCloseable {
         }
 
         HeaderCallOption headerCallOption = metadataHeader(headers);
+        CallOption[] callOptionArray = GrpcCallOptions.mergeCallOptions(callOptions, headerCallOption);
+
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
-        FlightStream stream = client.getStream(ticket, headerCallOption);
+        FlightStream stream = client.getStream(ticket, callOptionArray);
         FlightSqlIterator iterator = new FlightSqlIterator(stream);
 
         Spliterator<VectorSchemaRoot> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL);
@@ -141,11 +145,10 @@ final class FlightSqlClient implements AutoCloseable {
 
     @Nonnull
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
-        Location location = createLocation(config);
+        URI uri = createLocation(config).getUri();
+        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forAddress(uri.getHost(), uri.getPort());
 
-        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forTarget(location.getUri().getHost());
-
-        if (LocationSchemes.GRPC_TLS.equals(location.getUri().getScheme())) {
+        if (LocationSchemes.GRPC_TLS.equals(uri.getScheme())) {
             nettyChannelBuilder.useTransportSecurity();
 
             SslContext nettySslContext = createNettySslContext(config);
@@ -164,7 +167,6 @@ final class FlightSqlClient implements AutoCloseable {
         }
 
         nettyChannelBuilder.maxTraceEvents(0)
-                .maxInboundMessageSize(Integer.MAX_VALUE)
                 .maxInboundMetadataSize(Integer.MAX_VALUE);
 
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
