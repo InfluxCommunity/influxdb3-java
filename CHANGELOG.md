@@ -3,6 +3,7 @@
 ### Features
 
 1. [#229](https://github.com/InfluxCommunity/influxdb3-java/pull/229): Support proxy and custom ssl root certificates
+2. [#233](https://github.com/InfluxCommunity/influxdb3-java/pull/233): More detailed documentation about timestamp handling for query and write functions
 
 ## 1.0.0 [2024-12-11]
 
