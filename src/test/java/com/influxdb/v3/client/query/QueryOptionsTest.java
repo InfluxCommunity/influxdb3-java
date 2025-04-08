@@ -128,7 +128,7 @@ class QueryOptionsTest {
                     .build();
 
             QueryOptions queryOptions = new QueryOptions("test");
-            queryOptions.setGrpcCallOption(grpcCallOption);
+            queryOptions.setGrpcCallOptions(grpcCallOption);
 
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(builder.build())) {
                 try (Stream<PointValues> stream = influxDBClient.queryPoints(
@@ -166,7 +166,7 @@ class QueryOptionsTest {
                     .build();
 
             QueryOptions queryOptions = new QueryOptions("test");
-            queryOptions.setGrpcCallOption(grpcCallOption);
+            queryOptions.setGrpcCallOptions(grpcCallOption);
 
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
                 Assertions.assertThatNoException().isThrownBy(() -> {
@@ -181,7 +181,15 @@ class QueryOptionsTest {
     }
 
     @Test
-    void setGrpcCallOption() {
+    void defaultGrpcCallOptions() {
+        GrpcCallOptions grpcCallOptions = new QueryOptions("test").grpcCallOptions();
+        Assertions.assertThat(grpcCallOptions).isNotNull();
+        Assertions.assertThat(grpcCallOptions.getMaxInboundMessageSize()).isEqualTo(Integer.MAX_VALUE);
+        Assertions.assertThat(grpcCallOptions.getCallOptions().length).isEqualTo(1);
+    }
+
+    @Test
+    void setGrpcCallOptions() {
         Executor executor = Executors.newSingleThreadExecutor();
         Deadline deadline = Deadline.after(2, TimeUnit.SECONDS);
         String compressorName = "name";
@@ -195,19 +203,19 @@ class QueryOptionsTest {
                 .build();
 
         QueryOptions options = new QueryOptions("test");
-        options.setGrpcCallOption(grpcCallOption);
-        Assertions.assertThat(options.grpcCallOption()).isNotNull();
-        Assertions.assertThat(options.grpcCallOption().getMaxInboundMessageSize()).isEqualTo(1024);
-        Assertions.assertThat(options.grpcCallOption().getMaxOutboundMessageSize()).isEqualTo(1024);
-        Assertions.assertThat(options.grpcCallOption().getExecutor()).isEqualTo(executor);
-        Assertions.assertThat(options.grpcCallOption().getWaitForReady()).isTrue();
-        Assertions.assertThat(options.grpcCallOption().getCompressorName()).isEqualTo(compressorName);
-        Assertions.assertThat(options.grpcCallOption().getDeadline()).isEqualTo(deadline);
+        options.setGrpcCallOptions(grpcCallOption);
+        Assertions.assertThat(options.grpcCallOptions()).isNotNull();
+        Assertions.assertThat(options.grpcCallOptions().getMaxInboundMessageSize()).isEqualTo(1024);
+        Assertions.assertThat(options.grpcCallOptions().getMaxOutboundMessageSize()).isEqualTo(1024);
+        Assertions.assertThat(options.grpcCallOptions().getExecutor()).isEqualTo(executor);
+        Assertions.assertThat(options.grpcCallOptions().getWaitForReady()).isTrue();
+        Assertions.assertThat(options.grpcCallOptions().getCompressorName()).isEqualTo(compressorName);
+        Assertions.assertThat(options.grpcCallOptions().getDeadline()).isEqualTo(deadline);
 
     }
 
     @Test
-    void grpcCallOption() {
+    void grpcCallOptions() {
         Executor executor = Executors.newSingleThreadExecutor();
         Deadline deadline = Deadline.after(2, TimeUnit.SECONDS);
         GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()

@@ -60,6 +60,24 @@ public final class GrpcCallOptions {
         this.callOptions = builder.callOptions.toArray(new CallOption[0]);
     }
 
+
+    /**
+     * Creates a default instance of {@link GrpcCallOptions} with predefined settings.
+     * <p>
+     * The default configuration includes:
+     * <ul>
+     *   <li>Maximum inbound message size set to {@link Integer#MAX_VALUE}.</li>
+     * </ul>
+     * Other options can be customized using the {@link GrpcCallOptions.Builder}.
+     *
+     * @return the default configuration of {@link GrpcCallOptions}.
+     */
+    public static GrpcCallOptions getDefaultOptions() {
+        GrpcCallOptions.Builder builder = new GrpcCallOptions.Builder();
+        builder.withMaxInboundMessageSize(Integer.MAX_VALUE);
+        return builder.build();
+    }
+
     /**
      * Merges two arrays of {@link CallOption} into a single array. The method combines the elements
      * from the baseCallOptions array and the additional callOptions array. If either of the input

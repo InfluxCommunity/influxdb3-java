@@ -62,7 +62,7 @@ public final class QueryOptions {
     private final String database;
     private final QueryType queryType;
     private final Map<String, String> headers;
-    private GrpcCallOptions grpcCallOption;
+    private GrpcCallOptions grpcCallOptions = GrpcCallOptions.getDefaultOptions();
 
     /**
      * Construct QueryAPI options. The query type is set to SQL.
@@ -148,18 +148,18 @@ public final class QueryOptions {
 
     /**
      * Sets the GrpcCallOptions object.
-     * @param grpcCallOption the grpcCallOption
+     * @param grpcCallOptions the grpcCallOptions
      */
-    public void setGrpcCallOption(@Nonnull final GrpcCallOptions grpcCallOption) {
-        this.grpcCallOption = grpcCallOption;
+    public void setGrpcCallOptions(@Nonnull final GrpcCallOptions grpcCallOptions) {
+        this.grpcCallOptions = grpcCallOptions;
     }
 
     /**
      * @return the GrpcCallOptions object.
      */
     @Nullable
-    public GrpcCallOptions grpcCallOption() {
-        return grpcCallOption;
+    public GrpcCallOptions grpcCallOptions() {
+        return grpcCallOptions;
     }
 
     private boolean isNotDefined(final String option) {

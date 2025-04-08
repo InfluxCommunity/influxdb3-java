@@ -342,7 +342,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
         });
 
-        CallOption[] callOptions = options.grpcCallOption() != null ? options.grpcCallOption().getCallOptions() : null;
+        CallOption[] callOptions = options.grpcCallOptions() != null
+                ? options.grpcCallOptions().getCallOptions() : null;
         return flightSqlClient.execute(
                 query,
                 database,
