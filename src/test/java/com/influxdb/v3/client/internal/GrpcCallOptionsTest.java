@@ -27,6 +27,7 @@ import org.apache.arrow.flight.CallOptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class GrpcCallOptionsTest {
@@ -118,4 +119,86 @@ class GrpcCallOptionsTest {
         };
     }
 
+    @Test
+    void testEqualsWithEqualObjects() {
+        GrpcCallOptions options1 = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(2000)
+                .withCompressorName("gzip")
+                .build();
+        GrpcCallOptions options2 = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(2000)
+                .withCompressorName("gzip")
+                .build();
+
+        assertEquals(options1, options2);
+    }
+
+    @Test
+    void testEqualsWithDifferentObjects() {
+        GrpcCallOptions options1 = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(2000)
+                .withCompressorName("gzip")
+                .build();
+        GrpcCallOptions options2 = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(1000)
+                .withCompressorName("deflate")
+                .build();
+
+        assertNotEquals(options1, options2);
+    }
+
+    @Test
+    void testEqualsWithNullAndDifferentClass() {
+        GrpcCallOptions options = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(2000)
+                .build();
+
+        assertNotEquals(null, options);
+        assertNotEquals(1, options);
+    }
+
+    @Test
+    void testHashCodeWithEqualObjects() {
+        GrpcCallOptions options1 = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(2000)
+                .withCompressorName("gzip")
+                .build();
+        GrpcCallOptions options2 = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(2000)
+                .withCompressorName("gzip")
+                .build();
+
+        assertEquals(options1.hashCode(), options2.hashCode());
+    }
+
+    @Test
+    void testHashCodeWithDifferentObjects() {
+        GrpcCallOptions options1 = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(2000)
+                .withCompressorName("gzip")
+                .build();
+        GrpcCallOptions options2 = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(1000)
+                .withCompressorName("deflate")
+                .build();
+
+        assertNotEquals(options1.hashCode(), options2.hashCode());
+    }
+
+    @Test
+    void testToString() {
+        GrpcCallOptions options = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(2000)
+                .withMaxOutboundMessageSize(5000)
+                .withCompressorName("gzip")
+                .build();
+
+        String expected = "GrpcCallOptions{deadline=null, "
+                + "executor=null, "
+                + "compressorName='gzip', "
+                + "waitForReady=null, "
+                + "maxInboundMessageSize=2000, "
+                + "maxOutboundMessageSize=5000}";
+        assertEquals(expected, options.toString());
+    }
 }

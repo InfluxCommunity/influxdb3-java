@@ -151,13 +151,14 @@ public final class QueryOptions {
      * @param grpcCallOptions the grpcCallOptions
      */
     public void setGrpcCallOptions(@Nonnull final GrpcCallOptions grpcCallOptions) {
+        Arguments.checkNotNull(grpcCallOptions, "grpcCallOptions");
         this.grpcCallOptions = grpcCallOptions;
     }
 
     /**
      * @return the GrpcCallOptions object.
      */
-    @Nullable
+    @Nonnull
     public GrpcCallOptions grpcCallOptions() {
         return grpcCallOptions;
     }

@@ -22,12 +22,9 @@
 package com.influxdb.v3.client.internal;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -72,9 +69,9 @@ public final class GrpcCallOptions {
      *
      * @return the default configuration of {@link GrpcCallOptions}.
      */
+    @Nonnull
     public static GrpcCallOptions getDefaultOptions() {
         GrpcCallOptions.Builder builder = new GrpcCallOptions.Builder();
-        builder.withMaxInboundMessageSize(Integer.MAX_VALUE);
         return builder.build();
     }
 
@@ -89,10 +86,12 @@ public final class GrpcCallOptions {
      */
     public static CallOption[] mergeCallOptions(@Nullable final CallOption[] baseCallOptions,
                                                 final CallOption... callOptions) {
-        return Stream.concat(
-                Arrays.stream(Optional.ofNullable(baseCallOptions).orElse(new CallOption[0])),
-                Arrays.stream(Optional.ofNullable(callOptions).orElse(new CallOption[0]))
-        ).toArray(CallOption[]::new);
+        CallOption[] base = baseCallOptions != null ? baseCallOptions : new CallOption[0];
+        CallOption[] additional = callOptions != null ? callOptions : new CallOption[0];
+        CallOption[] merged = new CallOption[base.length + additional.length];
+        System.arraycopy(base, 0, merged, 0, base.length);
+        System.arraycopy(additional, 0, merged, base.length, additional.length);
+        return merged;
     }
 
     /**
