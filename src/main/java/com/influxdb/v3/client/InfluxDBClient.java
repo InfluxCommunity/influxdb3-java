@@ -76,7 +76,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Write a {@link Point} to the InfluxDB server.
      *
      * @param point the {@link Point} to write, can be null
-     * @apiNote the timestamp passed will be converted to nanoseconds since the Unix epoch by NanosecondConverter helper class
+     * <p>
+     * note: the timestamp passed will be converted to nanoseconds since the Unix epoch
+     * by NanosecondConverter helper class
      */
     void writePoint(@Nullable final Point point);
 
@@ -85,7 +87,9 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param point   the {@link Point} to write, can be null
      * @param options the options for writing data to InfluxDB
-     * @apiNote the timestamp passed will be converted to nanoseconds since the Unix epoch by NanosecondConverter helper class
+     * <p>
+     * note: the timestamp passed will be converted to nanoseconds since the Unix epoch
+     * by NanosecondConverter helper class
      */
     void writePoint(@Nullable final Point point, @Nonnull final WriteOptions options);
 
@@ -93,7 +97,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Write a list of {@link Point} to the InfluxDB server.
      *
      * @param points the list of {@link Point} to write, cannot be null
-     * @apiNote the timestamp passed will be converted to nanoseconds since the Unix epoch by NanosecondConverter helper class
+     * <p>
+     * note: the timestamp passed will be converted to nanoseconds since the Unix epoch
+     * by NanosecondConverter helper class
      */
     void writePoints(@Nonnull final List<Point> points);
 
@@ -102,7 +108,9 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param points  the list of {@link Point} to write, cannot be null
      * @param options the options for writing data to InfluxDB
-     * @apiNote the timestamp passed will be converted to nanoseconds since the Unix epoch by NanosecondConverter helper class
+     * <p>
+     * note: the timestamp passed will be converted to nanoseconds since the Unix epoch
+     * by NanosecondConverter helper class
      */
     void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteOptions options);
 
@@ -120,7 +128,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param query the SQL query string to execute, cannot be null
      * @return Batches of rows returned by the query
-     * @apiNote the timestamp will be returned as a number of nanoseconds since the Unix epoch
+     * <p>
+     * note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<Object[]> query(@Nonnull final String query);
@@ -141,7 +150,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param query      the SQL query string to execute, cannot be null
      * @param parameters query named parameters
      * @return Batches of rows returned by the query
-     * @apiNote the timestamp will be returned as a number of nanoseconds since the Unix epoch
+     * <p>
+     * note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<Object[]> query(@Nonnull final String query, @Nonnull final Map<String, Object> parameters);
@@ -161,7 +171,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param query   the query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
-     * @apiNote the timestamp will be returned as a number of nanoseconds since the Unix epoch
+     * <p>
+     * note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryOptions options);
@@ -183,7 +194,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param parameters query named parameters
      * @param options    the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
-     * @apiNote the timestamp will be returned as a number of nanoseconds since the Unix epoch
+     * <p>
+     * note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<Object[]> query(@Nonnull final String query,
@@ -204,7 +216,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param query the SQL query string to execute, cannot be null
      * @return Batches of PointValues returned by the query
-     * @apiNote the timestamp will be returned as a number of nanoseconds since the Unix epoch
+     * <p>
+     * note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<PointValues> queryPoints(@Nonnull final String query);
@@ -225,7 +238,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param query      the SQL query string to execute, cannot be null
      * @param parameters query named parameters
      * @return Batches of PointValues returned by the query
-     * @apiNote the timestamp will be returned as a number of nanoseconds since the Unix epoch
+     * <p>
+     * note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final Map<String, Object> parameters);
@@ -245,7 +259,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param query   the query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
      * @return Batches of PointValues returned by the query
-     * @apiNote the timestamp will be returned as a number of nanoseconds since the Unix epoch
+     * <p>
+     * note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options);
@@ -268,7 +283,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param parameters query named parameters
      * @param options    the options for querying data from InfluxDB
      * @return Batches of PointValues returned by the query
-     * @apiNote the timestamp will be returned as a number of nanoseconds since the Unix epoch
+     * <p>
+     * note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<PointValues> queryPoints(@Nonnull final String query,
