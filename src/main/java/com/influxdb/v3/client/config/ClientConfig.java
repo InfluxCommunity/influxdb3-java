@@ -57,10 +57,10 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
  *     </li>
- *     <li><code>proxyUrl</code> - Proxy url for query api and write api</li>
+ *     <li><code>proxyUrl</code> - proxy url for query api and write api</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
- *     <li><code>sslRootsFilePath</code> - Path to the stored certificates file in PEM format</li>
+ *     <li><code>sslRootsFilePath</code> - path to the stored certificates file in PEM format</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:

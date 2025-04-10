@@ -63,9 +63,9 @@ class ClientConfigTest {
 
         Assertions.assertThat(config.hashCode()).isEqualTo(configBuilder.build().hashCode());
         Assertions.assertThat(config.hashCode())
-          .isNotEqualTo(configBuilder.database("database").build().hashCode());
+                .isNotEqualTo(configBuilder.database("database").build().hashCode());
         Assertions.assertThat(config.hashCode())
-          .isNotEqualTo(configBuilder.defaultTags(defaultTags).build().hashCode());
+                .isNotEqualTo(configBuilder.defaultTags(defaultTags).build().hashCode());
     }
 
     @Test
