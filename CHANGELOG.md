@@ -5,6 +5,7 @@
 1. [#229](https://github.com/InfluxCommunity/influxdb3-java/pull/229): Support proxy and custom ssl root certificates
 2. [#232](https://github.com/InfluxCommunity/influxdb3-java/pull/232): Allow set rpc max message size through maxInboundMessageSize in ClientConfig
 3. [#233](https://github.com/InfluxCommunity/influxdb3-java/pull/233): More detailed documentation about timestamp handling for query and write functions
+4. [#236](https://github.com/InfluxCommunity/influxdb3-java/pull/236): Supports Java 21.
 
 ## 1.0.0 [2024-12-11]
 
