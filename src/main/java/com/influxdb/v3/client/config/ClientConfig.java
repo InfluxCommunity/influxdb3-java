@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
 /**
@@ -52,6 +53,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>writePrecision</code> - precision to use when writing points to InfluxDB</li>
  *     <li><code>defaultTags</code> - defaultTags added when writing points to InfluxDB</li>
  *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
+ *     <li><code>writeNoSync</code> - skip waiting for WAL persistence on write</li>
  *     <li><code>responseTimeout</code> - timeout when connecting to InfluxDB</li>
  *     <li><code>allowHttpRedirects</code> - allow redirects for InfluxDB connections</li>
  *     <li><code>disableServerCertificateValidation</code> -
@@ -73,6 +75,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     .database("my-database")
  *     .writePrecision(WritePrecision.S)
  *     .gzipThreshold(4096)
+ *     .writeNoSync(true)
  *     .proxyUrl("http://localhost:10000")
  *     .build();
  *
@@ -94,6 +97,7 @@ public final class ClientConfig {
     private final String database;
     private final WritePrecision writePrecision;
     private final Integer gzipThreshold;
+    private final Boolean writeNoSync;
     private final Map<String, String> defaultTags;
     private final Duration timeout;
     private final Boolean allowHttpRedirects;
@@ -178,6 +182,16 @@ public final class ClientConfig {
     @Nonnull
     public Integer getGzipThreshold() {
         return gzipThreshold;
+    }
+
+    /**
+     * Skip waiting for WAL persistence on write?
+     *
+     * @return skip waiting for WAL persistence on write
+     */
+    @Nonnull
+    public Boolean getWriteNoSync() {
+        return writeNoSync;
     }
 
     /**
@@ -295,6 +309,7 @@ public final class ClientConfig {
                 && Objects.equals(database, that.database)
                 && writePrecision == that.writePrecision
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
+                && Objects.equals(writeNoSync, that.writeNoSync)
                 && Objects.equals(defaultTags, that.defaultTags)
                 && Objects.equals(timeout, that.timeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
@@ -309,7 +324,7 @@ public final class ClientConfig {
     @Override
     public int hashCode() {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
-                database, writePrecision, gzipThreshold,
+                database, writePrecision, gzipThreshold, writeNoSync,
                 timeout, allowHttpRedirects, disableServerCertificateValidation,
                 proxy, proxyUrl, authenticator, headers,
                 defaultTags, sslRootsFilePath);
@@ -323,6 +338,7 @@ public final class ClientConfig {
                 .add("database='" + database + "'")
                 .add("writePrecision=" + writePrecision)
                 .add("gzipThreshold=" + gzipThreshold)
+                .add("writeNoSync=" + writeNoSync)
                 .add("timeout=" + timeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
@@ -348,6 +364,7 @@ public final class ClientConfig {
         private String database;
         private WritePrecision writePrecision;
         private Integer gzipThreshold;
+        private Boolean writeNoSync;
         private Map<String, String> defaultTags;
         private Duration timeout;
         private Boolean allowHttpRedirects;
@@ -449,6 +466,19 @@ public final class ClientConfig {
         public Builder gzipThreshold(@Nullable final Integer gzipThreshold) {
 
             this.gzipThreshold = gzipThreshold;
+            return this;
+        }
+
+        /**
+         * Sets whether to skip waiting for WAL persistence on write.
+         *
+         * @param writeNoSync skip waiting for WAL persistence on write
+         * @return this
+         */
+        @Nonnull
+        public Builder writeNoSync(@Nullable final Boolean writeNoSync) {
+
+            this.writeNoSync = writeNoSync;
             return this;
         }
 
@@ -634,6 +664,9 @@ public final class ClientConfig {
             if (parameters.containsKey("gzipThreshold")) {
                 this.gzipThreshold(Integer.parseInt(parameters.get("gzipThreshold")));
             }
+            if (parameters.containsKey("writeNoSync")) {
+                this.writeNoSync(Boolean.parseBoolean(parameters.get("writeNoSync")));
+            }
 
             return new ClientConfig(this);
         }
@@ -682,6 +715,10 @@ public final class ClientConfig {
             if (gzipThreshold != null) {
                 this.gzipThreshold(Integer.parseInt(gzipThreshold));
             }
+            final String writeNoSync = get.apply("INFLUX_WRITE_NO_SYNC", "influx.writeNoSync");
+            if (writeNoSync != null) {
+                this.writeNoSync(Boolean.parseBoolean(writeNoSync));
+            }
 
             return new ClientConfig(this);
         }
@@ -690,15 +727,19 @@ public final class ClientConfig {
             WritePrecision writePrecision;
             switch (precision) {
                 case "ns":
+                case "nanosecond":
                     writePrecision = WritePrecision.NS;
                     break;
                 case "us":
+                case "microsecond":
                     writePrecision = WritePrecision.US;
                     break;
                 case "ms":
+                case "millisecond":
                     writePrecision = WritePrecision.MS;
                     break;
                 case "s":
+                case "second":
                     writePrecision = WritePrecision.S;
                     break;
                 default:
@@ -716,8 +757,9 @@ public final class ClientConfig {
         authScheme = builder.authScheme;
         organization = builder.organization;
         database = builder.database;
-        writePrecision = builder.writePrecision != null ? builder.writePrecision : WritePrecision.NS;
-        gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : 1000;
+        writePrecision = builder.writePrecision != null ? builder.writePrecision : WriteOptions.DEFAULT_WRITE_PRECISION;
+        gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : WriteOptions.DEFAULT_GZIP_THRESHOLD;
+        writeNoSync = builder.writeNoSync != null ? builder.writeNoSync : WriteOptions.DEFAULT_NO_SYNC;
         defaultTags = builder.defaultTags;
         timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(10);
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
+import io.netty.handler.codec.http.HttpResponseStatus;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
@@ -184,11 +185,62 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     }
 
     @Test
+    void writeNoSyncFalse_UsesV2API() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        client.writeRecord("mem,tag=one value=1.0", new WriteOptions.Builder().precision(WritePrecision.NS).noSync(false).build());
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+        Assertions.assertThat(request).isNotNull();
+        Assertions.assertThat(request.getRequestUrl()).isNotNull();
+        Assertions.assertThat(request.getRequestUrl().encodedPath()).isEqualTo("/api/v2/write");
+        Assertions.assertThat(request.getRequestUrl().queryParameter("no_sync")).isNull();
+        Assertions.assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("ns");
+
+    }
+
+    @Test
+    void writeNoSyncTrue_UsesV3API() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        client.writeRecord("mem,tag=one value=1.0", new WriteOptions.Builder().precision(WritePrecision.NS).noSync(true).build());
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+        Assertions.assertThat(request).isNotNull();
+        Assertions.assertThat(request.getRequestUrl()).isNotNull();
+        Assertions.assertThat(request.getRequestUrl().encodedPath()).isEqualTo("/api/v3/write_lp");
+        Assertions.assertThat(request.getRequestUrl().queryParameter("no_sync")).isEqualTo("true");
+        Assertions.assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("nanosecond");
+    }
+
+    @Test
+    void writeNoSyncTrueOnV2Server_ThrowsException() throws InterruptedException {
+        mockServer.enqueue(createEmptyResponse(HttpResponseStatus.METHOD_NOT_ALLOWED.code()));
+
+        InfluxDBApiHttpException ae = org.junit.jupiter.api.Assertions.assertThrows(InfluxDBApiHttpException.class, () ->
+                client.writeRecord("mem,tag=one value=1.0", new WriteOptions.Builder().precision(WritePrecision.MS).noSync(true).build())
+        );
+
+        Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+        Assertions.assertThat(request).isNotNull();
+        Assertions.assertThat(request.getRequestUrl()).isNotNull();
+        Assertions.assertThat(request.getRequestUrl().encodedPath()).isEqualTo("/api/v3/write_lp");
+        Assertions.assertThat(request.getRequestUrl().queryParameter("no_sync")).isEqualTo("true");
+        Assertions.assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("millisecond");
+
+        Assertions.assertThat(ae.statusCode()).isEqualTo(HttpResponseStatus.METHOD_NOT_ALLOWED.code());
+        Assertions.assertThat(ae.getMessage()).contains("Server doesn't support write with NoSync=true (supported by InfluxDB 3 Core/Enterprise servers only).");
+    }
+
+    @Test
     void allParameterSpecified() throws InterruptedException {
         mockServer.enqueue(createResponse(200));
 
         client.writeRecord("mem,tag=one value=1.0",
-                new WriteOptions("your-database", WritePrecision.S, 1));
+                new WriteOptions("your-database", WritePrecision.S, 1, false));
 
         Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();

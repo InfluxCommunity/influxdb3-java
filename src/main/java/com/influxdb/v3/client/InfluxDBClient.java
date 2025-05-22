@@ -445,6 +445,7 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>database - database (bucket) name</li>
      *   <li>precision - timestamp precision when writing data</li>
      *   <li>gzipThreshold - payload size size for gzipping data</li>
+     *   <li>writeNoSync - skip waiting for WAL persistence on write</li>
      * </ul>
      *
      * @param connectionString connection string
@@ -477,6 +478,7 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>INFLUX_DATABASE - database (bucket) name</li>
      *   <li>INFLUX_PRECISION - timestamp precision when writing data</li>
      *   <li>INFLUX_GZIP_THRESHOLD - payload size size for gzipping data</li>
+     *   <li>INFLUX_WRITE_NO_SYNC - skip waiting for WAL persistence on write</li>
      * </ul>
      * Supported system properties:
      * <ul>
@@ -487,6 +489,7 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>influx.database - database (bucket) name</li>
      *   <li>influx.precision - timestamp precision when writing data</li>
      *   <li>influx.gzipThreshold - payload size size for gzipping data</li>
+     *   <li>influx.writeNoSync - skip waiting for WAL persistence on write</li>
      * </ul>
      *
      * @return instance of {@link InfluxDBClient}

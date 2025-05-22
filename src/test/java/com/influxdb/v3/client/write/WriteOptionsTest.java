@@ -55,9 +55,9 @@ class WriteOptionsTest {
 
     @Test
     void optionsEqualAll() {
-        WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512);
+        WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512, true);
         WriteOptions optionsViaBuilder = new WriteOptions.Builder()
-                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).build();
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true).build();
 
         Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
     }
@@ -115,13 +115,15 @@ class WriteOptionsTest {
                 .organization("my-org")
                 .writePrecision(WritePrecision.S)
                 .gzipThreshold(512)
+                .writeNoSync(false)
                 .build();
 
-        WriteOptions options = new WriteOptions("your-database", WritePrecision.US, 4096);
+        WriteOptions options = new WriteOptions("your-database", WritePrecision.US, 4096, true);
 
         Assertions.assertThat(options.databaseSafe(config)).isEqualTo("your-database");
         Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.US);
         Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(4096);
+        Assertions.assertThat(options.noSyncSafe(config)).isEqualTo(true);
     }
 
     @Test
@@ -170,6 +172,19 @@ class WriteOptionsTest {
         Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
         Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
         Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(4096);
+    }
+
+    @Test
+    void optionsOverrideWriteNoSync() {
+        ClientConfig config = configBuilder
+                .database("my-database")
+                .organization("my-org")
+                .writeNoSync(true)
+                .build();
+
+        WriteOptions options = new WriteOptions.Builder().noSync(false).build();
+
+        Assertions.assertThat(options.noSyncSafe(config)).isEqualTo(false);
     }
 
     @Test
