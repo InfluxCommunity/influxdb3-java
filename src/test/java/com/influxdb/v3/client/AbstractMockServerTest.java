@@ -54,6 +54,11 @@ public abstract class AbstractMockServerTest {
     }
 
     @Nonnull
+    protected MockResponse createEmptyResponse(final int responseCode) {
+        return new MockResponse().setResponseCode(responseCode);
+    }
+
+    @Nonnull
     protected MockResponse createResponse(final int responseCode) {
 
         return createResponseWithHeaders(responseCode, Map.of(

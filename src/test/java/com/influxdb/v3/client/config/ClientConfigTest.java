@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import com.influxdb.v3.client.write.WriteOptions;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -74,19 +75,21 @@ class ClientConfigTest {
 
         Assertions.assertThat(configString.contains("database='my-db'")).isEqualTo(true);
         Assertions.assertThat(configString.contains("gzipThreshold=1000")).isEqualTo(true);
+        Assertions.assertThat(configString).contains("writeNoSync=false");
     }
 
     @Test
     void fromConnectionString() throws MalformedURLException {
         ClientConfig cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
-                        + "?token=my-token&org=my-org&database=my-db&gzipThreshold=128");
+                        + "?token=my-token&org=my-org&database=my-db&gzipThreshold=128&writeNoSync=true");
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
         Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
         Assertions.assertThat(cfg.getOrganization()).isEqualTo("my-org");
         Assertions.assertThat(cfg.getDatabase()).isEqualTo("my-db");
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS); // default
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(128);
+        Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(true);
 
         cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
@@ -97,6 +100,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getDatabase()).isEqualTo(null);
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.US);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000); // default
+        Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(WriteOptions.DEFAULT_NO_SYNC);
 
         cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
@@ -107,6 +111,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getDatabase()).isEqualTo(null);
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000); // default
+        Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(WriteOptions.DEFAULT_NO_SYNC);
 
         cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
@@ -124,6 +129,19 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
         Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
         Assertions.assertThat(cfg.getAuthScheme()).isEqualTo("my-auth");
+    }
+
+    @Test
+    void fromConnectionString_longPrecision() throws MalformedURLException {
+        ClientConfig cfg;
+        cfg = new ClientConfig.Builder().build("http://localhost:9999/?token=x&precision=nanosecond");
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
+        cfg = new ClientConfig.Builder().build("http://localhost:9999/?token=x&precision=microsecond");
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.US);
+        cfg = new ClientConfig.Builder().build("http://localhost:9999/?token=x&precision=millisecond");
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
+        cfg = new ClientConfig.Builder().build("http://localhost:9999/?token=x&precision=second");
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.S);
     }
 
     @Test
@@ -179,7 +197,8 @@ class ClientConfigTest {
                 "INFLUX_ORG", "my-org",
                 "INFLUX_DATABASE", "my-db",
                 "INFLUX_PRECISION", "ms",
-                "INFLUX_GZIP_THRESHOLD", "64"
+                "INFLUX_GZIP_THRESHOLD", "64",
+                "INFLUX_WRITE_NO_SYNC", "true"
         );
         cfg = new ClientConfig.Builder()
                 .build(env, null);
@@ -189,6 +208,37 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getDatabase()).isEqualTo("my-db");
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(64);
+        Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(true);
+    }
+
+    @Test
+    void fromEnv_longPrecision() {
+        Map<String, String> baseEnv = Map.of(
+                "INFLUX_HOST", "http://localhost:9999/",
+                "INFLUX_TOKEN", "my-token"
+        );
+        Map<String, String> env;
+        ClientConfig cfg;
+
+        env = new HashMap<>(baseEnv);
+        env.put("INFLUX_PRECISION", "nanosecond");
+        cfg = new ClientConfig.Builder().build(env, null);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
+
+        env = new HashMap<>(baseEnv);
+        env.put("INFLUX_PRECISION", "microsecond");
+        cfg = new ClientConfig.Builder().build(env, null);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.US);
+
+        env = new HashMap<>(baseEnv);
+        env.put("INFLUX_PRECISION", "millisecond");
+        cfg = new ClientConfig.Builder().build(env, null);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
+
+        env = new HashMap<>(baseEnv);
+        env.put("INFLUX_PRECISION", "second");
+        cfg = new ClientConfig.Builder().build(env, null);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.S);
     }
 
     @Test
@@ -206,6 +256,7 @@ class ClientConfigTest {
         // these are defaults
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000);
+        Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(WriteOptions.DEFAULT_NO_SYNC);
 
         // basic
         properties = new Properties();
@@ -242,6 +293,7 @@ class ClientConfigTest {
         properties.put("influx.database", "my-db");
         properties.put("influx.precision", "ms");
         properties.put("influx.gzipThreshold", "64");
+        properties.put("influx.writeNoSync", "true");
         cfg = new ClientConfig.Builder()
                 .build(new HashMap<>(), properties);
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
@@ -250,5 +302,37 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getDatabase()).isEqualTo("my-db");
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(64);
+        Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(true);
     }
+
+    @Test
+    void fromSystemProperties_longPrecision() throws MalformedURLException {
+        Properties baseProps = new Properties();
+        baseProps.put("influx.host", "http://localhost:9999/");
+        baseProps.put("influx.token", "my-token");
+
+        Properties props;
+        ClientConfig cfg;
+
+        props = new Properties(baseProps);
+        props.put("influx.precision", "nanosecond");
+        cfg = new ClientConfig.Builder().build(new HashMap<>(), props);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
+
+        props = new Properties(baseProps);
+        props.put("influx.precision", "microsecond");
+        cfg = new ClientConfig.Builder().build(new HashMap<>(), props);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.US);
+
+        props = new Properties(baseProps);
+        props.put("influx.precision", "millisecond");
+        cfg = new ClientConfig.Builder().build(new HashMap<>(), props);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
+
+        props = new Properties(baseProps);
+        props.put("influx.precision", "second");
+        cfg = new ClientConfig.Builder().build(new HashMap<>(), props);
+        Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.S);
+    }
+
 }
