@@ -1,6 +1,6 @@
 package com.influxdb.v3.client.write;
 
-public class WritePrecisionConverter {
+public final class WritePrecisionConverter {
 
     private WritePrecisionConverter() {
     }

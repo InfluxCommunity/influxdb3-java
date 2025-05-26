@@ -27,10 +27,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import com.influxdb.v3.client.write.WriteOptions;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
 class ClientConfigTest {
@@ -132,7 +132,7 @@ class ClientConfigTest {
     }
 
     @Test
-    void fromConnectionString_longPrecision() throws MalformedURLException {
+    void fromConnectionStringLongPrecision() throws MalformedURLException {
         ClientConfig cfg;
         cfg = new ClientConfig.Builder().build("http://localhost:9999/?token=x&precision=nanosecond");
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
@@ -212,7 +212,7 @@ class ClientConfigTest {
     }
 
     @Test
-    void fromEnv_longPrecision() {
+    void fromEnvLongPrecision() {
         Map<String, String> baseEnv = Map.of(
                 "INFLUX_HOST", "http://localhost:9999/",
                 "INFLUX_TOKEN", "my-token"
@@ -306,7 +306,7 @@ class ClientConfigTest {
     }
 
     @Test
-    void fromSystemProperties_longPrecision() throws MalformedURLException {
+    void fromSystemPropertiesLongPrecision() throws MalformedURLException {
         Properties baseProps = new Properties();
         baseProps.put("influx.host", "http://localhost:9999/");
         baseProps.put("influx.token", "my-token");
