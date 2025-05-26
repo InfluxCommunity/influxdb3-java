@@ -68,7 +68,8 @@ public final class WriteOptions {
     /**
      * Default WriteOptions.
      */
-    public static final WriteOptions DEFAULTS = new WriteOptions(null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null);
+    public static final WriteOptions DEFAULTS = new WriteOptions(
+            null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null);
 
     private final String database;
     private final WritePrecision precision;
@@ -385,6 +386,7 @@ public final class WriteOptions {
     }
 
     private WriteOptions(@Nonnull final Builder builder) {
-        this(builder.database, builder.precision, builder.gzipThreshold, builder.noSync, builder.defaultTags, builder.headers);
+        this(builder.database, builder.precision, builder.gzipThreshold, builder.noSync, builder.defaultTags,
+                builder.headers);
     }
 }

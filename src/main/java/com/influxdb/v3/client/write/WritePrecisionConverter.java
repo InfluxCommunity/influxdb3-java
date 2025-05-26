@@ -2,7 +2,10 @@ package com.influxdb.v3.client.write;
 
 public class WritePrecisionConverter {
 
-    public static String toV2ApiString(WritePrecision precision) {
+    private WritePrecisionConverter() {
+    }
+
+    public static String toV2ApiString(final WritePrecision precision) {
         switch (precision) {
             case NS:
                 return "ns";
@@ -17,7 +20,7 @@ public class WritePrecisionConverter {
         }
     }
 
-    public static String toV3ApiString(WritePrecision precision) {
+    public static String toV3ApiString(final WritePrecision precision) {
         switch (precision) {
             case NS:
                 return "nanosecond";
