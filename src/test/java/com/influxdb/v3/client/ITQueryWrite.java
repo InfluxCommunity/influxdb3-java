@@ -236,9 +236,7 @@ class ITQueryWrite {
     @Test
     public void handleFlightRuntimeException() throws IOException {
         Instant now = Instant.now();
-        String measurement = String.format(
-          "/%d/test/com/influxdb/v3/client/ITQueryWrite/handleFlightRuntimeException", now.toEpochMilli()
-        );
+        String measurement = "/influxdb3-java/test/handleFlightRuntimeException";
 
         client = getInstance();
 
