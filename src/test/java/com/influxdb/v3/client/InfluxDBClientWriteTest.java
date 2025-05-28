@@ -372,8 +372,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
     }
 
-    private void checkWriteCalled(String expectedPath, String expectedDB, String expectedPrecision,
-                                  boolean expectedNoSync, boolean expectedGzip) throws InterruptedException {
+    private void checkWriteCalled(final String expectedPath, final String expectedDB, final String expectedPrecision,
+                                  final boolean expectedNoSync, final boolean expectedGzip) throws InterruptedException {
         RecordedRequest request = assertThatServerRequested();
         HttpUrl requestUrl = request.getRequestUrl();
         assertThat(requestUrl).isNotNull();
