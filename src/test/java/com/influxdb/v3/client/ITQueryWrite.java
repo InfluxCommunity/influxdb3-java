@@ -28,11 +28,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightRuntimeException;
+import org.apache.arrow.flight.FlightStatusCode;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
@@ -236,14 +238,15 @@ class ITQueryWrite {
     @Test
     public void handleFlightRuntimeException() throws IOException {
         Instant now = Instant.now();
-        String measurement = "/influxdb3-java/test/handleFlightRuntimeException";
+        String measurement = "/influxdb3-java/test/ITQueryWrite/handleFlightRuntimeException";
 
         client = getInstance();
 
         int extraTagLength = 512;
         Map<String, String> extraTags = new HashMap<String, String>();
+        Random seededRandom = new Random(1); // use seeded random to generate always the same tags
         for (int i = 0; i < 22; i++) {
-            extraTags.put(makeLengthyTag(extraTagLength, 64, (byte) '/'), "extra-tag-" + i);
+            extraTags.put(makeLengthyTag(extraTagLength, 64, (byte) '/', seededRandom), "extra-tag-" + i);
         }
 
         Point p = Point.measurement(measurement)
@@ -273,17 +276,21 @@ class ITQueryWrite {
             });
         } catch (FlightRuntimeException fre) {
             Assertions.assertThat(fre.getMessage()).doesNotContain("http2 exception");
-            Assertions.assertThat(fre.status().code()).isNotEqualTo(CallStatus.INTERNAL.code());
-            Assertions.assertThat(fre.status().code()).
+            FlightStatusCode statusCode = fre.status().code();
+            Assertions.assertThat(statusCode).isNotEqualTo(CallStatus.INTERNAL.code());
+            Assertions.assertThat(statusCode).
               as(String.format("Flight runtime exception was UNAVAILABLE.  "
                   + "Target test case was not fully tested.  "
                   + "Check limits of test account and target database %s.",
                 System.getenv("TESTING_INFLUXDB_DATABASE")))
               .isNotEqualTo(CallStatus.UNAVAILABLE.code());
-            Assertions.assertThat(fre.status().code()).
+            Assertions.assertThat(statusCode).
               as("Flight runtime exception was UNAUTHENTICATED.  "
                 + "Target test case was not fully tested. Check test account token.")
               .isNotEqualTo(CallStatus.UNAUTHENTICATED.code());
+            Assertions.assertThat(statusCode).
+              as("Flight runtime exception was not INVALID_ARGUMENT but: " + statusCode.toString())
+              .isEqualTo(CallStatus.INVALID_ARGUMENT.code());
             return;
         } catch (Exception e) {
             Assertions.fail(String.format("FlightRuntimeException should have been thrown.  "
@@ -302,16 +309,17 @@ class ITQueryWrite {
                 System.getenv("TESTING_INFLUXDB_DATABASE"));
     }
 
-    private String makeLengthyTag(final int length, final int maxPartLength, final byte separator) {
+    private String makeLengthyTag(final int length, final int maxPartLength, final byte separator,
+                                  final Random random) {
         final String legalVals = "0123456789abcdefghijklmnopqrstuvwxyz";
         byte[] bytes = new byte[length];
         int nextPartAddress = 0;
         for (int i = 0; i < length; i++) {
             if (i == nextPartAddress) {
                 bytes[i] = separator;
-                nextPartAddress = i + (int) (Math.random() * (maxPartLength - 3));
+                nextPartAddress = i + (int) (random.nextDouble() * (maxPartLength - 3));
             } else {
-                bytes[i] = legalVals.getBytes()[(int) (Math.random() * legalVals.length())];
+                bytes[i] = legalVals.getBytes()[(int) (random.nextDouble() * legalVals.length())];
             }
         }
         return new String(bytes);
