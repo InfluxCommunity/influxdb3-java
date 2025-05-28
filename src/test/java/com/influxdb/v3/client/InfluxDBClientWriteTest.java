@@ -372,8 +372,9 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
     }
 
-    private void checkWriteCalled(final String expectedPath, final String expectedDB, final String expectedPrecision,
-                                  final boolean expectedNoSync, final boolean expectedGzip) throws InterruptedException {
+    private void checkWriteCalled(final String expectedPath, final String expectedDB,
+                                  final String expectedPrecision, final boolean expectedNoSync,
+                                  final boolean expectedGzip) throws InterruptedException {
         RecordedRequest request = assertThatServerRequested();
         HttpUrl requestUrl = request.getRequestUrl();
         assertThat(requestUrl).isNotNull();
@@ -488,8 +489,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         mockServer.enqueue(createResponse(200));
 
         Point point = Point.measurement("mem")
-          .setTag("tag", "one")
-          .setField("value", 1.0);
+                .setTag("tag", "one")
+                .setField("value", 1.0);
 
         Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M5");
 
@@ -508,14 +509,14 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     @Test
     public void retryHandled429Test() {
         mockServer.enqueue(createResponse(429)
-          .setBody("{ \"message\" : \"Too Many Requests\" }")
-          .setHeader("retry-after", "42")
-          .setHeader("content-type", "application/json")
+                .setBody("{ \"message\" : \"Too Many Requests\" }")
+                .setHeader("retry-after", "42")
+                .setHeader("content-type", "application/json")
         );
 
         Point point = Point.measurement("mem")
-          .setTag("tag", "one")
-          .setField("value", 1.0);
+                .setTag("tag", "one")
+                .setField("value", 1.0);
 
         Throwable thrown = catchThrowable(() -> client.writePoint(point));
 
@@ -524,11 +525,11 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         InfluxDBApiHttpException he = (InfluxDBApiHttpException) thrown;
         assertThat(he.headers()).isNotNull();
         assertThat(he.getHeader("retry-after").get(0))
-          .isNotNull().isEqualTo("42");
+                .isNotNull().isEqualTo("42");
         assertThat(he.getHeader("content-type").get(0))
-          .isNotNull().isEqualTo("application/json");
+                .isNotNull().isEqualTo("application/json");
         assertThat(he.statusCode()).isEqualTo(429);
         assertThat(he.getMessage())
-          .isEqualTo("HTTP status code: 429; Message: Too Many Requests");
+                .isEqualTo("HTTP status code: 429; Message: Too Many Requests");
     }
 }
