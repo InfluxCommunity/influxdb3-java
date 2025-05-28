@@ -81,6 +81,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     private final RestClient restClient;
     private final FlightSqlClient flightSqlClient;
+    private final WriteOptions emptyWriteOptions;
 
     /**
      * Creates an instance using the specified config.
@@ -110,11 +111,12 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         this.config = config;
         this.restClient = restClient != null ? restClient : new RestClient(config);
         this.flightSqlClient = flightSqlClient != null ? flightSqlClient : new FlightSqlClient(config);
+        this.emptyWriteOptions = new WriteOptions(null);
     }
 
     @Override
     public void writeRecord(@Nullable final String record) {
-        writeRecord(record, WriteOptions.DEFAULTS);
+        writeRecord(record, emptyWriteOptions);
     }
 
     @Override
@@ -128,7 +130,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Override
     public void writeRecords(@Nonnull final List<String> records) {
-        writeRecords(records, WriteOptions.DEFAULTS);
+        writeRecords(records, emptyWriteOptions);
     }
 
     @Override
@@ -138,7 +140,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Override
     public void writePoint(@Nullable final Point point) {
-        writePoint(point, WriteOptions.DEFAULTS);
+        writePoint(point, emptyWriteOptions);
     }
 
     @Override
@@ -152,7 +154,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Override
     public void writePoints(@Nonnull final List<Point> points) {
-        writePoints(points, WriteOptions.DEFAULTS);
+        writePoints(points, emptyWriteOptions);
     }
 
     @Override
