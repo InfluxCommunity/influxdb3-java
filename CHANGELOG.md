@@ -13,6 +13,17 @@
      `"second"` (
      in addition to the existing `"ns"`, `"us"`, `"ms"`, `"s"`).
 
+### Bug Fixes
+
+1. [#239](https://github.com/InfluxCommunity/influxdb3-java/pull/239): Use write options from `ClientConfig` in
+   `InfluxDBClientImpl` write methods:
+   ```java
+   public void writeRecord(@Nullable final String record);
+   public void writeRecords(@Nonnull final List<String> records);
+   public void writePoint(@Nullable final Point point);
+   public void writePoints(@Nonnull final List<Point> points);
+   ```
+
 ## 1.1.0 [2025-05-22]
 
 ### Features
