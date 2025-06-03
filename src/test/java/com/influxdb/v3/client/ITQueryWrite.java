@@ -95,7 +95,7 @@ class ITQueryWrite {
 
         String influxQL = String.format("SELECT MEAN(value) FROM %s WHERE \"testId\"=%d "
                 + "group by time(1s) fill(none) order by time desc limit 1", measurement, testId);
-        try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.INFLUX_QL)) {
+        try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.defaultInfluxQlQueryOptions())) {
 
             List<Object[]> rows = stream.collect(Collectors.toList());
 

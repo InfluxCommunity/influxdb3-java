@@ -79,6 +79,16 @@ public final class WriteOptions {
     private final Map<String, String> headers;
 
     /**
+     * Creates a default instance of {@code WriteOptions} configured with standard values.
+     *
+     * @return A {@code WriteOptions} object with the default settings for write precision,
+     *         compression threshold, and no specified database.
+     */
+    public static WriteOptions defaultWriteOptions() {
+        return new WriteOptions(null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD);
+    }
+
+    /**
      * Construct WriteAPI options.
      *
      * @param database      The database to be used for InfluxDB operations.
