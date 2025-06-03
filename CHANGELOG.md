@@ -3,6 +3,16 @@
 ### Features
 
 1. [#209](https://github.com/InfluxCommunity/influxdb3-java/pull/209) Add query function returning row as map.
+1. [#238](https://github.com/InfluxCommunity/influxdb3-java/pull/238): Support fast writes without waiting for WAL
+   persistence:
+   - New write option (`WriteOptions.noSync`) added: `true` value means faster write but without the confirmation that
+     the data was persisted. Default value: `false`.
+   - **Supported by self-managed InfluxDB 3 Core and Enterprise servers only!**
+   - Also configurable via connection string query parameter (`writeNoSync`).
+   - Also configurable via environment variable (`INFLUX_WRITE_NO_SYNC`).
+   - Long precision string values added from v3 HTTP API: `"nanosecond"`, `"microsecond"`, `"millisecond"`,
+     `"second"` (
+     in addition to the existing `"ns"`, `"us"`, `"ms"`, `"s"`).
 
 ## 1.1.0 [2025-05-22]
 

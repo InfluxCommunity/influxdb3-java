@@ -62,13 +62,19 @@ public final class WriteOptions {
      */
     public static final Integer DEFAULT_GZIP_THRESHOLD = 1000;
     /**
+     * Default NoSync.
+     */
+    public static final boolean DEFAULT_NO_SYNC = false;
+    /**
      * Default WriteOptions.
      */
-    public static final WriteOptions DEFAULTS = new WriteOptions(null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD);
+    public static final WriteOptions DEFAULTS = new WriteOptions(
+            null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null);
 
     private final String database;
     private final WritePrecision precision;
     private final Integer gzipThreshold;
+    private final Boolean noSync;
     private final Map<String, String> defaultTags;
     private final Map<String, String> headers;
 
@@ -85,7 +91,7 @@ public final class WriteOptions {
     public WriteOptions(@Nullable final String database,
                         @Nullable final WritePrecision precision,
                         @Nullable final Integer gzipThreshold) {
-        this(database, precision, gzipThreshold, null);
+        this(database, precision, gzipThreshold, null, null, null);
     }
 
     /**
@@ -103,7 +109,26 @@ public final class WriteOptions {
                         @Nullable final WritePrecision precision,
                         @Nullable final Integer gzipThreshold,
                         @Nullable final Map<String, String> defaultTags) {
-        this(database, precision, gzipThreshold, defaultTags, null);
+        this(database, precision, gzipThreshold, null, defaultTags, null);
+    }
+
+    /**
+     * Construct WriteAPI options.
+     *
+     * @param database      The database to be used for InfluxDB operations.
+     *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param precision     The precision to use for the timestamp of points.
+     *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     * @param gzipThreshold The threshold for compressing request body.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
+     * @param noSync        Skip waiting for WAL persistence on write.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_NO_SYNC}.
+     */
+    public WriteOptions(@Nullable final String database,
+                        @Nullable final WritePrecision precision,
+                        @Nullable final Integer gzipThreshold,
+                        @Nullable final Boolean noSync) {
+        this(database, precision, gzipThreshold, noSync, null, null);
     }
 
     /**
@@ -113,7 +138,7 @@ public final class WriteOptions {
      *                The headers specified here are preferred over the headers specified in the client configuration.
      */
     public WriteOptions(@Nullable final Map<String, String> headers) {
-        this(null, null, null, null, headers);
+        this(null, null, null, null, null, headers);
     }
 
     /**
@@ -135,9 +160,35 @@ public final class WriteOptions {
                         @Nullable final Integer gzipThreshold,
                         @Nullable final Map<String, String> defaultTags,
                         @Nullable final Map<String, String> headers) {
+        this(database, precision, gzipThreshold, null, defaultTags, headers);
+    }
+
+    /**
+     * Construct WriteAPI options.
+     *
+     * @param database      The database to be used for InfluxDB operations.
+     *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param precision     The precision to use for the timestamp of points.
+     *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     * @param gzipThreshold The threshold for compressing request body.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
+     * @param noSync        Skip waiting for WAL persistence on write.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_NO_SYNC}.
+     * @param defaultTags   Default tags to be added when writing points.
+     * @param headers       The headers to be added to write request.
+     *                      The headers specified here are preferred over the headers
+     *                      specified in the client configuration.
+     */
+    public WriteOptions(@Nullable final String database,
+                        @Nullable final WritePrecision precision,
+                        @Nullable final Integer gzipThreshold,
+                        @Nullable final Boolean noSync,
+                        @Nullable final Map<String, String> defaultTags,
+                        @Nullable final Map<String, String> headers) {
         this.database = database;
         this.precision = precision;
         this.gzipThreshold = gzipThreshold;
+        this.noSync = noSync;
         this.defaultTags = defaultTags == null ? Map.of() : defaultTags;
         this.headers = headers == null ? Map.of() : headers;
     }
@@ -190,6 +241,16 @@ public final class WriteOptions {
     }
 
     /**
+     * @param config with default value
+     * @return Skip waiting for WAL persistence on write.
+     */
+    public boolean noSyncSafe(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
+        return noSync != null ? noSync
+                : (config.getWriteNoSync() != null ? config.getWriteNoSync() : DEFAULT_NO_SYNC);
+    }
+
+    /**
      * @return The headers to be added to write request.
      */
     @Nonnull
@@ -209,13 +270,14 @@ public final class WriteOptions {
         return Objects.equals(database, that.database)
                 && precision == that.precision
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
+                && Objects.equals(noSync, that.noSync)
                 && defaultTags.equals(that.defaultTags)
                 && headers.equals(that.headers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(database, precision, gzipThreshold, defaultTags, headers);
+        return Objects.hash(database, precision, gzipThreshold, noSync, defaultTags, headers);
     }
 
     private boolean isNotDefined(final String option) {
@@ -231,6 +293,7 @@ public final class WriteOptions {
         private String database;
         private WritePrecision precision;
         private Integer gzipThreshold;
+        private Boolean noSync;
         private Map<String, String> defaultTags = new HashMap<>();
         private Map<String, String> headers = new HashMap<>();
 
@@ -274,6 +337,19 @@ public final class WriteOptions {
         }
 
         /**
+         * Sets whether to skip waiting for WAL persistence on write.
+         *
+         * @param noSync skip waiting for WAL persistence on write.
+         * @return this
+         */
+        @Nonnull
+        public Builder noSync(@Nonnull final Boolean noSync) {
+
+            this.noSync = noSync;
+            return this;
+        }
+
+        /**
          * Sets defaultTags.
          *
          * @param defaultTags to be used when writing points
@@ -310,6 +386,7 @@ public final class WriteOptions {
     }
 
     private WriteOptions(@Nonnull final Builder builder) {
-        this(builder.database, builder.precision, builder.gzipThreshold, builder.defaultTags, builder.headers);
+        this(builder.database, builder.precision, builder.gzipThreshold, builder.noSync, builder.defaultTags,
+                builder.headers);
     }
 }
