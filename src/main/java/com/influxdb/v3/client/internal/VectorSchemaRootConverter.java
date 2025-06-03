@@ -23,7 +23,9 @@ package com.influxdb.v3.client.internal;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 import javax.annotation.Nonnull;
@@ -191,6 +193,27 @@ public final class VectorSchemaRootConverter {
                     fieldVector.getField(),
                     fieldVector.getObject(rowNumber)
             );
+        }
+
+        return row;
+    }
+
+    /**
+     * Get a Map from VectorSchemaRoot.
+     *
+     * @param vector    The data return from InfluxDB.
+     * @param rowNumber The row number of data
+     * @return  A Map represents a row of data
+     */
+    public Map<String, Object> getMapFromVectorSchemaRoot(@Nonnull final VectorSchemaRoot vector, final int rowNumber) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        for (FieldVector fieldVector : vector.getFieldVectors()) {
+            Object mappedValue = getMappedValue(
+                    fieldVector.getField(),
+                    fieldVector.getObject(rowNumber)
+            );
+            row.put(fieldVector.getName(), mappedValue);
+
         }
 
         return row;

@@ -2,6 +2,7 @@
 
 ### Features
 
+1. [#209](https://github.com/InfluxCommunity/influxdb3-java/pull/209) Add query function returning row as map.
 1. [#238](https://github.com/InfluxCommunity/influxdb3-java/pull/238): Support fast writes without waiting for WAL
    persistence:
    - New write option (`WriteOptions.noSync`) added: `true` value means faster write but without the confirmation that

@@ -118,7 +118,7 @@ public final class VectorSchemaRootUtils {
 
         Float8Vector floatVector = (Float8Vector) root.getVector("temperature");
         floatVector.allocateNew();
-        floatVector.set(0, 100.8766f);
+        floatVector.set(0, 100.8766);
 
         VarCharVector stringVector = (VarCharVector) root.getVector("name");
         stringVector.allocateNew();
