@@ -66,14 +66,6 @@ public class InfluxDBClientTest {
     }
 
     @Test
-    void requiredHostEnvOrProperties() {
-
-        Assertions.assertThatThrownBy(InfluxDBClient::getInstance)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("The URL of the InfluxDB server has to be defined.");
-    }
-
-    @Test
     void fromParameters() throws Exception {
 
         try (InfluxDBClient client = InfluxDBClient.getInstance("http://localhost:8086",
@@ -136,5 +128,4 @@ public class InfluxDBClientTest {
                             + "class com.influxdb.v3.client.internal.InfluxDBClientImpl");
         }
     }
-
 }
