@@ -279,7 +279,7 @@ public class E2ETest {
     }
 
     @Test
-    public void testQueryRowWithParamOptions() throws Exception {
+    public void testQueryRowWithOptions() throws Exception {
         try (InfluxDBClient client = InfluxDBClient.getInstance(
                 System.getenv("TESTING_INFLUXDB_URL"),
                 System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
@@ -322,10 +322,9 @@ public class E2ETest {
                 testDatas.add(map);
             }
 
-            Map<String, Object> parameters = Map.of("testId", uuid);
             // Result set much be ordered by time
-            String sql = String.format("Select * from %s where \"testId\"=$testId order by time", measurement);
-            try (Stream<Map<String, Object>> stream = client.queryRows(sql, parameters, QueryOptions.DEFAULTS)) {
+            String sql = String.format("Select * from %s where \"testId\"='%s' order by time", measurement, uuid);
+            try (Stream<Map<String, Object>> stream = client.queryRows(sql, QueryOptions.DEFAULTS)) {
                 List<Map<String, Object>> results = stream.collect(Collectors.toList());
                 for (int i = 0; i <= 9; i++) {
                     Map<String, Object> row = results.get(i);
