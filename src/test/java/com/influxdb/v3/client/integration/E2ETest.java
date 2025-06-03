@@ -44,6 +44,7 @@ import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
@@ -278,7 +279,7 @@ public class E2ETest {
     }
 
     @Test
-    public void testQueryRowWithParam() throws Exception {
+    public void testQueryRowWithParamOptions() throws Exception {
         try (InfluxDBClient client = InfluxDBClient.getInstance(
                 System.getenv("TESTING_INFLUXDB_URL"),
                 System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
@@ -324,7 +325,7 @@ public class E2ETest {
             Map<String, Object> parameters = Map.of("testId", uuid);
             // Result set much be ordered by time
             String sql = String.format("Select * from %s where \"testId\"=$testId order by time", measurement);
-            try (Stream<Map<String, Object>> stream = client.queryRows(sql, parameters)) {
+            try (Stream<Map<String, Object>> stream = client.queryRows(sql, parameters, QueryOptions.DEFAULTS)) {
                 List<Map<String, Object>> results = stream.collect(Collectors.toList());
                 for (int i = 0; i <= 9; i++) {
                     Map<String, Object> row = results.get(i);
