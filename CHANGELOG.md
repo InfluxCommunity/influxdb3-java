@@ -1,5 +1,9 @@
 ## 1.2.0 [unreleased]
 
+### Features
+
+1. [#209](https://github.com/InfluxCommunity/influxdb3-java/pull/209) Add query function returning row as map.
+
 ## 1.1.0 [2025-05-22]
 
 ### Features
@@ -8,10 +12,6 @@
 2. [#232](https://github.com/InfluxCommunity/influxdb3-java/pull/232): Allow set rpc max message size through maxInboundMessageSize in ClientConfig
 3. [#233](https://github.com/InfluxCommunity/influxdb3-java/pull/233): More detailed documentation about timestamp handling for query and write functions
 4. [#236](https://github.com/InfluxCommunity/influxdb3-java/pull/236): Supports Java 21.
-
-### Features
-
-1. [#209](https://github.com/InfluxCommunity/influxdb3-java/pull/209) Add query function returning row as map
 
 ## 1.0.0 [2024-12-11]
 
