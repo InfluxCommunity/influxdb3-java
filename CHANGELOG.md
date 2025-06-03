@@ -1,5 +1,9 @@
 ## 1.2.0 [unreleased]
 
+### Features
+
+1. [#209](https://github.com/InfluxCommunity/influxdb3-java/pull/209) Add query function returning row as map.
+
 ## 1.1.0 [2025-05-22]
 
 ### Features
