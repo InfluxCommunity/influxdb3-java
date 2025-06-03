@@ -3,7 +3,7 @@
 ### Features
 
 1. [#209](https://github.com/InfluxCommunity/influxdb3-java/pull/209) Add query function returning row as map.
-1. [#238](https://github.com/InfluxCommunity/influxdb3-java/pull/238): Support fast writes without waiting for WAL
+2. [#238](https://github.com/InfluxCommunity/influxdb3-java/pull/238): Support fast writes without waiting for WAL
    persistence:
    - New write option (`WriteOptions.noSync`) added: `true` value means faster write but without the confirmation that
      the data was persisted. Default value: `false`.
@@ -25,6 +25,7 @@
    public void writePoint(@Nullable final Point point);
    public void writePoints(@Nonnull final List<Point> points);
    ```
+2. [#241](https://github.com/InfluxCommunity/influxdb3-java/pull/241): Some default options will be used from a getter.
 
 ## 1.1.0 [2025-05-22]
 
