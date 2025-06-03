@@ -210,7 +210,7 @@ public class E2ETest {
                 System.getenv("TESTING_INFLUXDB_DATABASE"),
                 null)) {
             String uuid = UUID.randomUUID().toString();
-            String measurement = "host21";
+            String measurement = "host22";
             List<Map<String, Object>> testDatas = new ArrayList<>();
             for (int i = 0; i <= 9; i++) {
                 long timestamp = System.currentTimeMillis();
