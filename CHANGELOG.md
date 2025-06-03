@@ -18,6 +18,7 @@
 
 1. [#239](https://github.com/InfluxCommunity/influxdb3-java/pull/239): Use write options from `ClientConfig` in
    `InfluxDBClientImpl` write methods:
+
    ```java
    public void writeRecord(@Nullable final String record);
    public void writeRecords(@Nonnull final List<String> records);
