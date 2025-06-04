@@ -278,6 +278,9 @@ public class E2ETest {
         }
     }
 
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
     public void testQueryRowWithOptions() throws Exception {
         try (InfluxDBClient client = InfluxDBClient.getInstance(

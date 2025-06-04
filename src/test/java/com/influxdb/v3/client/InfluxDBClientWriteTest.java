@@ -23,15 +23,19 @@ package com.influxdb.v3.client;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.assertj.core.api.Assertions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
@@ -223,10 +227,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         mockServer.enqueue(createEmptyResponse(HttpResponseStatus.METHOD_NOT_ALLOWED.code()));
 
         InfluxDBApiHttpException ae = org.junit.jupiter.api.Assertions.assertThrows(InfluxDBApiHttpException.class,
-                () -> {
-                    client.writeRecord("mem,tag=one value=1.0",
-                            new WriteOptions.Builder().precision(WritePrecision.MS).noSync(true).build());
-                }
+                () -> client.writeRecord("mem,tag=one value=1.0",
+                        new WriteOptions.Builder().precision(WritePrecision.MS).noSync(true).build())
         );
 
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
@@ -240,6 +242,167 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(ae.statusCode()).isEqualTo(HttpResponseStatus.METHOD_NOT_ALLOWED.code());
         assertThat(ae.getMessage()).contains("Server doesn't support write with NoSync=true"
                 + " (supported by InfluxDB 3 Core/Enterprise servers only).");
+    }
+
+    @Test
+    void writeRecordWithDefaultWriteOptionsDefaultConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            client.writeRecord("mem,tag=one value=1.0");
+        }
+
+        checkWriteCalled("/api/v2/write", "DB", "ns", false, false);
+    }
+
+    @Test
+    void writeRecordWithDefaultWriteOptionsCustomConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .writePrecision(WritePrecision.S)
+                .writeNoSync(true)
+                .gzipThreshold(1)
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            client.writeRecord("mem,tag=one value=1.0");
+        }
+
+        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
+    }
+
+    @Test
+    void writeRecordsWithDefaultWriteOptionsDefaultConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            client.writeRecords(List.of("mem,tag=one value=1.0"));
+        }
+
+        checkWriteCalled("/api/v2/write", "DB", "ns", false, false);
+    }
+
+    @Test
+    void writeRecordsWithDefaultWriteOptionsCustomConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .writePrecision(WritePrecision.S)
+                .writeNoSync(true)
+                .gzipThreshold(1)
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            client.writeRecords(List.of("mem,tag=one value=1.0"));
+        }
+
+        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
+    }
+
+    @Test
+    void writePointWithDefaultWriteOptionsDefaultConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            Point point = new Point("mem");
+            point.setTag("tag", "one");
+            point.setField("value", 1.0);
+            client.writePoint(point);
+        }
+
+        checkWriteCalled("/api/v2/write", "DB", "ns", false, false);
+    }
+
+    @Test
+    void writePointWithDefaultWriteOptionsCustomConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .writePrecision(WritePrecision.S)
+                .writeNoSync(true)
+                .gzipThreshold(1)
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            Point point = new Point("mem");
+            point.setTag("tag", "one");
+            point.setField("value", 1.0);
+            client.writePoint(point);
+        }
+
+        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
+    }
+
+    @Test
+    void writePointsWithDefaultWriteOptionsDefaultConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            Point point = new Point("mem");
+            point.setTag("tag", "one");
+            point.setField("value", 1.0);
+            client.writePoints(List.of(point));
+        }
+
+        checkWriteCalled("/api/v2/write", "DB", "ns", false, false);
+    }
+
+    @Test
+    void writePointsWithDefaultWriteOptionsCustomConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .writePrecision(WritePrecision.S)
+                .writeNoSync(true)
+                .gzipThreshold(1)
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            Point point = new Point("mem");
+            point.setTag("tag", "one");
+            point.setField("value", 1.0);
+            client.writePoints(List.of(point));
+        }
+
+        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
+    }
+
+    private void checkWriteCalled(final String expectedPath, final String expectedDB,
+                                  final String expectedPrecision, final boolean expectedNoSync,
+                                  final boolean expectedGzip) throws InterruptedException {
+        RecordedRequest request = assertThatServerRequested();
+        HttpUrl requestUrl = request.getRequestUrl();
+        assertThat(requestUrl).isNotNull();
+        assertThat(requestUrl.encodedPath()).isEqualTo(expectedPath);
+        if (expectedNoSync) {
+            assertThat(requestUrl.queryParameter("db")).isEqualTo(expectedDB);
+        } else {
+            assertThat(requestUrl.queryParameter("bucket")).isEqualTo(expectedDB);
+        }
+        assertThat(requestUrl.queryParameter("precision")).isEqualTo(expectedPrecision);
+        if (expectedNoSync) {
+            assertThat(requestUrl.queryParameter("no_sync")).isEqualTo("true");
+        } else {
+            assertThat(requestUrl.queryParameter("no_sync")).isNull();
+        }
+        if (expectedGzip) {
+            assertThat(request.getHeader("Content-Encoding")).isEqualTo("gzip");
+        } else {
+            assertThat(request.getHeader("Content-Encoding")).isNull();
+        }
+    }
+
+    @NotNull
+    private RecordedRequest assertThatServerRequested() throws InterruptedException {
+        assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+        assertThat(request).isNotNull();
+        return request;
     }
 
     @Test
@@ -344,7 +507,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void retryHandled429Test() throws InterruptedException {
+    public void retryHandled429Test() {
         mockServer.enqueue(createResponse(429)
           .setBody("{ \"message\" : \"Too Many Requests\" }")
           .setHeader("retry-after", "42")
