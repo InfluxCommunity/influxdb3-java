@@ -52,14 +52,14 @@ public final class QueryOptions {
 
     /**
      * Default QueryAPI options.<br>
-     * Deprecated: use {@link #defaultQueryOptions()} instead.
+     * Deprecated: use {@link #defaultQueryOptions} instead.
      */
     @Deprecated(forRemoval = true)
     public static final QueryOptions DEFAULTS = new QueryOptions(null, QueryType.SQL);
 
     /**
      * Default QueryAPI options for InfluxQL.<br>
-     * Deprecated: use {@link #defaultInfluxQlQueryOptions()} instead.
+     * Deprecated: use {@link #defaultInfluxQlQueryOptions} instead.
      */
     @Deprecated(forRemoval = true)
     public static final QueryOptions INFLUX_QL = new QueryOptions(null, QueryType.InfluxQL);

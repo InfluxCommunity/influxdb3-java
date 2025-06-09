@@ -13,6 +13,7 @@
    - Long precision string values added from v3 HTTP API: `"nanosecond"`, `"microsecond"`, `"millisecond"`,
      `"second"` (
      in addition to the existing `"ns"`, `"us"`, `"ms"`, `"s"`).
+3. [#241](https://github.com/InfluxCommunity/influxdb3-java/pull/241): Some default options will be used from a getter.
 
 ### Bug Fixes
 
@@ -25,7 +26,6 @@
    public void writePoint(@Nullable final Point point);
    public void writePoints(@Nonnull final List<Point> points);
    ```
-2. [#241](https://github.com/InfluxCommunity/influxdb3-java/pull/241): Some default options will be used from a getter.
 
 ## 1.1.0 [2025-05-22]
 
