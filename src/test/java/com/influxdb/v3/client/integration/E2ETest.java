@@ -327,7 +327,7 @@ public class E2ETest {
 
             // Result set much be ordered by time
             String sql = String.format("Select * from %s where \"testId\"='%s' order by time", measurement, uuid);
-            try (Stream<Map<String, Object>> stream = client.queryRows(sql, QueryOptions.DEFAULTS)) {
+            try (Stream<Map<String, Object>> stream = client.queryRows(sql, QueryOptions.defaultQueryOptions())) {
                 List<Map<String, Object>> results = stream.collect(Collectors.toList());
                 for (int i = 0; i <= 9; i++) {
                     Map<String, Object> row = results.get(i);

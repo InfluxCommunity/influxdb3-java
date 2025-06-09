@@ -165,7 +165,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<Object[]> query(@Nonnull final String query) {
-        return query(query, NO_PARAMETERS, QueryOptions.DEFAULTS);
+        return query(query, NO_PARAMETERS, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -177,7 +177,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<Object[]> query(@Nonnull final String query, @Nonnull final Map<String, Object> parameters) {
-        return query(query, parameters, QueryOptions.DEFAULTS);
+        return query(query, parameters, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -198,7 +198,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<Map<String, Object>> queryRows(@Nonnull final String query) {
-        return queryRows(query, NO_PARAMETERS, QueryOptions.DEFAULTS);
+        return queryRows(query, NO_PARAMETERS, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -206,7 +206,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     public Stream<Map<String, Object>> queryRows(@Nonnull final String query,
                                                  @Nonnull final Map<String, Object> parameters
     ) {
-        return queryRows(query, parameters, QueryOptions.DEFAULTS);
+        return queryRows(query, parameters, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -233,7 +233,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<PointValues> queryPoints(@Nonnull final String query) {
-        return queryPoints(query, QueryOptions.DEFAULTS);
+        return queryPoints(query, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -245,7 +245,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final Map<String, Object> parameters) {
-        return queryPoints(query, parameters, QueryOptions.DEFAULTS);
+        return queryPoints(query, parameters, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -266,7 +266,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query) {
-        return queryBatches(query, QueryOptions.DEFAULTS);
+        return queryBatches(query, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -279,7 +279,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query,
                                                  @Nonnull final Map<String, Object> parameters) {
-        return queryBatches(query, parameters, QueryOptions.DEFAULTS);
+        return queryBatches(query, parameters, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull

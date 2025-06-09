@@ -67,7 +67,9 @@ public final class WriteOptions {
     public static final boolean DEFAULT_NO_SYNC = false;
     /**
      * Default WriteOptions.
+     * Deprecated use {@link #defaultWriteOptions} instead
      */
+    @Deprecated(forRemoval = true)
     public static final WriteOptions DEFAULTS = new WriteOptions(
             null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null);
 
@@ -77,6 +79,16 @@ public final class WriteOptions {
     private final Boolean noSync;
     private final Map<String, String> defaultTags;
     private final Map<String, String> headers;
+
+    /**
+     * Creates a default instance of {@code WriteOptions} configured with standard values.
+     *
+     * @return A {@code WriteOptions} object with the default settings for write precision,
+     *         compression threshold, and no specified database.
+     */
+    public static WriteOptions defaultWriteOptions() {
+        return new WriteOptions(null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null);
+    }
 
     /**
      * Construct WriteAPI options.

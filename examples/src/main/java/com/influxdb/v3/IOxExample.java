@@ -98,7 +98,7 @@ public final class IOxExample {
 
             String influxQL =
                     "select MEAN(value) from temperature group by time(1d) fill(none) order by time desc limit 10";
-            try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.INFLUX_QL)) {
+            try (Stream<Object[]> stream = client.query(influxQL, QueryOptions.defaultInfluxQlQueryOptions())) {
                 stream.forEach(row -> System.out.printf("| %-16s | %-18s |%n", row[1], row[2]));
             }
 
