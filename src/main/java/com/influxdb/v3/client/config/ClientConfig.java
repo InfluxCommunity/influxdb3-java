@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
 /**
@@ -52,25 +53,30 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>writePrecision</code> - precision to use when writing points to InfluxDB</li>
  *     <li><code>defaultTags</code> - defaultTags added when writing points to InfluxDB</li>
  *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
+ *     <li><code>writeNoSync</code> - skip waiting for WAL persistence on write</li>
  *     <li><code>responseTimeout</code> - timeout when connecting to InfluxDB</li>
  *     <li><code>allowHttpRedirects</code> - allow redirects for InfluxDB connections</li>
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
  *     </li>
- *     <li><code>proxy</code> - HTTP proxy selector</li>
+ *     <li><code>proxyUrl</code> - proxy url for query api and write api</li>
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
+ *     <li><code>sslRootsFilePath</code> - path to the stored certificates file in PEM format</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
  * <pre>
  * ClientConfig config = new ClientConfig.Builder()
- *     .host("https://us-east-1-1.aws.cloud2.influxdata.com")
+ *     .host("<a href="https://us-east-1-1.aws.cloud2.influxdata.com">
+ *         https://us-east-1-1.aws.cloud2.influxdata.com
+ *         </a>")
  *     .token("my-token".toCharArray())
  *     .database("my-database")
  *     .writePrecision(WritePrecision.S)
  *     .gzipThreshold(4096)
- *     .proxy(ProxySelector.of(new InetSocketAddress("proxy.local", 8888)))
+ *     .writeNoSync(true)
+ *     .proxyUrl("http://localhost:10000")
  *     .build();
  *
  * try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
@@ -84,7 +90,6 @@ import com.influxdb.v3.client.write.WritePrecision;
  * Immutable class.
  */
 public final class ClientConfig {
-
     private final String host;
     private final char[] token;
     private final String authScheme;
@@ -92,13 +97,21 @@ public final class ClientConfig {
     private final String database;
     private final WritePrecision writePrecision;
     private final Integer gzipThreshold;
+    private final Boolean writeNoSync;
     private final Map<String, String> defaultTags;
     private final Duration timeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
-    private final ProxySelector proxy;
+    private final String proxyUrl;
     private final Authenticator authenticator;
     private final Map<String, String> headers;
+    private final String sslRootsFilePath;
+
+    /**
+     * Deprecated use {@link #proxyUrl}.
+     */
+    @Deprecated
+    private final ProxySelector proxy;
 
     /**
      * Gets URL of the InfluxDB server.
@@ -172,6 +185,16 @@ public final class ClientConfig {
     }
 
     /**
+     * Skip waiting for WAL persistence on write?
+     *
+     * @return skip waiting for WAL persistence on write
+     */
+    @Nonnull
+    public Boolean getWriteNoSync() {
+        return writeNoSync;
+    }
+
+    /**
      * Gets default tags used when writing points.
      * @return default tags
      */
@@ -213,10 +236,32 @@ public final class ClientConfig {
      * Gets the proxy.
      *
      * @return the proxy, may be null
+     * Deprecated use {@link #proxyUrl}
      */
     @Nullable
+    @Deprecated
     public ProxySelector getProxy() {
         return proxy;
+    }
+
+    /**
+     * Gets the proxy url.
+     *
+     * @return the proxy url, may be null
+     */
+    @Nullable
+    public String getProxyUrl() {
+        return proxyUrl;
+    }
+
+    /**
+     * Gets certificates file path.
+     *
+     * @return the certificates file path, may be null
+     */
+    @Nullable
+    public String sslRootsFilePath() {
+        return sslRootsFilePath;
     }
 
     /**
@@ -264,22 +309,25 @@ public final class ClientConfig {
                 && Objects.equals(database, that.database)
                 && writePrecision == that.writePrecision
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
+                && Objects.equals(writeNoSync, that.writeNoSync)
                 && Objects.equals(defaultTags, that.defaultTags)
                 && Objects.equals(timeout, that.timeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
                 && Objects.equals(proxy, that.proxy)
+                && Objects.equals(proxyUrl, that.proxyUrl)
                 && Objects.equals(authenticator, that.authenticator)
-                && Objects.equals(headers, that.headers);
+                && Objects.equals(headers, that.headers)
+                && Objects.equals(sslRootsFilePath, that.sslRootsFilePath);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
-          database, writePrecision, gzipThreshold,
-          timeout, allowHttpRedirects, disableServerCertificateValidation,
-          proxy, authenticator, headers,
-          defaultTags);
+                database, writePrecision, gzipThreshold, writeNoSync,
+                timeout, allowHttpRedirects, disableServerCertificateValidation,
+                proxy, proxyUrl, authenticator, headers,
+                defaultTags, sslRootsFilePath);
     }
 
     @Override
@@ -290,13 +338,16 @@ public final class ClientConfig {
                 .add("database='" + database + "'")
                 .add("writePrecision=" + writePrecision)
                 .add("gzipThreshold=" + gzipThreshold)
+                .add("writeNoSync=" + writeNoSync)
                 .add("timeout=" + timeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
                 .add("proxy=" + proxy)
+                .add("proxyUrl=" + proxyUrl)
                 .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
+                .add("sslRootsFilePath=" + sslRootsFilePath)
                 .toString();
     }
 
@@ -313,13 +364,16 @@ public final class ClientConfig {
         private String database;
         private WritePrecision writePrecision;
         private Integer gzipThreshold;
+        private Boolean writeNoSync;
         private Map<String, String> defaultTags;
         private Duration timeout;
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
         private ProxySelector proxy;
+        private String proxyUrl;
         private Authenticator authenticator;
         private Map<String, String> headers;
+        private String sslRootsFilePath;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -416,6 +470,19 @@ public final class ClientConfig {
         }
 
         /**
+         * Sets whether to skip waiting for WAL persistence on write.
+         *
+         * @param writeNoSync skip waiting for WAL persistence on write
+         * @return this
+         */
+        @Nonnull
+        public Builder writeNoSync(@Nullable final Boolean writeNoSync) {
+
+            this.writeNoSync = writeNoSync;
+            return this;
+        }
+
+        /**
          * Sets default tags to be written with points.
          *
          * @param defaultTags - tags to be used.
@@ -472,11 +539,25 @@ public final class ClientConfig {
          *
          * @param proxy Proxy selector.
          * @return this
+         * Deprecated use {@link #proxyUrl}
          */
         @Nonnull
         public Builder proxy(@Nullable final ProxySelector proxy) {
 
             this.proxy = proxy;
+            return this;
+        }
+
+        /**
+         * Sets the proxy url. Default is 'null'.
+         *
+         * @param proxyUrl Proxy url.
+         * @return this
+         */
+        @Nonnull
+        public Builder proxyUrl(@Nullable final String proxyUrl) {
+
+            this.proxyUrl = proxyUrl;
             return this;
         }
 
@@ -498,7 +579,9 @@ public final class ClientConfig {
          * such as tracing headers. To add custom headers use following code:
          * <pre>
          * ClientConfig config = new ClientConfig.Builder()
-         *     .host("https://us-east-1-1.aws.cloud2.influxdata.com")
+         *     .host("<a href="https://us-east-1-1.aws.cloud2.influxdata.com">
+         *         https://us-east-1-1.aws.cloud2.influxdata.com
+         *         </a>")
          *     .token("my-token".toCharArray())
          *     .database("my-database")
          *     .headers(Map.of("X-Tracing-Id", "123"))
@@ -520,6 +603,19 @@ public final class ClientConfig {
         public Builder headers(@Nullable final Map<String, String> headers) {
 
             this.headers = headers;
+            return this;
+        }
+
+        /**
+         * Sets certificate file path. Default is 'null'.
+         *
+         * @param sslRootsFilePath The certificate file path
+         * @return this
+         */
+        @Nonnull
+        public Builder sslRootsFilePath(@Nullable final String sslRootsFilePath) {
+
+            this.sslRootsFilePath = sslRootsFilePath;
             return this;
         }
 
@@ -567,6 +663,9 @@ public final class ClientConfig {
             }
             if (parameters.containsKey("gzipThreshold")) {
                 this.gzipThreshold(Integer.parseInt(parameters.get("gzipThreshold")));
+            }
+            if (parameters.containsKey("writeNoSync")) {
+                this.writeNoSync(Boolean.parseBoolean(parameters.get("writeNoSync")));
             }
 
             return new ClientConfig(this);
@@ -616,6 +715,10 @@ public final class ClientConfig {
             if (gzipThreshold != null) {
                 this.gzipThreshold(Integer.parseInt(gzipThreshold));
             }
+            final String writeNoSync = get.apply("INFLUX_WRITE_NO_SYNC", "influx.writeNoSync");
+            if (writeNoSync != null) {
+                this.writeNoSync(Boolean.parseBoolean(writeNoSync));
+            }
 
             return new ClientConfig(this);
         }
@@ -624,15 +727,19 @@ public final class ClientConfig {
             WritePrecision writePrecision;
             switch (precision) {
                 case "ns":
+                case "nanosecond":
                     writePrecision = WritePrecision.NS;
                     break;
                 case "us":
+                case "microsecond":
                     writePrecision = WritePrecision.US;
                     break;
                 case "ms":
+                case "millisecond":
                     writePrecision = WritePrecision.MS;
                     break;
                 case "s":
+                case "second":
                     writePrecision = WritePrecision.S;
                     break;
                 default:
@@ -650,15 +757,18 @@ public final class ClientConfig {
         authScheme = builder.authScheme;
         organization = builder.organization;
         database = builder.database;
-        writePrecision = builder.writePrecision != null ? builder.writePrecision : WritePrecision.NS;
-        gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : 1000;
+        writePrecision = builder.writePrecision != null ? builder.writePrecision : WriteOptions.DEFAULT_WRITE_PRECISION;
+        gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : WriteOptions.DEFAULT_GZIP_THRESHOLD;
+        writeNoSync = builder.writeNoSync != null ? builder.writeNoSync : WriteOptions.DEFAULT_NO_SYNC;
         defaultTags = builder.defaultTags;
         timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(10);
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
         proxy = builder.proxy;
+        proxyUrl = builder.proxyUrl;
         authenticator = builder.authenticator;
         headers = builder.headers;
+        sslRootsFilePath = builder.sslRootsFilePath;
     }
 }

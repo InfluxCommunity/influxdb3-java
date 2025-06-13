@@ -38,10 +38,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 import com.influxdb.v3.client.InfluxDBApiException;
+import com.influxdb.v3.client.InfluxDBApiHttpException;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.PointValues;
@@ -49,6 +52,7 @@ import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
+import com.influxdb.v3.client.write.WritePrecisionConverter;
 
 /**
  * Implementation of the InfluxDBClient. It is thread-safe and can be safely shared between threads.
@@ -77,6 +81,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     private final RestClient restClient;
     private final FlightSqlClient flightSqlClient;
+    private final WriteOptions emptyWriteOptions;
 
     /**
      * Creates an instance using the specified config.
@@ -106,11 +111,12 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         this.config = config;
         this.restClient = restClient != null ? restClient : new RestClient(config);
         this.flightSqlClient = flightSqlClient != null ? flightSqlClient : new FlightSqlClient(config);
+        this.emptyWriteOptions = new WriteOptions(null);
     }
 
     @Override
     public void writeRecord(@Nullable final String record) {
-        writeRecord(record, WriteOptions.DEFAULTS);
+        writeRecord(record, emptyWriteOptions);
     }
 
     @Override
@@ -124,7 +130,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Override
     public void writeRecords(@Nonnull final List<String> records) {
-        writeRecords(records, WriteOptions.DEFAULTS);
+        writeRecords(records, emptyWriteOptions);
     }
 
     @Override
@@ -134,7 +140,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Override
     public void writePoint(@Nullable final Point point) {
-        writePoint(point, WriteOptions.DEFAULTS);
+        writePoint(point, emptyWriteOptions);
     }
 
     @Override
@@ -148,7 +154,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Override
     public void writePoints(@Nonnull final List<Point> points) {
-        writePoints(points, WriteOptions.DEFAULTS);
+        writePoints(points, emptyWriteOptions);
     }
 
     @Override
@@ -159,7 +165,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<Object[]> query(@Nonnull final String query) {
-        return query(query, NO_PARAMETERS, QueryOptions.DEFAULTS);
+        return query(query, NO_PARAMETERS, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -171,7 +177,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<Object[]> query(@Nonnull final String query, @Nonnull final Map<String, Object> parameters) {
-        return query(query, parameters, QueryOptions.DEFAULTS);
+        return query(query, parameters, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -191,8 +197,43 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Nonnull
     @Override
+    public Stream<Map<String, Object>> queryRows(@Nonnull final String query) {
+        return queryRows(query, NO_PARAMETERS, QueryOptions.defaultQueryOptions());
+    }
+
+    @Nonnull
+    @Override
+    public Stream<Map<String, Object>> queryRows(@Nonnull final String query,
+                                                 @Nonnull final Map<String, Object> parameters
+    ) {
+        return queryRows(query, parameters, QueryOptions.defaultQueryOptions());
+    }
+
+    @Nonnull
+    @Override
+    public Stream<Map<String, Object>> queryRows(@Nonnull final String query, @Nonnull final QueryOptions options) {
+        return queryRows(query, NO_PARAMETERS, options);
+    }
+
+    @Nonnull
+    @Override
+    public Stream<Map<String, Object>> queryRows(@Nonnull final String query,
+                                                 @Nonnull final Map<String, Object> parameters,
+                                                 @Nonnull final QueryOptions options) {
+        return queryData(query, parameters, options)
+                .flatMap(vector -> IntStream.range(0, vector.getRowCount())
+                                            .mapToObj(rowNumber ->
+                                                              VectorSchemaRootConverter.INSTANCE
+                                                                      .getMapFromVectorSchemaRoot(
+                                                                              vector,
+                                                                              rowNumber
+                                                                      )));
+    }
+
+    @Nonnull
+    @Override
     public Stream<PointValues> queryPoints(@Nonnull final String query) {
-        return queryPoints(query, QueryOptions.DEFAULTS);
+        return queryPoints(query, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -204,7 +245,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final Map<String, Object> parameters) {
-        return queryPoints(query, parameters, QueryOptions.DEFAULTS);
+        return queryPoints(query, parameters, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -225,7 +266,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Nonnull
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query) {
-        return queryBatches(query, QueryOptions.DEFAULTS);
+        return queryBatches(query, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -238,7 +279,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     @Override
     public Stream<VectorSchemaRoot> queryBatches(@Nonnull final String query,
                                                  @Nonnull final Map<String, Object> parameters) {
-        return queryBatches(query, parameters, QueryOptions.DEFAULTS);
+        return queryBatches(query, parameters, QueryOptions.defaultQueryOptions());
     }
 
     @Nonnull
@@ -273,11 +314,27 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
         WritePrecision precision = options.precisionSafe(config);
 
-        Map<String, String> queryParams = new HashMap<>() {{
-            put("bucket", database);
-            put("org", config.getOrganization());
-            put("precision", precision.name().toLowerCase());
-        }};
+        String path;
+        Map<String, String> queryParams;
+        boolean noSync = options.noSyncSafe(config);
+        if (noSync) {
+            // Setting no_sync=true is supported only in the v3 API.
+            path = "api/v3/write_lp";
+            queryParams = new HashMap<>() {{
+                put("org", config.getOrganization());
+                put("db", database);
+                put("precision", WritePrecisionConverter.toV3ApiString(precision));
+                put("no_sync", "true");
+            }};
+        } else {
+            // By default, use the v2 API.
+            path = "api/v2/write";
+            queryParams = new HashMap<>() {{
+                put("org", config.getOrganization());
+                put("bucket", database);
+                put("precision", WritePrecisionConverter.toV2ApiString(precision));
+            }};
+        }
 
         Map<String, String> defaultTags = options.defaultTagsSafe(config);
 
@@ -313,7 +370,16 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         }
         headers.putAll(options.headersSafe());
 
-        restClient.request("api/v2/write", HttpMethod.POST, body, queryParams, headers);
+        try {
+            restClient.request(path, HttpMethod.POST, body, queryParams, headers);
+        } catch (InfluxDBApiHttpException e) {
+            if (noSync && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
+                // Server does not support the v3 write API, can't use the NoSync option.
+                throw new InfluxDBApiHttpException("Server doesn't support write with NoSync=true "
+                        + "(supported by InfluxDB 3 Core/Enterprise servers only).", e.headers(), e.statusCode());
+            }
+            throw e;
+        }
     }
 
     @Nonnull
@@ -341,7 +407,15 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
         });
 
-        return flightSqlClient.execute(query, database, options.queryTypeSafe(), parameters, options.headersSafe());
+        CallOption[] callOptions = options.grpcCallOptions().getCallOptions();
+        return flightSqlClient.execute(
+                query,
+                database,
+                options.queryTypeSafe(),
+                parameters,
+                options.headersSafe(),
+                callOptions
+        );
     }
 
     @Nonnull

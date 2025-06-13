@@ -76,6 +76,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Write a {@link Point} to the InfluxDB server.
      *
      * @param point the {@link Point} to write, can be null
+     * <p>
+     * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
+     * by NanosecondConverter helper class
      */
     void writePoint(@Nullable final Point point);
 
@@ -84,6 +87,9 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param point   the {@link Point} to write, can be null
      * @param options the options for writing data to InfluxDB
+     * <p>
+     * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
+     * by NanosecondConverter helper class
      */
     void writePoint(@Nullable final Point point, @Nonnull final WriteOptions options);
 
@@ -91,6 +97,9 @@ public interface InfluxDBClient extends AutoCloseable {
      * Write a list of {@link Point} to the InfluxDB server.
      *
      * @param points the list of {@link Point} to write, cannot be null
+     * <p>
+     * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
+     * by NanosecondConverter helper class
      */
     void writePoints(@Nonnull final List<Point> points);
 
@@ -99,6 +108,9 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param points  the list of {@link Point} to write, cannot be null
      * @param options the options for writing data to InfluxDB
+     * <p>
+     * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
+     * by NanosecondConverter helper class
      */
     void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteOptions options);
 
@@ -116,6 +128,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param query the SQL query string to execute, cannot be null
      * @return Batches of rows returned by the query
+     * <p>
+     * Note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<Object[]> query(@Nonnull final String query);
@@ -136,6 +150,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param query      the SQL query string to execute, cannot be null
      * @param parameters query named parameters
      * @return Batches of rows returned by the query
+     * <p>
+     * Note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<Object[]> query(@Nonnull final String query, @Nonnull final Map<String, Object> parameters);
@@ -155,6 +171,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param query   the query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
+     * <p>
+     * Note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<Object[]> query(@Nonnull final String query, @Nonnull final QueryOptions options);
@@ -176,11 +194,94 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param parameters query named parameters
      * @param options    the options for querying data from InfluxDB
      * @return Batches of rows returned by the query
+     * <p>
+     * Note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<Object[]> query(@Nonnull final String query,
                            @Nonnull final Map<String, Object> parameters,
                            @Nonnull final QueryOptions options);
+
+    /**
+     * Query data from InfluxDB IOx using FlightSQL.
+     * <p>
+     * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
+     * <pre>
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=intel")) {
+     *      rows.forEach(row -&gt; {
+     *          // process row
+     *      });
+     * };
+     * </pre>
+     *
+     * @param query the query string to execute, cannot be null
+     * @return Batches of rows returned by the query
+     */
+    @Nonnull
+    Stream<Map<String, Object>> queryRows(@Nonnull final String query);
+
+    /**
+     * Query data from InfluxDB IOx using FlightSQL.
+     * <p>
+     * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
+     * <pre>
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host",
+     *                                                                      Map.of("host", "server-a"))) {
+     *      rows.forEach(row -&gt; {
+     *          // process row
+     *      })
+     * };
+     * </pre>
+     *
+     * @param query      the query string to execute, cannot be null
+     * @param parameters query named parameters
+     * @return Batches of rows returned by the query
+     */
+    @Nonnull
+    Stream<Map<String, Object>> queryRows(@Nonnull final String query, @Nonnull final Map<String, Object> parameters);
+
+    /**
+     * Query data from InfluxDB IOx using FlightSQL.
+     * <p>
+     * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
+     * <pre>
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=intel",
+     *                                                                      options)) {
+     *      rows.forEach(row -&gt; {
+     *          // process row
+     *      })
+     * };
+     * </pre>
+     *
+     * @param query   the query string to execute, cannot be null
+     * @param options the options for querying data from InfluxDB
+     * @return Batches of rows returned by the query
+     */
+    @Nonnull
+    Stream<Map<String, Object>> queryRows(@Nonnull final String query, @Nonnull final QueryOptions options);
+
+    /**
+     * Query data from InfluxDB IOx using FlightSQL.
+     * <p>
+     * The result stream should be closed after use, you can use try-resource pattern to close it automatically:
+     * <pre>
+     * try (Stream&lt;Map&lt;String, Object&gt;&gt; rows = client.queryRows("select * from cpu where host=$host",
+     *                                                                      Map.of("host", "server-a"), options)) {
+     *      rows.forEach(row -&gt; {
+     *          // process row
+     *      })
+     * };
+     * </pre>
+     *
+     * @param query      the query string to execute, cannot be null
+     * @param parameters query named parameters
+     * @param options    the options for querying data from InfluxDB
+     * @return Batches of rows returned by the query
+     */
+    @Nonnull
+    Stream<Map<String, Object>> queryRows(@Nonnull final String query,
+                                          @Nonnull final Map<String, Object> parameters,
+                                          @Nonnull final QueryOptions options);
 
     /**
      * Query data from InfluxDB IOx into Point structure using FlightSQL.
@@ -196,6 +297,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @param query the SQL query string to execute, cannot be null
      * @return Batches of PointValues returned by the query
+     * <p>
+     * Note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<PointValues> queryPoints(@Nonnull final String query);
@@ -216,6 +319,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param query      the SQL query string to execute, cannot be null
      * @param parameters query named parameters
      * @return Batches of PointValues returned by the query
+     * <p>
+     * Note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final Map<String, Object> parameters);
@@ -235,6 +340,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param query   the query string to execute, cannot be null
      * @param options the options for querying data from InfluxDB
      * @return Batches of PointValues returned by the query
+     * <p>
+     * Note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<PointValues> queryPoints(@Nonnull final String query, @Nonnull final QueryOptions options);
@@ -257,6 +364,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param parameters query named parameters
      * @param options    the options for querying data from InfluxDB
      * @return Batches of PointValues returned by the query
+     * <p>
+     * Note: the timestamp will be returned as a number of nanoseconds since the Unix epoch
      */
     @Nonnull
     Stream<PointValues> queryPoints(@Nonnull final String query,
@@ -417,6 +526,7 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>database - database (bucket) name</li>
      *   <li>precision - timestamp precision when writing data</li>
      *   <li>gzipThreshold - payload size size for gzipping data</li>
+     *   <li>writeNoSync - skip waiting for WAL persistence on write</li>
      * </ul>
      *
      * @param connectionString connection string
@@ -449,6 +559,7 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>INFLUX_DATABASE - database (bucket) name</li>
      *   <li>INFLUX_PRECISION - timestamp precision when writing data</li>
      *   <li>INFLUX_GZIP_THRESHOLD - payload size size for gzipping data</li>
+     *   <li>INFLUX_WRITE_NO_SYNC - skip waiting for WAL persistence on write</li>
      * </ul>
      * Supported system properties:
      * <ul>
@@ -459,6 +570,7 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>influx.database - database (bucket) name</li>
      *   <li>influx.precision - timestamp precision when writing data</li>
      *   <li>influx.gzipThreshold - payload size size for gzipping data</li>
+     *   <li>influx.writeNoSync - skip waiting for WAL persistence on write</li>
      * </ul>
      *
      * @return instance of {@link InfluxDBClient}

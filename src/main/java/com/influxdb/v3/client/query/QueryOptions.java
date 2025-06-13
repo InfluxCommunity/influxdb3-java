@@ -28,6 +28,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.Arguments;
+import com.influxdb.v3.client.internal.GrpcCallOptions;
 
 /**
  * Query API options.
@@ -50,17 +51,42 @@ import com.influxdb.v3.client.internal.Arguments;
 public final class QueryOptions {
 
     /**
-     * Default QueryAPI options.
+     * Default QueryAPI options.<br>
+     * Deprecated: use {@link #defaultQueryOptions} instead.
      */
+    @Deprecated(forRemoval = true)
     public static final QueryOptions DEFAULTS = new QueryOptions(null, QueryType.SQL);
+
     /**
-     * Default QueryAPI options for InfluxQL.
+     * Default QueryAPI options for InfluxQL.<br>
+     * Deprecated: use {@link #defaultInfluxQlQueryOptions} instead.
      */
+    @Deprecated(forRemoval = true)
     public static final QueryOptions INFLUX_QL = new QueryOptions(null, QueryType.InfluxQL);
 
     private final String database;
     private final QueryType queryType;
     private final Map<String, String> headers;
+    private GrpcCallOptions grpcCallOptions = GrpcCallOptions.getDefaultOptions();
+
+    /**
+     * Provides default query options with no database specified and using SQL as the query type.
+     *
+     * @return A {@code QueryOptions} instance with default settings, including a null database
+     *         and {@code QueryType.SQL} as the query type.
+     */
+    public static QueryOptions defaultQueryOptions() {
+        return new QueryOptions(null, QueryType.SQL);
+    }
+
+    /**
+     * Provides default query options for executing InfluxQL queries with no database specified.
+     *
+     * @return A {@code QueryOptions} instance configured with a null database and {@code QueryType.InfluxQL}.
+     */
+    public static QueryOptions defaultInfluxQlQueryOptions() {
+        return new QueryOptions(null, QueryType.InfluxQL);
+    }
 
     /**
      * Construct QueryAPI options. The query type is set to SQL.
@@ -142,6 +168,23 @@ public final class QueryOptions {
     @Nonnull
     public Map<String, String> headersSafe() {
         return headers;
+    }
+
+    /**
+     * Sets the GrpcCallOptions object.
+     * @param grpcCallOptions the grpcCallOptions
+     */
+    public void setGrpcCallOptions(@Nonnull final GrpcCallOptions grpcCallOptions) {
+        Arguments.checkNotNull(grpcCallOptions, "grpcCallOptions");
+        this.grpcCallOptions = grpcCallOptions;
+    }
+
+    /**
+     * @return the GrpcCallOptions object.
+     */
+    @Nonnull
+    public GrpcCallOptions grpcCallOptions() {
+        return grpcCallOptions;
     }
 
     private boolean isNotDefined(final String option) {

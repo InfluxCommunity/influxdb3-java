@@ -1,4 +1,40 @@
-## 1.1.0 [unreleased]
+## 1.2.0 [unreleased]
+
+### Features
+
+1. [#209](https://github.com/InfluxCommunity/influxdb3-java/pull/209) Add query function returning row as map.
+2. [#238](https://github.com/InfluxCommunity/influxdb3-java/pull/238): Support fast writes without waiting for WAL
+   persistence:
+   - New write option (`WriteOptions.noSync`) added: `true` value means faster write but without the confirmation that
+     the data was persisted. Default value: `false`.
+   - **Supported by self-managed InfluxDB 3 Core and Enterprise servers only!**
+   - Also configurable via connection string query parameter (`writeNoSync`).
+   - Also configurable via environment variable (`INFLUX_WRITE_NO_SYNC`).
+   - Long precision string values added from v3 HTTP API: `"nanosecond"`, `"microsecond"`, `"millisecond"`,
+     `"second"` (
+     in addition to the existing `"ns"`, `"us"`, `"ms"`, `"s"`).
+3. [#241](https://github.com/InfluxCommunity/influxdb3-java/pull/241): Some default options will be used from a getter.
+
+### Bug Fixes
+
+1. [#239](https://github.com/InfluxCommunity/influxdb3-java/pull/239): Use write options from `ClientConfig` in
+   `InfluxDBClientImpl` write methods:
+
+   ```java
+   public void writeRecord(@Nullable final String record);
+   public void writeRecords(@Nonnull final List<String> records);
+   public void writePoint(@Nullable final Point point);
+   public void writePoints(@Nonnull final List<Point> points);
+   ```
+
+## 1.1.0 [2025-05-22]
+
+### Features
+
+1. [#229](https://github.com/InfluxCommunity/influxdb3-java/pull/229): Support proxy and custom ssl root certificates
+2. [#232](https://github.com/InfluxCommunity/influxdb3-java/pull/232): Allow set rpc max message size through maxInboundMessageSize in ClientConfig
+3. [#233](https://github.com/InfluxCommunity/influxdb3-java/pull/233): More detailed documentation about timestamp handling for query and write functions
+4. [#236](https://github.com/InfluxCommunity/influxdb3-java/pull/236): Supports Java 21.
 
 ## 1.0.0 [2024-12-11]
 

@@ -21,9 +21,12 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.Map;
 
+import io.grpc.HttpConnectProxiedSocketAddress;
+import io.grpc.ProxyDetector;
 import io.grpc.internal.GrpcUtil;
 import org.apache.arrow.flight.CallHeaders;
 import org.apache.arrow.flight.CallInfo;
@@ -81,6 +84,31 @@ public class FlightSqlClientTest {
         if (allocator != null) {
             allocator.close();
         }
+    }
+
+    @Test
+    void flightSqlClient() throws Exception {
+        String correctHost = "grpc+unix://tmp/dummy.sock";
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(correctHost)
+                .token("Token".toCharArray())
+                .build();
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
+            Assertions.assertThat(flightSqlClient).isNotNull();
+        }
+
+        FlightClient.Builder builder = FlightClient.builder(allocator, server.getLocation());
+        try (FlightClient flightClient = builder.build()) {
+            FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig, flightClient);
+            Assertions.assertThat(flightSqlClient).isNotNull();
+        }
+
+        var inCorrectHost = "grpc+unix://///tmp/dummy.sock";
+        ClientConfig clientConfig1 = new ClientConfig.Builder()
+                .host(inCorrectHost)
+                .token("Token".toCharArray())
+                .build();
+        Assertions.assertThatThrownBy(() -> new FlightSqlClient(clientConfig1));
     }
 
     @Test
@@ -269,6 +297,31 @@ public class FlightSqlClientTest {
                     GrpcUtil.MESSAGE_ACCEPT_ENCODING
             );
             Assertions.assertThat(incomingHeaders.get("X-Tracing-Id")).isEqualTo("987");
+        }
+    }
+
+    @Test
+    void createProxyDetector() {
+        String targetUrl = "https://localhost:80";
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(targetUrl)
+                .build();
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
+            String proxyUrl = "http://localhost:10000";
+            ProxyDetector proxyDetector = flightSqlClient.createProxyDetector(targetUrl, proxyUrl);
+            Assertions.assertThat(proxyDetector.proxyFor(
+                    new InetSocketAddress("localhost", 80)
+            )).isEqualTo(HttpConnectProxiedSocketAddress.newBuilder()
+                    .setProxyAddress(new InetSocketAddress("localhost", 10000))
+                    .setTargetAddress(new InetSocketAddress("localhost", 80))
+                    .build());
+
+            // Return null case
+            Assertions.assertThat(proxyDetector.proxyFor(
+                    new InetSocketAddress("123.2.3.1", 80)
+            )).isNull();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

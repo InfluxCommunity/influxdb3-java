@@ -160,6 +160,10 @@ workflows:
           name: jdk-20
           maven-image: "cimg/openjdk:20.0"
           arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      - tests-java:
+          name: jdk-21
+          maven-image: "cimg/openjdk:21.0"
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - deploy-snapshot:
           requires:
             - check-dependencies
@@ -168,6 +172,7 @@ workflows:
             - jdk-11
             - jdk-17
             - jdk-20
+            - jdk-21
           filters:
             branches:
               only: main

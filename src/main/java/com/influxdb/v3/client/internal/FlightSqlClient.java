@@ -21,6 +21,8 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.io.FileInputStream;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -39,21 +41,35 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.Metadata;
+import io.grpc.ProxyDetector;
+import io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.NettyChannelBuilder;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.FlightClient;
+import org.apache.arrow.flight.FlightGrpcUtils;
 import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.HeaderCallOption;
 import org.apache.arrow.flight.Location;
+import org.apache.arrow.flight.LocationSchemes;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.grpc.MetadataAdapter;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.util.AutoCloseables;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.query.QueryType;
 
 final class FlightSqlClient implements AutoCloseable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FlightSqlClient.class);
 
     private final FlightClient client;
 
@@ -83,8 +99,6 @@ final class FlightSqlClient implements AutoCloseable {
             defaultHeaders.putAll(config.getHeaders());
         }
 
-        Package mainPackage = RestClient.class.getPackage();
-
         this.client = (client != null) ? client : createFlightClient(config);
     }
 
@@ -93,7 +107,8 @@ final class FlightSqlClient implements AutoCloseable {
                                      @Nonnull final String database,
                                      @Nonnull final QueryType queryType,
                                      @Nonnull final Map<String, Object> queryParameters,
-                                     @Nonnull final Map<String, String> headers) {
+                                     @Nonnull final Map<String, String> headers,
+                                     final CallOption... callOptions) {
 
         Map<String, Object> ticketData = new HashMap<>() {{
             put("database", database);
@@ -113,8 +128,10 @@ final class FlightSqlClient implements AutoCloseable {
         }
 
         HeaderCallOption headerCallOption = metadataHeader(headers);
+        CallOption[] callOptionArray = GrpcCallOptions.mergeCallOptions(callOptions, headerCallOption);
+
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
-        FlightStream stream = client.getStream(ticket, headerCallOption);
+        FlightStream stream = client.getStream(ticket, callOptionArray);
         FlightSqlIterator iterator = new FlightSqlIterator(stream);
 
         Spliterator<VectorSchemaRoot> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL);
@@ -128,13 +145,49 @@ final class FlightSqlClient implements AutoCloseable {
 
     @Nonnull
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
-        Location location = createLocation(config);
+        URI uri = createLocation(config).getUri();
+        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forAddress(uri.getHost(), uri.getPort());
 
-        return FlightClient.builder()
-                .location(location)
-                .allocator(new RootAllocator(Long.MAX_VALUE))
-                .verifyServer(!config.getDisableServerCertificateValidation())
-                .build();
+        if (LocationSchemes.GRPC_TLS.equals(uri.getScheme())) {
+            nettyChannelBuilder.useTransportSecurity();
+
+            SslContext nettySslContext = createNettySslContext(config);
+            nettyChannelBuilder.sslContext(nettySslContext);
+        } else {
+            nettyChannelBuilder.usePlaintext();
+        }
+
+        if (config.getProxyUrl() != null) {
+            ProxyDetector proxyDetector = createProxyDetector(config.getHost(), config.getProxyUrl());
+            nettyChannelBuilder.proxyDetector(proxyDetector);
+        }
+
+        if (config.getProxy() != null) {
+            LOG.warn("proxy property in ClientConfig will not work in query api, use proxyUrl property instead");
+        }
+
+        nettyChannelBuilder.maxTraceEvents(0)
+                .maxInboundMetadataSize(Integer.MAX_VALUE);
+
+        return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
+    }
+
+    @Nonnull
+    SslContext createNettySslContext(@Nonnull final ClientConfig config) {
+        try {
+            SslContextBuilder sslContextBuilder;
+            sslContextBuilder = GrpcSslContexts.forClient();
+            if (config.getDisableServerCertificateValidation()) {
+                sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+            } else if (config.sslRootsFilePath() != null) {
+                try (FileInputStream fileInputStream = new FileInputStream(config.sslRootsFilePath())) {
+                    sslContextBuilder.trustManager(fileInputStream);
+                }
+            }
+            return sslContextBuilder.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Nonnull
@@ -164,6 +217,22 @@ final class FlightSqlClient implements AutoCloseable {
             }
         }
         return new HeaderCallOption(metadata);
+    }
+
+    ProxyDetector createProxyDetector(@Nonnull final String targetUrl, @Nonnull final String proxyUrl) {
+        URI targetUri = URI.create(targetUrl);
+        URI proxyUri = URI.create(proxyUrl);
+        return (targetServerAddress) -> {
+            InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
+            if (targetUri.getHost().equals(targetAddress.getHostString())
+                    && targetUri.getPort() == targetAddress.getPort()) {
+                return HttpConnectProxiedSocketAddress.newBuilder()
+                        .setProxyAddress(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()))
+                        .setTargetAddress(targetAddress)
+                        .build();
+            }
+            return null;
+        };
     }
 
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {
