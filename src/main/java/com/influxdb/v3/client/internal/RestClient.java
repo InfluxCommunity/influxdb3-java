@@ -140,6 +140,26 @@ final class RestClient implements AutoCloseable {
         this.client = builder.build();
     }
 
+    @Nonnull
+    public String ping() throws InfluxDBApiException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(this.baseUrl + "ping"))
+                .GET()
+                .build();
+
+        HttpResponse<String> response;
+        String influxdbVersion;
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            influxdbVersion = response.headers().firstValue("x-influxdb-version").orElseThrow();
+        } catch (Exception e) {
+            throw new InfluxDBApiException(e);
+        }
+        handleInfluxDBApiHttpException(response);
+
+        return influxdbVersion;
+    }
+
     void request(@Nonnull final String path,
                  @Nonnull final HttpMethod method,
                  @Nullable final byte[] data,
@@ -197,6 +217,10 @@ final class RestClient implements AutoCloseable {
             throw new InfluxDBApiException(e);
         }
 
+        handleInfluxDBApiHttpException(response);
+    }
+
+    private void handleInfluxDBApiHttpException(final HttpResponse<String> response) {
         int statusCode = response.statusCode();
         if (statusCode < 200 || statusCode >= 300) {
             String reason = "";

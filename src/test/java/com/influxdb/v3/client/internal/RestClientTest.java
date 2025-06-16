@@ -476,4 +476,30 @@ public class RestClientTest extends AbstractMockServerTest {
         Assertions.assertThat(he.getMessage())
           .isEqualTo("HTTP status code: 503; Message: temporarily offline");
     }
+
+    @Test
+    public void pingReturnsVersionWhenSuccessful() throws Exception {
+        String influxDBVersion = "v2.1.0";
+        mockServer.enqueue(createResponse(200).setHeader("x-influxdb-version", influxDBVersion));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+
+        String version = restClient.ping();
+
+        Assertions.assertThat(version).isEqualTo(influxDBVersion);
+    }
+
+    @Test
+    public void pingThrowsExceptionOnFailure() {
+        mockServer.enqueue(createResponse(500).setBody("{\"message\":\"internal server error\"}"));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+
+        Assertions.assertThatThrownBy(() -> restClient.ping())
+                .isInstanceOf(InfluxDBApiException.class);
+    }
 }

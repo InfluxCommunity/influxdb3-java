@@ -290,6 +290,12 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         return queryData(query, parameters, options);
     }
 
+    @Nonnull
+    @Override
+    public String ping() {
+        return this.restClient.ping();
+    }
+
     @Override
     public void close() throws Exception {
         restClient.close();
