@@ -14,6 +14,7 @@
      `"second"` (
      in addition to the existing `"ns"`, `"us"`, `"ms"`, `"s"`).
 3. [#241](https://github.com/InfluxCommunity/influxdb3-java/pull/241): Some default options will be used from a getter.
+4. [#243](https://github.com/InfluxCommunity/influxdb3-java/pull/243): Add function to get InfluxDB version.
 
 ### Bug Fixes
 
