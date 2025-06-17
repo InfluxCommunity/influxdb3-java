@@ -454,7 +454,6 @@ public interface InfluxDBClient extends AutoCloseable {
      *
      * @return a string representing the server version. Can be null.
      */
-    @Nonnull
     String getServerVersion();
 
     /**

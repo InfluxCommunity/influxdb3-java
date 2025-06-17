@@ -155,12 +155,11 @@ final class RestClient implements AutoCloseable {
         } catch (Exception e) {
             throw new InfluxDBApiException(e);
         }
-        handleInfluxDBApiHttpException(response);
 
         return influxdbVersion;
     }
 
-    private String extractServerVersion(HttpResponse<String> response) {
+    private String extractServerVersion(final HttpResponse<String> response) {
         return response.headers()
                 .firstValue("x-influxdb-version")
                 .orElseGet(() -> {
@@ -230,10 +229,6 @@ final class RestClient implements AutoCloseable {
             throw new InfluxDBApiException(e);
         }
 
-        handleInfluxDBApiHttpException(response);
-    }
-
-    private void handleInfluxDBApiHttpException(final HttpResponse<String> response) {
         int statusCode = response.statusCode();
         if (statusCode < 200 || statusCode >= 300) {
             String reason = "";
