@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.netty.handler.codec.http.HttpMethod;
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
@@ -501,5 +502,29 @@ public class RestClientTest extends AbstractMockServerTest {
         String version = restClient.getServerVersion();
 
         Assertions.assertThat(version).isEqualTo(influxDBVersion);
+    }
+
+    @Test
+    public void getServerVersionError() {
+        MockResponse mockResponse = new MockResponse();
+        mockResponse.setBody("not json")
+                .setHeader("something", "something");
+        mockServer.enqueue(mockResponse);
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        String version = restClient.getServerVersion();
+        Assertions.assertThat(version).isEqualTo(null);
+    }
+
+    @Test
+    public void getServerVersionErrorNoBody() {
+        mockServer.enqueue(new MockResponse().setResponseCode(200));
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        String version = restClient.getServerVersion();
+        Assertions.assertThat(version).isEqualTo(null);
     }
 }

@@ -142,11 +142,12 @@ final class RestClient implements AutoCloseable {
     }
 
     public String getServerVersion() throws InfluxDBApiException {
-        HttpResponse<String> response;
         String influxdbVersion;
+        HttpResponse<String> response = request("ping", HttpMethod.GET, null, null, null);
         try {
-            response = request("ping", HttpMethod.GET, null, null, null);
             influxdbVersion = extractServerVersion(response);
+        } catch (JsonProcessingException e) {
+            influxdbVersion = null;
         } catch (Exception e) {
             throw new InfluxDBApiException(e);
         }
@@ -164,10 +165,10 @@ final class RestClient implements AutoCloseable {
     }
 
     HttpResponse<String> request(@Nonnull final String path,
-                 @Nonnull final HttpMethod method,
-                 @Nullable final byte[] data,
-                 @Nullable final Map<String, String> queryParams,
-                 @Nullable final Map<String, String> headers) {
+                                 @Nonnull final HttpMethod method,
+                                 @Nullable final byte[] data,
+                                 @Nullable final Map<String, String> queryParams,
+                                 @Nullable final Map<String, String> headers) {
 
         QueryStringEncoder uriEncoder = new QueryStringEncoder(String.format("%s%s", baseUrl, path));
         if (queryParams != null) {
