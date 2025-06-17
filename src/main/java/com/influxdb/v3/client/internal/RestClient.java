@@ -33,6 +33,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,16 +65,16 @@ final class RestClient implements AutoCloseable {
 
     private static final TrustManager[] TRUST_ALL_CERTS = new TrustManager[]{
             new X509TrustManager() {
-                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                public X509Certificate[] getAcceptedIssuers() {
                     return null;
                 }
 
                 public void checkClientTrusted(
-                        final java.security.cert.X509Certificate[] certs, final String authType) {
+                        final X509Certificate[] certs, final String authType) {
                 }
 
                 public void checkServerTrusted(
-                        final java.security.cert.X509Certificate[] certs, final String authType) {
+                        final X509Certificate[] certs, final String authType) {
                 }
             }
     };
@@ -141,27 +142,20 @@ final class RestClient implements AutoCloseable {
         this.client = builder.build();
     }
 
-    public String getServerVersion() throws InfluxDBApiException {
+    public String getServerVersion() {
         String influxdbVersion;
         HttpResponse<String> response = request("ping", HttpMethod.GET, null, null, null);
         try {
-            influxdbVersion = extractServerVersion(response);
+            influxdbVersion = response.headers().firstValue("X-Influxdb-Version").orElse(null);
+            if (influxdbVersion == null) {
+                JsonNode jsonNode = objectMapper.readTree(response.body());
+                influxdbVersion = Optional.ofNullable(jsonNode.get("version")).map(JsonNode::asText).orElse(null);
+            }
         } catch (JsonProcessingException e) {
-            influxdbVersion = null;
-        } catch (Exception e) {
-            throw new InfluxDBApiException(e);
+            return null;
         }
 
         return influxdbVersion;
-    }
-
-    private String extractServerVersion(final HttpResponse<String> response) throws JsonProcessingException {
-        String version = response.headers().firstValue("X-Influxdb-Version").orElse(null);
-        if (version == null) {
-            JsonNode jsonNode = objectMapper.readTree(response.body());
-            version = Optional.ofNullable(jsonNode.get("version")).map(JsonNode::asText).orElse(null);
-        }
-        return version;
     }
 
     HttpResponse<String> request(@Nonnull final String path,
