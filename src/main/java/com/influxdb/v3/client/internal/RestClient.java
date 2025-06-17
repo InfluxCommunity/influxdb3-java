@@ -36,6 +36,7 @@ import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -159,17 +160,13 @@ final class RestClient implements AutoCloseable {
         return influxdbVersion;
     }
 
-    private String extractServerVersion(final HttpResponse<String> response) {
-        return response.headers()
-                .firstValue("x-influxdb-version")
-                .orElseGet(() -> {
-                    try {
-                        JsonNode jsonNode = objectMapper.readTree(response.body());
-                        return jsonNode.get("version").asText();
-                    } catch (JsonProcessingException e) {
-                        throw new InfluxDBApiException(e);
-                    }
-                });
+    private String extractServerVersion(final HttpResponse<String> response) throws JsonProcessingException {
+        String version = response.headers().firstValue("X-Influxdb-Version").orElse(null);
+        if (version == null) {
+            JsonNode jsonNode = objectMapper.readTree(response.body());
+            version = Optional.ofNullable(jsonNode.get("version")).map(JsonNode::asText).orElse(null);
+        }
+        return version;
     }
 
     void request(@Nonnull final String path,

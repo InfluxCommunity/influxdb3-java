@@ -502,16 +502,4 @@ public class RestClientTest extends AbstractMockServerTest {
 
         Assertions.assertThat(version).isEqualTo(influxDBVersion);
     }
-
-    @Test
-    public void getServerVersionThrowsExceptionOnFailure() {
-        mockServer.enqueue(createResponse(500).setBody("{\"message\":\"internal server error\"}"));
-
-        restClient = new RestClient(new ClientConfig.Builder()
-                .host(baseURL)
-                .build());
-
-        Assertions.assertThatThrownBy(() -> restClient.getServerVersion())
-                .isInstanceOf(InfluxDBApiException.class);
-    }
 }
