@@ -388,14 +388,14 @@ public class E2ETest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    public void testPing() throws Exception {
+    public void testGetServerVersion() throws Exception {
         try (InfluxDBClient client = InfluxDBClient.getInstance(
                 System.getenv("TESTING_INFLUXDB_URL"),
                 System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
                 System.getenv("TESTING_INFLUXDB_DATABASE"),
                 null)) {
 
-            Assertions.assertThat(client.ping()).isNotEmpty();
+            Assertions.assertThat(client.getServerVersion()).isNotEmpty();
         }
     }
 

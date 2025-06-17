@@ -292,8 +292,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
     @Nonnull
     @Override
-    public String ping() {
-        return this.restClient.ping();
+    public String getServerVersion() {
+        return this.restClient.getServerVersion();
     }
 
     @Override

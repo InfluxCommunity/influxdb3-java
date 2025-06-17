@@ -450,12 +450,12 @@ public interface InfluxDBClient extends AutoCloseable {
                                           @Nonnull final QueryOptions options);
 
     /**
-     * Sends a ping and returns the InfluxDB version.
+     * Get InfluxDB server version.
      *
-     * @return a non-null string representing the response to the ping request
+     * @return a string representing the server version. Can be null.
      */
     @Nonnull
-    String ping();
+    String getServerVersion();
 
     /**
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying

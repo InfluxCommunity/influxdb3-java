@@ -141,7 +141,7 @@ final class RestClient implements AutoCloseable {
     }
 
     @Nonnull
-    public String ping() throws InfluxDBApiException {
+    public String getServerVersion() throws InfluxDBApiException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(this.baseUrl + "ping"))
                 .GET()
@@ -151,13 +151,26 @@ final class RestClient implements AutoCloseable {
         String influxdbVersion;
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            influxdbVersion = response.headers().firstValue("x-influxdb-version").orElseThrow();
+            influxdbVersion = extractServerVersion(response);
         } catch (Exception e) {
             throw new InfluxDBApiException(e);
         }
         handleInfluxDBApiHttpException(response);
 
         return influxdbVersion;
+    }
+
+    private String extractServerVersion(HttpResponse<String> response) {
+        return response.headers()
+                .firstValue("x-influxdb-version")
+                .orElseGet(() -> {
+                    try {
+                        JsonNode jsonNode = objectMapper.readTree(response.body());
+                        return jsonNode.get("version").asText();
+                    } catch (JsonProcessingException e) {
+                        throw new InfluxDBApiException(e);
+                    }
+                });
     }
 
     void request(@Nonnull final String path,

@@ -478,28 +478,40 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void pingReturnsVersionWhenSuccessful() throws Exception {
+    public void getServerVersionV2Successful() throws Exception {
         String influxDBVersion = "v2.1.0";
         mockServer.enqueue(createResponse(200).setHeader("x-influxdb-version", influxDBVersion));
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host(baseURL)
                 .build());
-
-        String version = restClient.ping();
+        String version = restClient.getServerVersion();
 
         Assertions.assertThat(version).isEqualTo(influxDBVersion);
     }
 
     @Test
-    public void pingThrowsExceptionOnFailure() {
+    public void getServerVersionV3Successful() throws Exception {
+        String influxDBVersion = "3.0.0";
+        mockServer.enqueue(createResponse(200).setBody("{\"version\":\"" + influxDBVersion + "\"}"));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        String version = restClient.getServerVersion();
+
+        Assertions.assertThat(version).isEqualTo(influxDBVersion);
+    }
+
+    @Test
+    public void getServerVersionThrowsExceptionOnFailure() {
         mockServer.enqueue(createResponse(500).setBody("{\"message\":\"internal server error\"}"));
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host(baseURL)
                 .build());
 
-        Assertions.assertThatThrownBy(() -> restClient.ping())
+        Assertions.assertThatThrownBy(() -> restClient.getServerVersion())
                 .isInstanceOf(InfluxDBApiException.class);
     }
 }
