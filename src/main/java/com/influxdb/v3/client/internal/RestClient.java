@@ -141,17 +141,11 @@ final class RestClient implements AutoCloseable {
         this.client = builder.build();
     }
 
-    @Nonnull
     public String getServerVersion() throws InfluxDBApiException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(this.baseUrl + "ping"))
-                .GET()
-                .build();
-
         HttpResponse<String> response;
         String influxdbVersion;
         try {
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            response = request("ping", HttpMethod.GET, null, null, null);
             influxdbVersion = extractServerVersion(response);
         } catch (Exception e) {
             throw new InfluxDBApiException(e);
@@ -169,7 +163,7 @@ final class RestClient implements AutoCloseable {
         return version;
     }
 
-    void request(@Nonnull final String path,
+    HttpResponse<String> request(@Nonnull final String path,
                  @Nonnull final HttpMethod method,
                  @Nullable final byte[] data,
                  @Nullable final Map<String, String> queryParams,
@@ -264,6 +258,8 @@ final class RestClient implements AutoCloseable {
             String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
             throw new InfluxDBApiHttpException(message, response.headers(), response.statusCode());
         }
+
+        return response;
     }
 
     private X509TrustManager getX509TrustManagerFromFile(@Nonnull final String filePath) {
