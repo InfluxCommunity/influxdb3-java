@@ -290,7 +290,6 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         return queryData(query, parameters, options);
     }
 
-    @Nonnull
     @Override
     public String getServerVersion() {
         return this.restClient.getServerVersion();
