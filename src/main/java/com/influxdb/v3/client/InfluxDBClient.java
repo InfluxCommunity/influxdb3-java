@@ -450,6 +450,15 @@ public interface InfluxDBClient extends AutoCloseable {
                                           @Nonnull final QueryOptions options);
 
     /**
+     * Get InfluxDB server version.
+     *
+     * @return a string representing the server version.
+     * Returns <code>null</code> if the server version can't be determined.
+     */
+    @Nullable
+    String getServerVersion();
+
+    /**
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
      * common operations such as writing, querying.
      *

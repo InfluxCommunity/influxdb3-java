@@ -384,6 +384,21 @@ public class E2ETest {
         }
     }
 
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testGetServerVersion() throws Exception {
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+                System.getenv("TESTING_INFLUXDB_URL"),
+                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+                System.getenv("TESTING_INFLUXDB_DATABASE"),
+                null)) {
+
+            Assertions.assertThat(client.getServerVersion()).isNotEmpty();
+        }
+    }
+
     private void assertGetDataSuccess(@Nonnull final InfluxDBClient influxDBClient) {
         influxDBClient.writePoint(
                 Point.measurement("test1")

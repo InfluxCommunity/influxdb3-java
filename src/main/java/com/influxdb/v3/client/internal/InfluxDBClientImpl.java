@@ -291,6 +291,11 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     }
 
     @Override
+    public String getServerVersion() {
+        return this.restClient.getServerVersion();
+    }
+
+    @Override
     public void close() throws Exception {
         restClient.close();
         flightSqlClient.close();
