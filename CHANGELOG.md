@@ -1,5 +1,9 @@
 ## 1.3.0 [unreleased]
 
+### Features
+
+1. [#250](https://github.com/InfluxCommunity/influxdb3-java/pull/250) Upgrade Netty version to 4.2.3.Final.
+
 ## 1.2.0 [2025-06-26]
 
 ### Features
