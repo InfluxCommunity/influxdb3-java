@@ -106,6 +106,7 @@ public final class Point {
 
   /**
    *  Get measurement name.
+   *  It will return null when querying with SQL Query.
    *
    * @return Measurement name
    */

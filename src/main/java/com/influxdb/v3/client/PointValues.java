@@ -71,6 +71,7 @@ public final class PointValues {
 
   /**
    *  Get measurement name.
+   *  It will return null when querying with SQL Query.
    *
    * @return Measurement name
    */
