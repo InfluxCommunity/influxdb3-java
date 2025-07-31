@@ -1,0 +1,143 @@
+package com.influxdb.v3.durable;
+
+import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.config.ClientConfig;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
+import java.util.logging.Logger;
+
+/**
+ * And example pool for InfluxDBClient clients.
+ * <p>
+ * All clients handled by the pool will share the same basic configuration.
+ */
+public class InfluxClientPool implements AutoCloseable {
+
+  Logger logger = Logger.getLogger(InfluxClientPool.class.getName());
+
+  private static int DEFAULT_MAX_SIZE = 4;
+
+  // Container for clients waiting to be used.
+  Stack<InfluxDBClient> idlers = new Stack<>();
+  // Container for clients currently in use.
+  List<InfluxDBClient> runners = new ArrayList<>();
+
+
+
+  int maxSize;
+
+  // The shared configuration.
+  ClientConfig clientConfig;
+
+  /**
+   * Basic Constructor, uses DEFAULT_MAX_SIZE for maxSize.
+   * <p>
+   * @param clientConfig - the standard configuration for all clients managed by the pool.
+   */
+  public InfluxClientPool(ClientConfig clientConfig) {
+    this(clientConfig, DEFAULT_MAX_SIZE);
+  }
+
+  /**
+   * Basic constructor.
+   * <p>
+   * @param clientConfig - the standard configuration for all clients managed by the pool.
+   */
+  public InfluxClientPool(ClientConfig clientConfig, int maxSize) {
+    this.clientConfig = clientConfig;
+    this.maxSize = maxSize;
+  }
+
+  /**
+   * Checks for a free client in the idle stack.  If the idle stack
+   * is empty, it generates a new client.
+   *
+   * @return - An InfluxDBClient ready for use.
+   */
+  public synchronized InfluxDBClient borrowClient() {
+    InfluxDBClient client;
+    if (idlers.isEmpty()) {
+      client = InfluxDBClient.getInstance(clientConfig);
+      runners.add(client);
+      if (activeCount() >= maxSize) {
+        logger.severe("Max pool size " + maxSize + " exceeded: " + "actives "
+          + activeCount() + " idles " + idleCount() +
+          " (hint: Is there a process hogging zombie clients?)");
+      }
+    } else {
+      client = idlers.pop();
+      runners.add(client);
+    }
+    logger.info("Lending client " + client.hashCode());
+    return client;
+  }
+
+  /**
+   * Invalidate a client if some unwanted exception state is encountered,
+   * or if for some other reason it is unusable or no longer needed.
+   *
+   * @param client - client to be closed and flagged for garbage collection.
+   */
+  public synchronized void invalidateClient(InfluxDBClient client) {
+    runners.remove(client);
+    try {
+      client.close();
+    } catch (Exception e) {
+      logger.warning("Exception occurred when invalidating client " +
+        client.hashCode() + ": " + e.getMessage());
+    }
+  }
+
+  /**
+   * Return the client to the idle stack within the pool
+   * when it is no longer needed but can still be reused.
+   *
+   * @param client - the client to be returned.
+   */
+  public synchronized void returnClient(InfluxDBClient client) {
+    logger.info("Returning client " + client.hashCode());
+    runners.remove(client);
+    idlers.push(client);
+  }
+
+  /**
+   * Handle closing all resources.
+   * <p>
+   * First return active clients to the idle stack.
+   * Then close all clients in the idle stack.
+   *
+   * @throws Exception
+   */
+  @Override
+  public synchronized void close() throws Exception {
+    logger.info("Closing client pool");
+    int stillActiveCount = activeCount();
+    for(int i = stillActiveCount - 1; i >= 0; i--){
+      returnClient(runners.get(i));
+    }
+    while(!idlers.isEmpty()){
+      try(InfluxDBClient client = idlers.pop()){
+        logger.info("Closing client " + client.hashCode());
+      } catch (IllegalStateException e){
+        StringBuilder msg = new StringBuilder("IllegalStateException when closing client. ");
+        msg.append(e.getMessage());
+        if (e.getMessage().contains("leaked")) {
+          msg.append(" (hint: were all streams returned from queries closed correctly?)");
+        }
+        logger.warning(msg.toString());
+      } catch (Exception e) { // client close should be automatic
+        logger.warning("Exception when closing client " + e.getMessage());
+      }
+    }
+  }
+
+  public int activeCount() {
+    return runners.size();
+  }
+
+  public int idleCount() {
+    return idlers.size();
+  }
+}
