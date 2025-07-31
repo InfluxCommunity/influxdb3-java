@@ -1,11 +1,5 @@
 package com.influxdb.v3.durable;
 
-import com.influxdb.v3.client.InfluxDBApiException;
-import com.influxdb.v3.client.InfluxDBClient;
-import com.influxdb.v3.client.Point;
-import com.influxdb.v3.client.PointValues;
-import com.influxdb.v3.client.config.ClientConfig;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -15,6 +9,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+
+import com.influxdb.v3.client.InfluxDBApiException;
+import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.Point;
+import com.influxdb.v3.client.PointValues;
+import com.influxdb.v3.client.config.ClientConfig;
 
 /**
  * The example depends on the "influxdb3-java" module and this module should be built first
@@ -37,29 +37,32 @@ import java.util.stream.Stream;
  * and queries.  Furthermore, while four processing threads are running, the pool need only instantiate three
  * clients, if handled properly.
  */
-public class DurableExample {
+public final class DurableExample {
 
-  private static final Logger logger = Logger.getLogger(DurableExample.class.getName());
+  static Logger logger = Logger.getLogger(DurableExample.class.getName());
 
   public static ClientConfig clientConfig;
 
+  private DurableExample() {
+  }
+
   public static void setup() {
 
-    String INFLUX_HOST = System.getenv("INFLUX_HOST") != null
+    String influxHost = System.getenv("INFLUX_HOST") != null
       ? System.getenv("INFLUX_HOST") : "http://localhost:8181";
-    String INFLUX_TOKEN = System.getenv("INFLUX_TOKEN") != null
+    String influxToken = System.getenv("INFLUX_TOKEN") != null
       ? System.getenv("INFLUX_TOKEN") : "my-token";
-    String INFLUX_DB = System.getenv("INFLUX_DATABASE") != null
+    String influxDatabase = System.getenv("INFLUX_DATABASE") != null
       ? System.getenv("INFLUX_DATABASE") : "my-db";
 
     clientConfig = new ClientConfig.Builder()
-      .host(INFLUX_HOST)
-      .token(INFLUX_TOKEN.toCharArray())
-      .database(INFLUX_DB)
+      .host(influxHost)
+      .token(influxToken.toCharArray())
+      .database(influxDatabase)
       .build();
   }
 
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
 
     setup();
 
@@ -85,7 +88,7 @@ public class DurableExample {
     String badQuery = String.format("SELECT * FOO %s ORDER BY time DESC", Sensor.class.getSimpleName());
 
     // Set up the autoclosable client pool
-    try(InfluxClientPool clientPool = new InfluxClientPool(clientConfig)){
+    try (InfluxClientPool clientPool = new InfluxClientPool(clientConfig)) {
 
       // thread controller
       final ExecutorService executors = Executors.newFixedThreadPool(5);
@@ -93,7 +96,7 @@ public class DurableExample {
       // an error free write thread
       final Runnable writeOK = () -> {
         int count = 0;
-        while(!shutdownAll.get()) {
+        while (!shutdownAll.get()) {
           List<Point> points = new ArrayList<>();
           for (Sensor sensor : sensors) {
             points.add(sensor.randomPoint().toPoint());
@@ -101,7 +104,8 @@ public class DurableExample {
 
           // borrow then return a client
           InfluxDBClient client = clientPool.borrowClient();
-          logger.info(" [writeTaskPointsOK " + count + "] Writing " + points.size() + " points with client " + client.hashCode());
+          logger.info(" [writeTaskPointsOK " + count + "] Writing " + points.size()
+            + " points with client " + client.hashCode());
           client.writePoints(points);
           clientPool.returnClient(client);
 
@@ -116,7 +120,7 @@ public class DurableExample {
         // delay start by 2 seconds
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
         int count = 0;
-        while(!shutdownAll.get()) {
+        while (!shutdownAll.get()) {
           List<String> lps = new ArrayList<>();
           for (Sensor sensor : sensors) {
             // every fourth write attempt uses an invalid Line protocol line
@@ -130,7 +134,8 @@ public class DurableExample {
           // borrow a client from the pool
           InfluxDBClient client = clientPool.borrowClient();
           try {
-            logger.info("[writeErrorRecover " + count +"] Writing " + lps.size() + " lps with client " + client.hashCode());
+            logger.info("[writeErrorRecover " + count + "] Writing " + lps.size()
+              + " lps with client " + client.hashCode());
             client.writeRecords(lps);
           } catch (InfluxDBApiException ie) {
             logger.warning("[writeErrorRecover " + count + "] Write Error " + ie.getMessage());
@@ -149,13 +154,14 @@ public class DurableExample {
         // delay start by 4 seconds
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(4));
         int count = 0;
-        while(!shutdownAll.get()) {
+        while (!shutdownAll.get()) {
           // borrow a client from the pool
           InfluxDBClient client = clientPool.borrowClient();
 
           // initiate the query and process the results
-          try(Stream<PointValues> pvs = client.queryPoints(query)) {
-            logger.info("[queryOK " + count + "] with client " + client.hashCode() + ": query returned " + pvs.toArray().length + " records");
+          try (Stream<PointValues> pvs = client.queryPoints(query)) {
+            logger.info("[queryOK " + count + "] with client " + client.hashCode()
+              + ": query returned " + pvs.toArray().length + " records");
           } catch (Exception e) {
             logger.severe("[queryOK " + count + "] unexpected query Error " + e.getMessage());
           } finally {
@@ -173,17 +179,19 @@ public class DurableExample {
         // delay start by 6 seconds
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(6));
         int count = 0;
-        while(!shutdownAll.get()) {
+        while (!shutdownAll.get()) {
           // borrow a client from the pool
           InfluxDBClient client = clientPool.borrowClient();
           // every third query attempt results in an error
           String effectiveQuery = count > 0 && count % 3 == 0 ? badQuery : query;
 
           // attempt to execute the query and process the results
-          try(Stream<PointValues> pvs = client.queryPoints(effectiveQuery)) {
-            logger.info("[queryErrorRecover " + count + "] with client " + client.hashCode() + ": query returned " + pvs.toArray().length + " records");
+          try (Stream<PointValues> pvs = client.queryPoints(effectiveQuery)) {
+            logger.info("[queryErrorRecover " + count + "] with client " + client.hashCode()
+              + ": query returned " + pvs.toArray().length + " records");
           } catch (Exception e) {
-            logger.warning("[queryErrorRecover " + count + "] with client " + client.hashCode() + ": query Error " + e.getMessage());
+            logger.warning("[queryErrorRecover " + count + "] with client " + client.hashCode()
+              + ": query Error " + e.getMessage());
           } finally {
             // ensure the client is returned to the pool even after an error
             clientPool.returnClient(client);
@@ -199,9 +207,9 @@ public class DurableExample {
         LockSupport.parkNanos(TimeUnit.MINUTES.toNanos(runTime));
         shutdownAll.set(true);
         logger.info(" [timer] Shutting down");
-        logger.info("clientPool clients: active " +
-          clientPool.activeCount() +
-          " idle: " + clientPool.idleCount());
+        logger.info("clientPool clients: active "
+          + clientPool.activeCount()
+          + " idle: " + clientPool.idleCount());
         executors.shutdown();
       };
 

@@ -1,8 +1,8 @@
 package com.influxdb.v3.durable;
 
-import com.influxdb.v3.client.Point;
-
 import java.time.Instant;
+
+import com.influxdb.v3.client.Point;
 
 /**
  * A generic Sensor.
@@ -14,7 +14,7 @@ public class Sensor {
   String model;
   String location;
 
-  public Sensor(String name, String model, String location) {
+  public Sensor(final String name, final String model, final String location) {
     this.id = Math.round(Math.random() * 1000000);
     this.name = name;
     this.model = model;
@@ -48,15 +48,15 @@ public class Sensor {
    * @param timestamp - a timestamp for the data point.  If null returns now.
    * @return A Sensor.DataPoint
    */
-  public Sensor.DataPoint randomPoint(Instant timestamp) {
+  public Sensor.DataPoint randomPoint(final Instant timestamp) {
     return new Sensor.DataPoint(this, randomAccel(), randomVel(), randomBearing(),
       randomAccel(), randomVel(), randomBearing(), timestamp);
   }
 
   /**
-   * Creates a random data point with Instant.now()
+   * Creates a random data point with Instant.now().
    *
-   * @return A Sensor.DataPoint
+   * @return A Sensor.DataPoint.
    */
   public Sensor.DataPoint randomPoint() {
     return randomPoint(Instant.now());
@@ -86,24 +86,24 @@ public class Sensor {
     double vBearing;
     Instant timestamp;
 
-    String lpFormat = "%s,id=%s,location=%s,model=%s,name=%s " +
-      "hAccel=%.6f,hBearing=%.6f,hVel=%.6f,vAccel=%.6f,vBearing=%.6f,vVel=%.6f %d";
+    String lpFormat = "%s,id=%s,location=%s,model=%s,name=%s "
+      + "hAccel=%.6f,hBearing=%.6f,hVel=%.6f,vAccel=%.6f,vBearing=%.6f,vVel=%.6f %d";
 
     /**
      * Used for illustrating client fail over when incorrect line protocol values are sent.
      */
-    String lpFormatBroken = "%s,id=%s,location=%s,model=%s,name=%s " +
-      "hAccel=,hBearing=%.6f,hVel=%.6f,vAccel=%.6f,vBearing=%.6f,vVel=%.6f %d";
+    String lpFormatBroken = "%s,id=%s,location=%s,model=%s,name=%s "
+      + "hAccel=,hBearing=%.6f,hVel=%.6f,vAccel=%.6f,vBearing=%.6f,vVel=%.6f %d";
 
 
-    public DataPoint(Sensor sensor,
-                     double hAccel,
-                     double hVel,
-                     double hBearing,
-                     double vAccel,
-                     double vVel,
-                     double vBearing,
-                     Instant timestamp) {
+    public DataPoint(final Sensor sensor,
+                     final double hAccel,
+                     final double hVel,
+                     final double hBearing,
+                     final double vAccel,
+                     final double vVel,
+                     final double vBearing,
+                     final Instant timestamp) {
       this.sensor = sensor;
       this.hAccel = hAccel;
       this.hVel = hVel;
