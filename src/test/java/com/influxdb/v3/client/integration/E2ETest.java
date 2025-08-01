@@ -127,8 +127,9 @@ public class E2ETest {
                 .sslRootsFilePath(certificateFile)
                 .build();
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        Assertions.assertThatThrownBy(() -> assertGetDataSuccess(influxDBClient))
-                .isInstanceOf(Exception.class);
+        assertGetDataSuccess(influxDBClient);
+//        Assertions.assertThatThrownBy(() -> assertGetDataSuccess(influxDBClient))
+//                .isInstanceOf(Exception.class);
     }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")

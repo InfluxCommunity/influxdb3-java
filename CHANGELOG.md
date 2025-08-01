@@ -4,6 +4,7 @@
 
 1. [#250](https://github.com/InfluxCommunity/influxdb3-java/pull/250) Upgrade Netty version to 4.2.3.Final.
 2. [#251](https://github.com/InfluxCommunity/influxdb3-java/pull/251) Add comment warning null when calling getMeasurement function.
+3. [#252](https://github.com/InfluxCommunity/influxdb3-java/pull/252) Run integration tests against a locally started InfluxDB 3 Core server. 
 
 ## 1.2.0 [2025-06-26]
 
