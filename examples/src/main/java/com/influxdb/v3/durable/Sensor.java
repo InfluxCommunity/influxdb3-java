@@ -143,7 +143,7 @@ public class Sensor {
     }
 
     /**
-     * Converts a SensorDataPoint to an InfluxDBClient v3 Point.
+     * Converts a Sensor.DataPoint to an InfluxDBClient v3 Point.
      *
      * @return - an InfluxDBClient v3 Point.
      */
@@ -163,7 +163,7 @@ public class Sensor {
     }
 
     /**
-     * Convert the SensorDataPoint to a valid Line protocol string.
+     * Convert the Sensor.DataPoint to a valid Line protocol string.
      *
      * @return - a valid Line protocol string.
      */
