@@ -55,5 +55,5 @@ export INFLUX_DATABASE=<TARGET_DATABASE>
 - Run with maven
 
 ```bash
-$ MAVEN_OPTS="--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED" mvn compile exec:java -Dexec.main="com.influxdb.v3.durable.DurableExample"
+MAVEN_OPTS="--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED" mvn compile exec:java -Dexec.main="com.influxdb.v3.durable.DurableExample"
 ```
