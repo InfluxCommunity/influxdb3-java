@@ -40,3 +40,20 @@ The underlying write (HTTP/REST) and query (Apache arrow Flight/GRPC) transports
 - [DurableExample](src/main/java/com/influxdb/v3/durable/DurableExample.java)
 - [InfluxClientPool](src/main/java/com/influxdb/v3/durable/InfluxClientPool.java)
 
+### Command line run
+
+- Set environment variables
+
+```bash
+
+export INFLUX_HOST=<INFLUX_HOST_URL>
+export INFLUX_TOKEN=<ORGANIZATION_TOKEN>
+export INFLUX_DATABASE=<TARGET_DATABASE>
+
+```
+
+- Run with maven
+
+```bash
+$ MAVEN_OPTS="--add-opens=java.base/java.nio=org.apache.arrow.memory.core,ALL-UNNAMED" mvn compile exec:java -Dexec.main="com.influxdb.v3.durable.DurableExample"
+```
