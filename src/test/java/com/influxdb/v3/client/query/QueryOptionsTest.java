@@ -36,7 +36,6 @@ import javax.annotation.Nonnull;
 import io.grpc.Deadline;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.Server;
 import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.CallOptions;
 import org.apache.arrow.flight.CallStatus;
