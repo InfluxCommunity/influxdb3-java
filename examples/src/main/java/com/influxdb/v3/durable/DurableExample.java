@@ -125,10 +125,16 @@ public final class DurableExample {
 
           // borrow then return a client
           InfluxDBClient client = clientPool.borrowClient();
-          logger.info(" [writeTaskPointsOK " + count + "] Writing " + points.size()
-            + " points with client " + client.hashCode());
-          client.writePoints(points);
-          clientPool.returnClient(client);
+          try {
+            logger.info(" [writeTaskPointsOK " + count + "] Writing " + points.size()
+              + " points with client " + client.hashCode());
+            client.writePoints(points);
+          } catch (Exception e) {
+            logger.severe(" [writeTaskPointsOK " + count + "] Unexpected Error writing points "
+              + e.getMessage());
+          } finally {
+            clientPool.returnClient(client);
+          }
 
           LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(10));
           count++;

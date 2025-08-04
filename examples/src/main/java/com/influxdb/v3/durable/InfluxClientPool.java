@@ -81,6 +81,9 @@ public class InfluxClientPool implements AutoCloseable {
       client = InfluxDBClient.getInstance(clientConfig);
       runners.add(client);
       if (activeCount() >= maxSize) {
+        // N.B. this is just an example implementation.
+        // For simplicity this _example_ will allow the maxSize value to be exceeded with a severe warning.
+        // In a production environment maxSize should be managed appropriately.
         logger.severe("Max pool size " + maxSize + " exceeded: " + "actives "
           + activeCount() + " idles " + idleCount()
           + " (hint: Is there a process hogging zombie clients?)");
@@ -152,11 +155,11 @@ public class InfluxClientPool implements AutoCloseable {
     }
   }
 
-  public int activeCount() {
+  public synchronized int activeCount() {
     return runners.size();
   }
 
-  public int idleCount() {
+  public synchronized int idleCount() {
     return idlers.size();
   }
 }
