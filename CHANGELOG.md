@@ -5,6 +5,10 @@
 1. [#250](https://github.com/InfluxCommunity/influxdb3-java/pull/250) Upgrade Netty version to 4.2.3.Final.
 2. [#251](https://github.com/InfluxCommunity/influxdb3-java/pull/251) Add comment warning null when calling getMeasurement function.
 
+### Documentation
+
+1. [#253](https://github.com/InfluxCommunity/influxdb3-java/pull/253) New Durable example showing client reuse for better resource management.
+
 ## 1.2.0 [2025-06-26]
 
 ### Features

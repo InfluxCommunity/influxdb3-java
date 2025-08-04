@@ -21,6 +21,8 @@
  */
 package com.influxdb.v3.client.query;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -63,6 +65,13 @@ import com.influxdb.v3.client.internal.GrpcCallOptions;
 class QueryOptionsTest {
 
     private ClientConfig.Builder configBuilder;
+
+    private static int findFreePort() throws IOException {
+        ServerSocket s = new ServerSocket(0);
+        int port = s.getLocalPort();
+        s.close();
+        return port;
+    }
 
     @BeforeEach
     void before() {
@@ -109,7 +118,8 @@ class QueryOptionsTest {
 
     @Test
     void setInboundMessageSizeSmall() throws Exception {
-        URI uri = URI.create("http://127.0.0.1:33333");
+        int freePort = findFreePort();
+        URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 100;
         try (VectorSchemaRoot vectorSchemaRoot = generateVectorSchemaRoot(10, rowCount);
              BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
@@ -147,7 +157,8 @@ class QueryOptionsTest {
 
     @Test
     void setInboundMessageSizeLarge() throws Exception {
-        URI uri = URI.create("http://127.0.0.1:33333");
+        int freePort = findFreePort();
+        URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 100;
         try (VectorSchemaRoot vectorSchemaRoot = generateVectorSchemaRoot(10, rowCount);
              BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
