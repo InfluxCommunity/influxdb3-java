@@ -1,4 +1,16 @@
-## 1.2.0 [unreleased]
+## 1.3.0 [unreleased]
+
+### Features
+
+1. [#250](https://github.com/InfluxCommunity/influxdb3-java/pull/250) Upgrade Netty version to 4.2.3.Final.
+2. [#251](https://github.com/InfluxCommunity/influxdb3-java/pull/251) Add comment warning null when calling getMeasurement function.
+3. [#252](https://github.com/InfluxCommunity/influxdb3-java/pull/252) Run integration tests against a locally started InfluxDB 3 Core server.
+
+### Documentation
+
+1. [#253](https://github.com/InfluxCommunity/influxdb3-java/pull/253) New Durable example showing client reuse for better resource management.
+
+## 1.2.0 [2025-06-26]
 
 ### Features
 
@@ -14,6 +26,7 @@
      `"second"` (
      in addition to the existing `"ns"`, `"us"`, `"ms"`, `"s"`).
 3. [#241](https://github.com/InfluxCommunity/influxdb3-java/pull/241): Some default options will be used from a getter.
+4. [#243](https://github.com/InfluxCommunity/influxdb3-java/pull/243): Add function to get InfluxDB version.
 
 ### Bug Fixes
 

@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.netty.handler.codec.http.HttpMethod;
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
@@ -475,5 +476,55 @@ public class RestClientTest extends AbstractMockServerTest {
         Assertions.assertThat(he.statusCode()).isEqualTo(503);
         Assertions.assertThat(he.getMessage())
           .isEqualTo("HTTP status code: 503; Message: temporarily offline");
+    }
+
+    @Test
+    public void getServerVersionV2Successful() throws Exception {
+        String influxDBVersion = "v2.1.0";
+        mockServer.enqueue(createResponse(200).setHeader("x-influxdb-version", influxDBVersion));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        String version = restClient.getServerVersion();
+
+        Assertions.assertThat(version).isEqualTo(influxDBVersion);
+    }
+
+    @Test
+    public void getServerVersionV3Successful() throws Exception {
+        String influxDBVersion = "3.0.0";
+        mockServer.enqueue(createResponse(200).setBody("{\"version\":\"" + influxDBVersion + "\"}"));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        String version = restClient.getServerVersion();
+
+        Assertions.assertThat(version).isEqualTo(influxDBVersion);
+    }
+
+    @Test
+    public void getServerVersionError() {
+        MockResponse mockResponse = new MockResponse();
+        mockResponse.setBody("not json")
+                .setHeader("something", "something");
+        mockServer.enqueue(mockResponse);
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        String version = restClient.getServerVersion();
+        Assertions.assertThat(version).isEqualTo(null);
+    }
+
+    @Test
+    public void getServerVersionErrorNoBody() {
+        mockServer.enqueue(new MockResponse().setResponseCode(200));
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        String version = restClient.getServerVersion();
+        Assertions.assertThat(version).isEqualTo(null);
     }
 }

@@ -28,7 +28,7 @@
     <groupId>com.influxdb</groupId>
     <artifactId>influxdb3-java</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.3.0-SNAPSHOT</version>
 
     <name>InfluxDB 3 Java Client</name>
     <description>
@@ -73,11 +73,11 @@
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
         </repository>
         <site>
             <id>GitHubPages</id>
@@ -88,9 +88,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <netty-handler.version>4.2.2.Final</netty-handler.version>
         <junit-jupiter.version>5.13.4</junit-jupiter.version>
         <junit-platform.version>1.13.4</junit-platform.version>
+        <netty-handler.version>4.2.3.Final</netty-handler.version>
 
         <plugin.surefire.version>3.5.3</plugin.surefire.version>
         <plugin.jacoco.version>0.8.12</plugin.jacoco.version>
@@ -217,13 +217,13 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
-            <version>2.0.70.Final</version>
+            <version>2.0.72.Final</version>
         </dependency>
 
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>4.31.0</version>
+            <version>4.31.1</version>
         </dependency>
 
         <dependency>
@@ -305,7 +305,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>2.0.16</version>
+            <version>2.0.17</version>
             <scope>test</scope>
         </dependency>
 

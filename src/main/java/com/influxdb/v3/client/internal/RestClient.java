@@ -33,9 +33,11 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -63,16 +65,16 @@ final class RestClient implements AutoCloseable {
 
     private static final TrustManager[] TRUST_ALL_CERTS = new TrustManager[]{
             new X509TrustManager() {
-                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                public X509Certificate[] getAcceptedIssuers() {
                     return null;
                 }
 
                 public void checkClientTrusted(
-                        final java.security.cert.X509Certificate[] certs, final String authType) {
+                        final X509Certificate[] certs, final String authType) {
                 }
 
                 public void checkServerTrusted(
-                        final java.security.cert.X509Certificate[] certs, final String authType) {
+                        final X509Certificate[] certs, final String authType) {
                 }
             }
     };
@@ -140,11 +142,27 @@ final class RestClient implements AutoCloseable {
         this.client = builder.build();
     }
 
-    void request(@Nonnull final String path,
-                 @Nonnull final HttpMethod method,
-                 @Nullable final byte[] data,
-                 @Nullable final Map<String, String> queryParams,
-                 @Nullable final Map<String, String> headers) {
+    public String getServerVersion() {
+        String influxdbVersion;
+        HttpResponse<String> response = request("ping", HttpMethod.GET, null, null, null);
+        try {
+            influxdbVersion = response.headers().firstValue("X-Influxdb-Version").orElse(null);
+            if (influxdbVersion == null) {
+                JsonNode jsonNode = objectMapper.readTree(response.body());
+                influxdbVersion = Optional.ofNullable(jsonNode.get("version")).map(JsonNode::asText).orElse(null);
+            }
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+
+        return influxdbVersion;
+    }
+
+    HttpResponse<String> request(@Nonnull final String path,
+                                 @Nonnull final HttpMethod method,
+                                 @Nullable final byte[] data,
+                                 @Nullable final Map<String, String> queryParams,
+                                 @Nullable final Map<String, String> headers) {
 
         QueryStringEncoder uriEncoder = new QueryStringEncoder(String.format("%s%s", baseUrl, path));
         if (queryParams != null) {
@@ -235,6 +253,8 @@ final class RestClient implements AutoCloseable {
             String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
             throw new InfluxDBApiHttpException(message, response.headers(), response.statusCode());
         }
+
+        return response;
     }
 
     private X509TrustManager getX509TrustManagerFromFile(@Nonnull final String filePath) {

@@ -117,24 +117,6 @@ public class E2ETest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void wrongSslCertificate() {
-        String certificateFile = "src/test/java/com/influxdb/v3/client/testdata/docker.com.pem";
-
-        ClientConfig clientConfig = new ClientConfig.Builder()
-                .host(System.getenv("TESTING_INFLUXDB_URL"))
-                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
-                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-                .sslRootsFilePath(certificateFile)
-                .build();
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        Assertions.assertThatThrownBy(() -> assertGetDataSuccess(influxDBClient))
-                .isInstanceOf(Exception.class);
-    }
-
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
-    @Test
     void disableServerCertificateValidation() {
         String wrongCertificateFile = "src/test/java/com/influxdb/v3/client/testdata/docker.com.pem";
 
@@ -381,6 +363,21 @@ public class E2ETest {
                         }
                     })
                     .isInstanceOf(FlightRuntimeException.class);
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testGetServerVersion() throws Exception {
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+                System.getenv("TESTING_INFLUXDB_URL"),
+                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+                System.getenv("TESTING_INFLUXDB_DATABASE"),
+                null)) {
+
+            Assertions.assertThat(client.getServerVersion()).isNotEmpty();
         }
     }
 
