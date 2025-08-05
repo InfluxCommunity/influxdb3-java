@@ -11,6 +11,11 @@ jobs:
         default: ""
     docker:
       - image: << parameters.maven-image >>
+      - image: influxdb:3-core
+        environment:
+          - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
+          - INFLUXDB3_OBJECT_STORE=file
+          - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
     steps:
       - checkout
       - restore_cache:
@@ -18,6 +23,13 @@ jobs:
           keys:
             - &cache-key maven-cache_v1-<< parameters.maven-image >>-{{ checksum "pom.xml" }}
             - maven-cache_v3-<< parameters.maven-image >>-
+      - run:
+          name: Setup InfluxDB service
+          command: |
+            ./scripts/influxdb-setup.sh \
+              --export-url-as TESTING_INFLUXDB_URL \
+              --export-db-as TESTING_INFLUXDB_DATABASE \
+              --export-token-as TESTING_INFLUXDB_TOKEN
       - run:
           name: "Running tests"
           command: |
