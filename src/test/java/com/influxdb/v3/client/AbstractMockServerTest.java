@@ -22,11 +22,13 @@
 package com.influxdb.v3.client;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
+import mockwebserver3.MockResponse;
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -50,32 +52,42 @@ public abstract class AbstractMockServerTest {
 
     @AfterEach
     protected void shutdownMockServer() throws IOException {
-        mockServer.shutdown();
+        mockServer.close();
     }
 
     @Nonnull
     protected MockResponse createEmptyResponse(final int responseCode) {
-        return new MockResponse().setResponseCode(responseCode);
+        return new MockResponse.Builder().code(responseCode).build();
+    }
+
+    @Nonnull
+    protected MockResponse createResponse(final int responseCode,
+                                          @Nullable final Map<String, String> headers,
+                                          @Nullable final String body) {
+
+      MockResponse.Builder mrb = new MockResponse.Builder();
+      mrb.code(responseCode);
+      Map<String, String> effectiveHeaders = new HashMap<>(Map.of("Content-Type", "text/csv; charset=utf-8",
+        "Date", "Tue, 26 Jun 2018 13:15:01 GMT"));
+      if (headers != null) {
+        effectiveHeaders.putAll(headers);
+      }
+      for (Map.Entry<String, String> entry : effectiveHeaders.entrySet()) {
+        mrb.addHeader(entry.getKey(), entry.getValue());
+      }
+      if (body != null) {
+        mrb.body(body);
+      }
+
+      return mrb.build();
     }
 
     @Nonnull
     protected MockResponse createResponse(final int responseCode) {
 
-        return createResponseWithHeaders(responseCode, Map.of(
-                "Content-Type", "text/csv; charset=utf-8",
-                "Date", "Tue, 26 Jun 2018 13:15:01 GMT"
-        ));
-    }
-
-    @Nonnull
-    protected MockResponse createResponseWithHeaders(final int responseCode, final Map<String, String> headers) {
-
-        final MockResponse response = new MockResponse()
-                .setResponseCode(responseCode);
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            response.addHeader(entry.getKey(), entry.getValue());
-        }
-
-        return response;
+        return createResponse(responseCode, Map.of(
+          "Content-Type", "text/csv; charset=utf-8",
+          "Date", "Tue, 26 Jun 2018 13:15:01 GMT"
+        ), null);
     }
 }

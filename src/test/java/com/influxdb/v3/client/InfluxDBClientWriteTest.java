@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import mockwebserver3.RecordedRequest;
 import okhttp3.HttpUrl;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -103,8 +103,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getRequestUrl().queryParameter("bucket")).isEqualTo("my-database");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().queryParameter("bucket")).isEqualTo("my-database");
     }
 
     @Test
@@ -116,8 +116,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getRequestUrl().queryParameter("bucket")).isEqualTo("my-database-2");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().queryParameter("bucket")).isEqualTo("my-database-2");
     }
 
     @Test
@@ -144,8 +144,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("ns");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().queryParameter("precision")).isEqualTo("ns");
     }
 
     @Test
@@ -157,8 +157,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("s");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().queryParameter("precision")).isEqualTo("s");
     }
 
     @Test
@@ -170,9 +170,9 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getHeader("Content-Type")).isEqualTo("text/plain; charset=utf-8");
-        assertThat(request.getHeader("Content-Encoding")).isNotEqualTo("gzip");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getHeaders().get("Content-Type")).isEqualTo("text/plain; charset=utf-8");
+        assertThat(request.getHeaders().get("Content-Encoding")).isNotEqualTo("gzip");
     }
 
     @Test
@@ -184,9 +184,9 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getHeader("Content-Type")).isEqualTo("text/plain; charset=utf-8");
-        assertThat(request.getHeader("Content-Encoding")).isEqualTo("gzip");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getHeaders().get("Content-Type")).isEqualTo("text/plain; charset=utf-8");
+        assertThat(request.getHeaders().get("Content-Encoding")).isEqualTo("gzip");
     }
 
     @Test
@@ -199,10 +199,10 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getRequestUrl().encodedPath()).isEqualTo("/api/v2/write");
-        assertThat(request.getRequestUrl().queryParameter("no_sync")).isNull();
-        assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("ns");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().encodedPath()).isEqualTo("/api/v2/write");
+        assertThat(request.getUrl().queryParameter("no_sync")).isNull();
+        assertThat(request.getUrl().queryParameter("precision")).isEqualTo("ns");
 
     }
 
@@ -216,10 +216,10 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getRequestUrl().encodedPath()).isEqualTo("/api/v3/write_lp");
-        assertThat(request.getRequestUrl().queryParameter("no_sync")).isEqualTo("true");
-        assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("nanosecond");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().encodedPath()).isEqualTo("/api/v3/write_lp");
+        assertThat(request.getUrl().queryParameter("no_sync")).isEqualTo("true");
+        assertThat(request.getUrl().queryParameter("precision")).isEqualTo("nanosecond");
     }
 
     @Test
@@ -234,10 +234,10 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getRequestUrl().encodedPath()).isEqualTo("/api/v3/write_lp");
-        assertThat(request.getRequestUrl().queryParameter("no_sync")).isEqualTo("true");
-        assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("millisecond");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().encodedPath()).isEqualTo("/api/v3/write_lp");
+        assertThat(request.getUrl().queryParameter("no_sync")).isEqualTo("true");
+        assertThat(request.getUrl().queryParameter("precision")).isEqualTo("millisecond");
 
         assertThat(ae.statusCode()).isEqualTo(HttpResponseStatus.METHOD_NOT_ALLOWED.code());
         assertThat(ae.getMessage()).contains("Server doesn't support write with NoSync=true"
@@ -376,7 +376,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
                                   final String expectedPrecision, final boolean expectedNoSync,
                                   final boolean expectedGzip) throws InterruptedException {
         RecordedRequest request = assertThatServerRequested();
-        HttpUrl requestUrl = request.getRequestUrl();
+        HttpUrl requestUrl = request.getUrl();
         assertThat(requestUrl).isNotNull();
         assertThat(requestUrl.encodedPath()).isEqualTo(expectedPath);
         if (expectedNoSync) {
@@ -391,9 +391,9 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             assertThat(requestUrl.queryParameter("no_sync")).isNull();
         }
         if (expectedGzip) {
-            assertThat(request.getHeader("Content-Encoding")).isEqualTo("gzip");
+            assertThat(request.getHeaders().get("Content-Encoding")).isEqualTo("gzip");
         } else {
-            assertThat(request.getHeader("Content-Encoding")).isNull();
+            assertThat(request.getHeaders().get("Content-Encoding")).isNull();
         }
     }
 
@@ -415,11 +415,11 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getRequestUrl()).isNotNull();
-        assertThat(request.getHeader("Content-Type")).isEqualTo("text/plain; charset=utf-8");
-        assertThat(request.getHeader("Content-Encoding")).isEqualTo("gzip");
-        assertThat(request.getRequestUrl().queryParameter("precision")).isEqualTo("s");
-        assertThat(request.getRequestUrl().queryParameter("bucket")).isEqualTo("your-database");
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getHeaders().get("Content-Type")).isEqualTo("text/plain; charset=utf-8");
+        assertThat(request.getHeaders().get("Content-Encoding")).isEqualTo("gzip");
+        assertThat(request.getUrl().queryParameter("precision")).isEqualTo("s");
+        assertThat(request.getUrl().queryParameter("bucket")).isEqualTo("your-database");
     }
 
     @Test
@@ -431,8 +431,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getHeader("Content-Type")).isEqualTo("text/plain; charset=utf-8");
-        assertThat(request.getHeader("Content-Encoding")).isNull();
+        assertThat(request.getHeaders().get("Content-Type")).isEqualTo("text/plain; charset=utf-8");
+        assertThat(request.getHeaders().get("Content-Encoding")).isNull();
     }
 
     @Test
@@ -444,7 +444,10 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getBody().readUtf8()).isEqualTo("mem,tag=one value=1.0");
+//        assertThat(request.getBody().readUtf8()).isEqualTo("mem,tag=one value=1.0");
+//         assertThat(request.getBody().getUtf8$okio()).isEqualTo("mem,tag=one value=1.0");
+        assertThat(request.getBody().utf8()).isEqualTo("mem,tag=one value=1.0");
+
     }
 
     @Test
@@ -460,7 +463,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getBody().readUtf8()).isEqualTo("mem,tag=one value=1.0");
+  //      assertThat(request.getBody().readUtf8()).isEqualTo("mem,tag=one value=1.0");
+        assertThat(request.getBody().utf8()).isEqualTo("mem,tag=one value=1.0");
     }
 
     @Test
@@ -480,7 +484,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
         assertThat(request).isNotNull();
-        assertThat(request.getBody().readUtf8()).isEqualTo("mem,tag=one value=1.0\ncpu,tag=two value=2.0");
+        // assertThat(request.getBody().readUtf8()).isEqualTo("mem,tag=one value=1.0\ncpu,tag=two value=2.0");
+        assertThat(request.getBody().utf8()).isEqualTo("mem,tag=one value=1.0\ncpu,tag=two value=2.0");
     }
 
 
@@ -502,17 +507,16 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         RecordedRequest request = mockServer.takeRequest();
 
         assertThat(request).isNotNull();
-        assertThat(request.getBody().readUtf8()).isEqualTo("mem,model=M5,tag=one,unit=U2 value=1.0");
+        // assertThat(request.getBody().readUtf8()).isEqualTo("mem,model=M5,tag=one,unit=U2 value=1.0");
+        assertThat(request.getBody().utf8()).isEqualTo("mem,model=M5,tag=one,unit=U2 value=1.0");
 
     }
 
     @Test
     public void retryHandled429Test() {
-        mockServer.enqueue(createResponse(429)
-          .setBody("{ \"message\" : \"Too Many Requests\" }")
-          .setHeader("retry-after", "42")
-          .setHeader("content-type", "application/json")
-        );
+        mockServer.enqueue(createResponse(429,
+          Map.of("retry-after", "42", "content-type", "application/json"),
+          "{ \"message\" : \"Too Many Requests\" }"));
 
         Point point = Point.measurement("mem")
           .setTag("tag", "one")

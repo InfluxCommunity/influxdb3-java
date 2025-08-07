@@ -36,8 +36,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.netty.handler.codec.http.HttpMethod;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.RecordedRequest;
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
+import okhttp3.Headers;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -114,7 +115,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        String authorization = recordedRequest.getHeader("Authorization");
+        String authorization = recordedRequest.getHeaders().get("Authorization");
         Assertions.assertThat(authorization).isEqualTo("Token my-token");
     }
 
@@ -132,7 +133,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        String authorization = recordedRequest.getHeader("Authorization");
+        String authorization = recordedRequest.getHeaders().get("Authorization");
         Assertions.assertThat(authorization).isEqualTo("my-auth-scheme my-token");
     }
 
@@ -148,7 +149,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        String authorization = recordedRequest.getHeader("Authorization");
+        String authorization = recordedRequest.getHeaders().get("Authorization");
         Assertions.assertThat(authorization).isNull();
     }
 
@@ -164,7 +165,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        String userAgent = recordedRequest.getHeader("User-Agent");
+        String userAgent = recordedRequest.getHeaders().get("User-Agent");
         Assertions.assertThat(userAgent).startsWith("influxdb3-java/");
     }
 
@@ -182,7 +183,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        String authorization = recordedRequest.getHeader("X-device");
+        String authorization = recordedRequest.getHeaders().get("X-device");
         Assertions.assertThat(authorization).isEqualTo("ab-01");
     }
 
@@ -200,9 +201,9 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        String header = recordedRequest.getHeader("X-device");
+        String header = recordedRequest.getHeaders().get("X-device");
         Assertions.assertThat(header).isEqualTo("ab-01");
-        header = recordedRequest.getHeader("X-Request-Trace-Id");
+        header = recordedRequest.getHeaders().get("X-Request-Trace-Id");
         Assertions.assertThat(header).isEqualTo("123");
     }
 
@@ -220,7 +221,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        String header = recordedRequest.getHeader("X-device");
+        String header = recordedRequest.getHeaders().get("X-device");
         Assertions.assertThat(header).isEqualTo("ab-02");
     }
 
@@ -243,7 +244,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        String header = recordedRequest.getHeader("X-Tracing-Id");
+        String header = recordedRequest.getHeaders().get("X-Tracing-Id");
         Assertions.assertThat(header).isEqualTo("852");
     }
 
@@ -259,8 +260,8 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
-        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL + "ping");
+        Assertions.assertThat(recordedRequest.getUrl()).isNotNull();
+        Assertions.assertThat(recordedRequest.getUrl().toString()).isEqualTo(baseURL + "ping");
     }
 
     @Test
@@ -280,17 +281,22 @@ public class RestClientTest extends AbstractMockServerTest {
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host("http://foo.com:8086")
-                .proxy(ProxySelector.of((InetSocketAddress) mockServer.toProxyAddress().address()))
+                .proxy(ProxySelector.of((InetSocketAddress) mockServer.getProxyAddress().address()))
                 .build());
 
         restClient.request("ping", HttpMethod.GET, null, null, null);
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
-        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL); // server is used as proxy
-        Assertions.assertThat(recordedRequest.getRequestLine()).isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
+        Assertions.assertThat(recordedRequest.getUrl()).isNotNull();
+        // with mockwebserver3 getUrl() returns target URL not proxy URL
+        // successful return implies proxy was used correctly.
+        Assertions.assertThat(recordedRequest.getUrl().toString())
+          .isEqualTo("http://foo.com:8086/ping"); // server is used as proxy
+        Assertions.assertThat(recordedRequest.getRequestLine())
+          .isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
     }
+
 
     @Test
     public void proxyUrl() throws InterruptedException {
@@ -305,14 +311,19 @@ public class RestClientTest extends AbstractMockServerTest {
 
         RecordedRequest recordedRequest = mockServer.takeRequest();
 
-        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
-        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL); // server is used as proxy
-        Assertions.assertThat(recordedRequest.getRequestLine()).isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
+        Assertions.assertThat(recordedRequest.getUrl()).isNotNull();
+        // with mockwebserver3 getUrl() returns target URL not proxy URL
+        // successful return implies proxy was used correctly.
+        Assertions.assertThat(recordedRequest.getUrl().toString())
+          .isEqualTo("http://foo.com:8086/ping"); // server is used as proxy
+        Assertions.assertThat(recordedRequest.getRequestLine())
+          .isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
     }
+
 
     @Test
     public void proxyWithAuthentication() throws InterruptedException {
-        mockServer.enqueue(createResponseWithHeaders(407, Map.of("Proxy-Authenticate", "Basic")));
+        mockServer.enqueue(createResponse(407, Map.of("Proxy-Authenticate", "Basic"), null));
         mockServer.enqueue(createResponse(200));
 
         restClient = new RestClient(new ClientConfig.Builder()
@@ -331,12 +342,14 @@ public class RestClientTest extends AbstractMockServerTest {
         RecordedRequest recordedRequest = mockServer.takeRequest();
         RecordedRequest proxyAuthRequest = mockServer.takeRequest();
 
-        Assertions.assertThat(recordedRequest.getRequestUrl()).isNotNull();
-        Assertions.assertThat(recordedRequest.getRequestUrl().toString()).isEqualTo(baseURL); // server is used as proxy
+        Assertions.assertThat(recordedRequest.getUrl()).isNotNull();
+       // with mockwebserver3 getUrl() returns target URL not proxy URL
+       // successful return implies proxy was used correctly.
+        Assertions.assertThat(recordedRequest.getUrl().toString()).isEqualTo("http://foo.com:8086/ping");
         Assertions.assertThat(recordedRequest.getRequestLine()).isEqualTo("GET http://foo.com:8086/ping HTTP/1.1");
 
         Assertions.assertThat(mockServer.getRequestCount()).isEqualTo(2);
-        String proxyAuthorization = proxyAuthRequest.getHeader("Proxy-Authorization");
+        String proxyAuthorization = proxyAuthRequest.getHeaders().get("Proxy-Authorization");
         Assertions.assertThat(proxyAuthorization)
                 .isEqualTo("Basic " + Base64.getEncoder().encodeToString("john:secret".getBytes()));
     }
@@ -357,7 +370,8 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void errorFromHeader() {
-        mockServer.enqueue(createResponse(500).setHeader("X-Influx-Error", "not used"));
+
+        mockServer.enqueue(createResponse(500, Map.of("X-Influx-Error", "not used"), null));
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host(baseURL)
@@ -371,61 +385,70 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void errorFromBody() {
-        mockServer.enqueue(createResponse(401)
-                .setHeader("X-Influx-Error", "not used")
-                .setBody("{\"message\":\"token does not have sufficient permissions\"}"));
 
-        restClient = new RestClient(new ClientConfig.Builder()
-                .host(baseURL)
-                .build());
+      mockServer.enqueue(createResponse(401,
+        Map.of("X-Influx-Errpr", "not used"),
+        "{\"message\":\"token does not have sufficient permissions\"}"));
 
-        Assertions.assertThatThrownBy(
-                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
-                .isInstanceOf(InfluxDBApiException.class)
-                .hasMessage("HTTP status code: 401; Message: token does not have sufficient permissions");
+      restClient = new RestClient(new ClientConfig.Builder()
+              .host(baseURL)
+              .build());
+
+      Assertions.assertThatThrownBy(
+                () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+              .isInstanceOf(InfluxDBApiException.class)
+              .hasMessage("HTTP status code: 401; Message: token does not have sufficient permissions");
     }
 
     @Test
     public void errorFromBodyEdgeWithoutMessage() { // OSS/Edge error message
-        mockServer.enqueue(createResponse(400)
-                .setBody("{\"error\":\"parsing failed\"}"));
 
-        restClient = new RestClient(new ClientConfig.Builder()
+      mockServer.enqueue(createResponse(400,
+        null,
+        "{\"error\":\"parsing failed\"}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
                 .host(baseURL)
                 .build());
 
-        Assertions.assertThatThrownBy(
-                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
-                .isInstanceOf(InfluxDBApiException.class)
-                .hasMessage("HTTP status code: 400; Message: parsing failed");
+      Assertions.assertThatThrownBy(
+                    () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+              .isInstanceOf(InfluxDBApiException.class)
+              .hasMessage("HTTP status code: 400; Message: parsing failed");
     }
 
     @Test
     public void errorFromBodyEdgeWithMessage() { // OSS/Edge specific error message
-        mockServer.enqueue(createResponse(400)
-                .setBody("{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value\"}}"));
 
-        restClient = new RestClient(new ClientConfig.Builder()
-                .host(baseURL)
-                .build());
+      mockServer.enqueue(createResponse(400,
+        null,
+        "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value\"}}"));
 
-        Assertions.assertThatThrownBy(
-                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
-                .isInstanceOf(InfluxDBApiException.class)
-                .hasMessage("HTTP status code: 400; Message: invalid field value");
+      restClient = new RestClient(new ClientConfig.Builder()
+              .host(baseURL)
+              .build());
+
+      Assertions.assertThatThrownBy(
+            () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+              .isInstanceOf(InfluxDBApiException.class)
+              .hasMessage("HTTP status code: 400; Message: invalid field value");
     }
 
     @Test
     public void errorFromBodyText() {
-        mockServer.enqueue(createResponse(402)
-                .setBody("token is over the limit"));
 
-        restClient = new RestClient(new ClientConfig.Builder()
-                .host(baseURL)
-                .build());
+      mockServer.enqueue(createResponse(402, null, "token is over the limit"));
 
-        Assertions.assertThatThrownBy(
-                        () -> restClient.request("ping", HttpMethod.GET, null, null, null))
+      restClient = new RestClient(new ClientConfig.Builder()
+              .host(baseURL)
+              .build());
+
+      Assertions.assertThatThrownBy(
+         () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
                 .isInstanceOf(InfluxDBApiException.class)
                 .hasMessage("HTTP status code: 402; Message: token is over the limit");
     }
@@ -450,13 +473,11 @@ public class RestClientTest extends AbstractMockServerTest {
     public void errorHttpExceptionThrown() {
         String retryDate = Instant.now().plus(300, ChronoUnit.SECONDS).toString();
 
-        mockServer.enqueue(createResponse(503)
-          .setHeader("retry-after", retryDate)
-          .setHeader("content-type", "application/json")
-          .setBody("{\"message\":\"temporarily offline\"}")
-        );
+      mockServer.enqueue(createResponse(503,
+        Map.of("retry-after", retryDate, "content-type", "application/json"),
+        "{\"message\":\"temporarily offline\"}"));
 
-        restClient = new RestClient(new ClientConfig.Builder()
+      restClient = new RestClient(new ClientConfig.Builder()
           .host(baseURL)
           .build());
 
@@ -481,7 +502,9 @@ public class RestClientTest extends AbstractMockServerTest {
     @Test
     public void getServerVersionV2Successful() throws Exception {
         String influxDBVersion = "v2.1.0";
-        mockServer.enqueue(createResponse(200).setHeader("x-influxdb-version", influxDBVersion));
+        mockServer.enqueue(createResponse(200,
+          Map.of("x-influxdb-version", influxDBVersion),
+          null));
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host(baseURL)
@@ -494,7 +517,9 @@ public class RestClientTest extends AbstractMockServerTest {
     @Test
     public void getServerVersionV3Successful() throws Exception {
         String influxDBVersion = "3.0.0";
-        mockServer.enqueue(createResponse(200).setBody("{\"version\":\"" + influxDBVersion + "\"}"));
+        mockServer.enqueue(createResponse(200,
+          null,
+          "{\"version\":\"" + influxDBVersion + "\"}"));
 
         restClient = new RestClient(new ClientConfig.Builder()
                 .host(baseURL)
@@ -506,9 +531,9 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void getServerVersionError() {
-        MockResponse mockResponse = new MockResponse();
-        mockResponse.setBody("not json")
-                .setHeader("something", "something");
+        MockResponse mockResponse = new MockResponse(200,
+          Headers.of("something", "something"),
+          "not json");
         mockServer.enqueue(mockResponse);
 
         restClient = new RestClient(new ClientConfig.Builder()
@@ -520,7 +545,7 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void getServerVersionErrorNoBody() {
-        mockServer.enqueue(new MockResponse().setResponseCode(200));
+        mockServer.enqueue(new MockResponse(200, Headers.of(), "Test-Version"));
         restClient = new RestClient(new ClientConfig.Builder()
                 .host(baseURL)
                 .build());
