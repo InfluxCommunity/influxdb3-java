@@ -42,6 +42,8 @@ class ClientConfigTest {
             .database("my-db")
             .writePrecision(WritePrecision.NS)
             .timeout(Duration.ofSeconds(30))
+            .writeTimeout(Duration.ofSeconds(30))
+            .queryTimeout(Duration.ofSeconds(120))
             .allowHttpRedirects(true)
             .disableServerCertificateValidation(true)
             .headers(Map.of("X-device", "ab-01"));
@@ -242,6 +244,24 @@ class ClientConfigTest {
     }
 
     @Test
+    void timeoutsFromEnv() {
+        Map<String, String> env = Map.of(
+            "INFLUX_HOST", "http://localhost:9999/",
+            "INFLUX_TOKEN", "my-token",
+            "INFLUX_WRITE_TIMEOUT", "45",
+            "INFLUX_QUERY_TIMEOUT", "180");
+
+        Duration writeTimeout = Duration.ofSeconds(45);
+        Duration queryTimeout = Duration.ofSeconds(180);
+        ClientConfig cfg = new ClientConfig.Builder().build(env, null);
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getWriteTimeout()).isEqualTo(writeTimeout);
+        Assertions.assertThat(cfg.getQueryTimeout()).isEqualTo(queryTimeout);
+
+    }
+
+    @Test
     void fromSystemProperties() {
         // minimal
         Properties properties = new Properties();
@@ -333,6 +353,26 @@ class ClientConfigTest {
         props.put("influx.precision", "second");
         cfg = new ClientConfig.Builder().build(new HashMap<>(), props);
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.S);
+    }
+
+    @Test
+    void fromSystemPropertiesTimeouts() {
+        Properties props = new Properties();
+        props.put("influx.host", "http://localhost:9999/");
+        props.put("influx.token", "my-token");
+        props.put("influx.writeTimeout", "20");
+        props.put("influx.queryTimeout", "300");
+
+        ClientConfig cfg = new ClientConfig.Builder().build(new HashMap<>(), props);
+
+        Duration writeTimeout = Duration.ofSeconds(20);
+        Duration queryTimeout = Duration.ofSeconds(300);
+
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getWriteTimeout()).isEqualTo(writeTimeout);
+        Assertions.assertThat(cfg.getQueryTimeout()).isEqualTo(queryTimeout);
+
     }
 
 }
