@@ -39,6 +39,8 @@ import javax.annotation.Nullable;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
+// TODO ensure that if writeTimeout is not defined but timeout is that writeTimeout is initialized to timeout
+
 /**
  * The <code>ClientConfig</code> holds the configurations for the
  * {@link com.influxdb.v3.client.InfluxDBClient} client.
@@ -54,7 +56,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>defaultTags</code> - defaultTags added when writing points to InfluxDB</li>
  *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
  *     <li><code>writeNoSync</code> - skip waiting for WAL persistence on write</li>
- *     <li><code>timeout</code> - <i>deprecated in 1.3.0</i> timeout when connecting to InfluxDB,
+ *     <li><code>timeout</code> - <i>deprecated in 1.4.0</i> timeout when connecting to InfluxDB,
  *     please use more informative properties <code>writeTimeout</code> and <code>queryTimeout</code></li>
  *     <li><code>writeTimeout</code> - timeout when writing data to InfluxDB</li>
  *     <li><code>queryTimeout</code> - timeout used to calculate a default GRPC deadline when querying InfluxDB.
@@ -103,6 +105,7 @@ public final class ClientConfig {
     private final Integer gzipThreshold;
     private final Boolean writeNoSync;
     private final Map<String, String> defaultTags;
+    @Deprecated
     private final Duration timeout;
     private final Duration writeTimeout;
     private final Duration queryTimeout;
@@ -219,10 +222,10 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets the default timeout in seconds to use for REST Write API calls.  Default is
+     * Gets the default timeout to use for REST Write API calls.  Default is
      * {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
      *
-     * @return the default timeout in seconds to use for REST Write API calls.
+     * @return the default timeout to use for REST Write API calls.
      */
     @Nonnull
     public Duration getWriteTimeout() {
@@ -840,7 +843,8 @@ public final class ClientConfig {
         defaultTags = builder.defaultTags;
         timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
         writeTimeout = builder.writeTimeout != null
-            ? builder.writeTimeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
+            ? builder.writeTimeout : builder.timeout != null
+            ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
         queryTimeout = builder.queryTimeout;
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null

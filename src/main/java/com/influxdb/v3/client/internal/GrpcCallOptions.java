@@ -22,11 +22,13 @@
 package com.influxdb.v3.client.internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.Tainted;
 
 import io.grpc.CompressorRegistry;
 import io.grpc.Deadline;
@@ -289,7 +291,38 @@ public final class GrpcCallOptions {
         }
 
         /**
+         * Helper method to clone already existing options
+         *
+         * @param grpcCallOptions = options to copy
+         * @return this
+         */
+        public Builder fromGrpcCallOptions(@Nonnull GrpcCallOptions grpcCallOptions) {
+            if (grpcCallOptions.getDeadline() != null) {
+                this.deadline = grpcCallOptions.getDeadline();
+            }
+            if (grpcCallOptions.getExecutor() != null) {
+                this.executor = grpcCallOptions.getExecutor();
+            }
+            if (grpcCallOptions.getCompressorName() != null) {
+                this.compressorName = grpcCallOptions.getCompressorName();
+            }
+            if (grpcCallOptions.getWaitForReady() != null) {
+                this.waitForReady = grpcCallOptions.getWaitForReady();
+            }
+            if (grpcCallOptions.getMaxInboundMessageSize() != null) {
+                this.maxInboundMessageSize = grpcCallOptions.getMaxInboundMessageSize();
+            }
+            if (grpcCallOptions.getMaxOutboundMessageSize() != null) {
+                this.maxOutboundMessageSize = grpcCallOptions.getMaxOutboundMessageSize();
+            }
+            return this;
+        }
+
+        /**
          * Sets the maximum allowed message size acceptable sent to the remote peer.
+         * <p>
+         * Note: this property leads to grpc-java issue 12109 and can lead to the connection hanging indefinitely.
+         * See (<a href="https://github.com/grpc/grpc-java/issues/12109">grpc-java 12109</a>)
          *
          * @param maxOutboundMessageSize The maximum message send size
          * @return this

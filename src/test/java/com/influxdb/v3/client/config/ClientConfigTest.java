@@ -42,7 +42,7 @@ class ClientConfigTest {
             .database("my-db")
             .writePrecision(WritePrecision.NS)
             .timeout(Duration.ofSeconds(30))
-            .writeTimeout(Duration.ofSeconds(30))
+            .writeTimeout(Duration.ofSeconds(35))
             .queryTimeout(Duration.ofSeconds(120))
             .allowHttpRedirects(true)
             .disableServerCertificateValidation(true)
@@ -78,6 +78,10 @@ class ClientConfigTest {
         Assertions.assertThat(configString.contains("database='my-db'")).isEqualTo(true);
         Assertions.assertThat(configString.contains("gzipThreshold=1000")).isEqualTo(true);
         Assertions.assertThat(configString).contains("writeNoSync=false");
+        Assertions.assertThat(configString).contains("timeout=PT30S");
+        Assertions.assertThat(configString).contains("writeTimeout=PT35S");
+        Assertions.assertThat(configString).contains("queryTimeout=PT2M");
+
     }
 
     @Test
@@ -373,6 +377,34 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWriteTimeout()).isEqualTo(writeTimeout);
         Assertions.assertThat(cfg.getQueryTimeout()).isEqualTo(queryTimeout);
 
+    }
+
+    @Test
+    void timeoutDefaultsTest() {
+        ClientConfig cfg = new ClientConfig.Builder()
+            .host("http://localhost:9999")
+            .token("my-token".toCharArray())
+            .organization("my-org")
+            .database("my-db")
+            .build();
+
+        Duration defaultTimeout = Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
+        Assertions.assertThat(cfg.getTimeout()).isEqualTo(defaultTimeout);
+        Assertions.assertThat(cfg.getWriteTimeout()).isEqualTo(defaultTimeout);
+        Assertions.assertThat(cfg.getQueryTimeout()).isNull();
+    }
+
+    @Test
+    void StandardTimeoutUsedWhenWriteTimeoutUndefinedTest(){
+        int testTimeout = 7;
+        ClientConfig config = new ClientConfig.Builder()
+            .host("http://localhost:8086")
+            .token("my-token".toCharArray())
+            .timeout(Duration.ofSeconds(testTimeout))
+            .build();
+
+        Assertions.assertThat(config.getTimeout()).isEqualTo(Duration.ofSeconds(testTimeout));
+        Assertions.assertThat(config.getWriteTimeout()).isEqualTo(Duration.ofSeconds(testTimeout));
     }
 
 }

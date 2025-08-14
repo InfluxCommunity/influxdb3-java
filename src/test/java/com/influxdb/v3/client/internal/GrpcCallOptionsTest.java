@@ -21,10 +21,14 @@
  */
 package com.influxdb.v3.client.internal;
 
+import io.grpc.Deadline;
 import io.grpc.stub.AbstractStub;
 import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.CallOptions;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -108,6 +112,45 @@ class GrpcCallOptionsTest {
 
         assertNotNull(result);
         assertEquals(0, result.length);
+    }
+
+    @Test
+    void grpcOptionsCloneTest(){
+        GrpcCallOptions origOptions = new GrpcCallOptions.Builder()
+            .withMaxInboundMessageSize(2000)
+            .withMaxOutboundMessageSize(1000)
+            .withWaitForReady()
+            .build();
+
+        GrpcCallOptions clonedOptions = new GrpcCallOptions.Builder()
+            .fromGrpcCallOptions(origOptions)
+            .build();
+
+        Assertions.assertEquals(origOptions, clonedOptions);
+        Assertions.assertNotSame(origOptions, clonedOptions);
+    }
+
+    @Test
+    void grpcOptionsFromCloneWithUpdateTest(){
+        GrpcCallOptions origOptions = new GrpcCallOptions.Builder()
+            .withMaxInboundMessageSize(2000)
+            .withMaxOutboundMessageSize(1000)
+            .build();
+
+        GrpcCallOptions copyOptions = new GrpcCallOptions.Builder()
+            .fromGrpcCallOptions(origOptions)
+            .withDeadline(Deadline.after(30, TimeUnit.SECONDS))
+            .build();
+
+        Assertions.assertNotNull(copyOptions.getCallOptions());
+        assertEquals(3, copyOptions.getCallOptions().length);
+        assertEquals(origOptions.getMaxInboundMessageSize(), copyOptions.getMaxInboundMessageSize());
+        assertEquals(origOptions.getMaxOutboundMessageSize(), copyOptions.getMaxOutboundMessageSize());
+        assertNotNull(copyOptions.getDeadline());
+        Assertions.assertTrue(copyOptions.getDeadline().timeRemaining(TimeUnit.SECONDS) > 27);
+        Assertions.assertNull(copyOptions.getExecutor());
+        Assertions.assertNull(copyOptions.getWaitForReady());
+        Assertions.assertNull(copyOptions.getCompressorName());
     }
 
     private CallOption callOption() {
