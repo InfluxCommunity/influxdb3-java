@@ -317,7 +317,7 @@ class ITQueryWrite {
             .host(System.getenv("TESTING_INFLUXDB_URL"))
             .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
             .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-            .queryTimeout(Duration.ofMillis(100))
+            .queryTimeout(Duration.ofNanos(5000))
             .build());
 
         String measurement = "timeout_test_" + Math.round(Math.random() * 100_000);
@@ -423,7 +423,7 @@ class ITQueryWrite {
 
         QueryOptions queryOptions = QueryOptions.defaultQueryOptions();
         queryOptions.setGrpcCallOptions(new GrpcCallOptions.Builder()
-            .withDeadline(Deadline.after(100, TimeUnit.MILLISECONDS))
+            .withDeadline(Deadline.after(5000, TimeUnit.NANOSECONDS))
             .build()
         );
 
