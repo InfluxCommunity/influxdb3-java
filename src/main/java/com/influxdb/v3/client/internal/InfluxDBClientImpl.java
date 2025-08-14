@@ -24,7 +24,6 @@ package com.influxdb.v3.client.internal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -399,7 +398,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         Arguments.checkNotNull(parameters, "parameters");
         Arguments.checkNotNull(options, "options");
 
-        if( options.grpcCallOptions().getDeadline() == null && config.getQueryTimeout() != null) {
+        if (options.grpcCallOptions().getDeadline() == null && config.getQueryTimeout() != null) {
             options.setGrpcCallOptions(new GrpcCallOptions.Builder()
                 .fromGrpcCallOptions(options.grpcCallOptions())
                 .withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS))

@@ -21,14 +21,15 @@
  */
 package com.influxdb.v3.client.internal;
 
+
+import java.util.concurrent.TimeUnit;
+
 import io.grpc.Deadline;
 import io.grpc.stub.AbstractStub;
 import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.CallOptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -115,7 +116,7 @@ class GrpcCallOptionsTest {
     }
 
     @Test
-    void grpcOptionsCloneTest(){
+    void grpcOptionsCloneTest() {
         GrpcCallOptions origOptions = new GrpcCallOptions.Builder()
             .withMaxInboundMessageSize(2000)
             .withMaxOutboundMessageSize(1000)
@@ -131,7 +132,7 @@ class GrpcCallOptionsTest {
     }
 
     @Test
-    void grpcOptionsFromCloneWithUpdateTest(){
+    void grpcOptionsFromCloneWithUpdateTest() {
         GrpcCallOptions origOptions = new GrpcCallOptions.Builder()
             .withMaxInboundMessageSize(2000)
             .withMaxOutboundMessageSize(1000)

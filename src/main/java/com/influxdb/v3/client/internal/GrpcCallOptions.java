@@ -22,13 +22,11 @@
 package com.influxdb.v3.client.internal;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.Tainted;
 
 import io.grpc.CompressorRegistry;
 import io.grpc.Deadline;
@@ -291,12 +289,12 @@ public final class GrpcCallOptions {
         }
 
         /**
-         * Helper method to clone already existing options
+         * Helper method to clone already existing options.
          *
          * @param grpcCallOptions = options to copy
          * @return this
          */
-        public Builder fromGrpcCallOptions(@Nonnull GrpcCallOptions grpcCallOptions) {
+        public Builder fromGrpcCallOptions(@Nonnull final GrpcCallOptions grpcCallOptions) {
             if (grpcCallOptions.getDeadline() != null) {
                 this.deadline = grpcCallOptions.getDeadline();
             }

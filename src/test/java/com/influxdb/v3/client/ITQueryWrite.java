@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.influxdb.v3.client.internal.GrpcCallOptions;
 import io.grpc.Deadline;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightRuntimeException;
@@ -48,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.internal.GrpcCallOptions;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
@@ -356,7 +356,7 @@ class ITQueryWrite {
 
         String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
 
-        try(Stream<Object[]> stream = client.query(sql)) {
+        try (Stream<Object[]> stream = client.query(sql)) {
             stream.forEach(row -> {
                 Assertions.assertThat(row).hasSize(1);
                 Assertions.assertThat(row[0]).isEqualTo(123.0);
@@ -440,7 +440,7 @@ class ITQueryWrite {
     }
 
     @Test
-    public void repeatQueryWithTimeoutTest(){
+    public void repeatQueryWithTimeoutTest() {
         long timeout = 1000;
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
             .host(System.getenv("TESTING_INFLUXDB_URL"))
@@ -455,8 +455,8 @@ class ITQueryWrite {
 
         String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
 
-        for (int i = 0; i < 3; i++){
-            try(Stream<Object[]> stream = client.query(sql)) {
+        for (int i = 0; i < 3; i++) {
+            try (Stream<Object[]> stream = client.query(sql)) {
                 stream.forEach(row -> {
                     Assertions.assertThat(row).hasSize(1);
                     Assertions.assertThat(row[0]).isEqualTo(123.0);
@@ -492,7 +492,7 @@ class ITQueryWrite {
             .build()
         );
 
-        try(Stream<Object[]> stream = client.query(sql, queryOptions)) {
+        try (Stream<Object[]> stream = client.query(sql, queryOptions)) {
             stream.forEach(row -> {
                 Assertions.assertThat(row).hasSize(1);
                 Assertions.assertThat(row[0]).isEqualTo(123.0);

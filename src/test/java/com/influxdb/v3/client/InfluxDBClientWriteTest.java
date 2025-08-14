@@ -553,7 +553,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
 
 
 
-        try(InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
+        try (InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
 
             Point point = Point.measurement("mem")
                 .setTag("tag", "one")
@@ -572,7 +572,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void writeTimeoutExceededTest(){
+    public void writeTimeoutExceededTest() {
 
         ClientConfig config = new ClientConfig.Builder()
             .host(baseURL)
@@ -581,7 +581,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             .writeTimeout(Duration.ofMillis(1))
             .build();
 
-        try(InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
+        try (InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
 
             Point point = Point.measurement("mem")
                 .setTag("tag", "one")
@@ -600,7 +600,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void writeTimeoutOKTest(){
+    public void writeTimeoutOKTest() {
         mockServer.enqueue(createResponse(200));
 
         Duration testDuration = Duration.ofMillis(2000);
@@ -612,7 +612,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             .writeTimeout(testDuration)
             .build();
 
-        try(InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
+        try (InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
 
             Point point = Point.measurement("mem")
                 .setTag("tag", "one")

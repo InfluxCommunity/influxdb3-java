@@ -395,7 +395,7 @@ class ClientConfigTest {
     }
 
     @Test
-    void StandardTimeoutUsedWhenWriteTimeoutUndefinedTest(){
+    void standardTimeoutUsedWhenWriteTimeoutUndefinedTest() {
         int testTimeout = 7;
         ClientConfig config = new ClientConfig.Builder()
             .host("http://localhost:8086")
