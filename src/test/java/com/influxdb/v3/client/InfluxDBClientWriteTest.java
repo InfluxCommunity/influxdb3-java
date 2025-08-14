@@ -574,11 +574,13 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     @Test
     public void writeTimeoutExceededTest() {
 
+        mockServer.enqueue(createEmptyResponse(200));
+
         ClientConfig config = new ClientConfig.Builder()
             .host(baseURL)
             .token("my-token".toCharArray())
             .database("my-db")
-            .writeTimeout(Duration.ofMillis(1))
+            .writeTimeout(Duration.ofNanos(5000))
             .build();
 
         try (InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
