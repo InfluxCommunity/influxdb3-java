@@ -93,7 +93,7 @@
         <netty-handler.version>4.2.3.Final</netty-handler.version>
 
         <plugin.surefire.version>3.5.3</plugin.surefire.version>
-        <plugin.jacoco.version>0.8.12</plugin.jacoco.version>
+        <plugin.jacoco.version>0.8.13</plugin.jacoco.version>
         <plugin.checkstyle.version>3.6.0</plugin.checkstyle.version>
         <plugin.javadoc.version>3.11.2</plugin.javadoc.version>
     </properties>
