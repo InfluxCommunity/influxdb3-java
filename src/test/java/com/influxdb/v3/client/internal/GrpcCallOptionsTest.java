@@ -22,6 +22,8 @@
 package com.influxdb.v3.client.internal;
 
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.grpc.Deadline;
@@ -117,7 +119,12 @@ class GrpcCallOptionsTest {
 
     @Test
     void grpcOptionsCloneTest() {
+        Executor unusedExecutor = Executors.newSingleThreadExecutor();
+
         GrpcCallOptions origOptions = new GrpcCallOptions.Builder()
+            .withDeadline(Deadline.after(5000, TimeUnit.MILLISECONDS))
+            .withCompressorName("compressor")
+            .withExecutor(unusedExecutor)
             .withMaxInboundMessageSize(2000)
             .withMaxOutboundMessageSize(1000)
             .withWaitForReady()
