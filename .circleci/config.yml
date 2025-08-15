@@ -133,7 +133,7 @@ jobs:
             
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov.SHA256SUM.sig
             
-            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            sudo gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             
             shasum -a 256 -c codecov.SHA256SUM
             
