@@ -66,6 +66,22 @@ jobs:
             chmod +x ./codecov
             ./codecov
 
+  tests-java-arm64:
+    parameters:
+      maven-image:
+        type: string
+        default: &default-maven-image "cimg/openjdk:11.0"
+      arg-line:
+        type: string
+        default: ""
+    docker:
+      - image: << parameters.maven-image >>
+      - resource_class: arm.medium
+        image: influxdb:3-core
+        environment:
+          - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
+          - INFLUXDB3_OBJECT_STORE=file
+          - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
   check-dependencies:
     parameters:
       maven-image:
@@ -188,3 +204,6 @@ workflows:
           filters:
             branches:
               only: main
+      - tests-java-arm64:
+          name: jdk-11-arm64
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
