@@ -21,6 +21,8 @@
  */
 package com.influxdb.v3.client;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -535,5 +537,103 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(he.statusCode()).isEqualTo(429);
         assertThat(he.getMessage())
           .isEqualTo("HTTP status code: 429; Message: Too Many Requests");
+    }
+
+    @Test
+    public void timeoutExceededTest() {
+
+        mockServer.enqueue(createEmptyResponse(200));
+
+        ClientConfig config = new ClientConfig.Builder()
+            .host(baseURL)
+            .token("my-token".toCharArray())
+            .database("my-db")
+            .timeout(Duration.ofNanos(5000))
+            .build();
+
+
+
+        try (InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
+
+            Point point = Point.measurement("mem")
+                .setTag("tag", "one")
+                .setField("value", 1.0);
+
+            Throwable thrown = catchThrowable(() -> {
+                toClient.writePoint(point);
+            });
+            assertThat(thrown).isNotNull();
+            assertThat(thrown).isInstanceOf(InfluxDBApiException.class);
+            assertThat(thrown.getMessage()).contains("java.net.http.HttpConnectTimeoutException");
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void writeTimeoutExceededTest() {
+
+        mockServer.enqueue(createEmptyResponse(200));
+
+        ClientConfig config = new ClientConfig.Builder()
+            .host(baseURL)
+            .token("my-token".toCharArray())
+            .database("my-db")
+            .writeTimeout(Duration.ofNanos(5000))
+            .build();
+
+        try (InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
+
+            Point point = Point.measurement("mem")
+                .setTag("tag", "one")
+                .setField("value", 1.0);
+
+            Throwable thrown = catchThrowable(() -> {
+                toClient.writePoint(point);
+            });
+            assertThat(thrown).isNotNull();
+            assertThat(thrown).isInstanceOf(InfluxDBApiException.class);
+            assertThat(thrown.getMessage()).contains("java.net.http.HttpConnectTimeoutException");
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void writeTimeoutOKTest() {
+        mockServer.enqueue(createResponse(200));
+
+        Duration testDuration = Duration.ofMillis(2000);
+
+        ClientConfig config = new ClientConfig.Builder()
+            .host(baseURL)
+            .token("my-token".toCharArray())
+            .database("my-db")
+            .writeTimeout(testDuration)
+            .build();
+
+        try (InfluxDBClient toClient = InfluxDBClient.getInstance(config)) {
+
+            Point point = Point.measurement("mem")
+                .setTag("tag", "one")
+                .setField("value", 1.0);
+
+                Instant start = Instant.now();
+                toClient.writePoint(point);
+                Instant end = Instant.now();
+                RecordedRequest request = mockServer.takeRequest();
+                assertThat(request).isNotNull();
+                assertThat(request.getBody()).isNotNull();
+                String utf8Body = request.getBody().utf8();
+                assertThat(utf8Body).isNotNull();
+                assertThat(utf8Body).isEqualTo("mem,tag=one value=1.0");
+                assertThat(Duration.between(start, end).toMillis()).isLessThan(testDuration.toMillis());
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }

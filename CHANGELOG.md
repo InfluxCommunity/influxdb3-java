@@ -1,5 +1,19 @@
 ## 1.4.0 [unreleased]
 
+### Features
+
+1. [#265](https://github.com/InfluxCommunity/influxdb3-java/pull/265) Add more precise timeout properties to `ClientConfig`.
+   1. Current property `timeout` is deprecated, as it applies only to the Write API and can be confusing to some users.
+   2. Two new properties are added, along with getters and similar setters in the `ClientConfig.Builder`.
+      1. `writeTimeout` - a `java.time.Duration` that applies only to the Write API.
+      2. `queryTimeout` - a `java.time.Duration` used to calculate deadlines when using the Query API.
+   3. These properties can also be defined when creating a client using environment variables. Respectively:
+      1. `INFLUX_WRITE_TIMEOUT` - a positive integer.  The time unit is in seconds.
+      2. `INFLUX_QUERY_TIMEOUT` - a positive integer.  The time unit is in seconds.
+   4. These properties can also be defined when creating a client using system properties. Respectively:
+      1. `influx.writeTimeout` - a positive integer.  The time unit is in seconds.
+      2. `influx.queryTimeout` - a positive integer.  The time unit is in seconds.
+
 ## 1.3.0 [2025-08-13]
 
 ### Features

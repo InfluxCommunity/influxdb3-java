@@ -289,12 +289,45 @@ public final class GrpcCallOptions {
         }
 
         /**
+         * Helper method to clone already existing gRPC options.
+         *
+         * @param grpcCallOptions = options to copy
+         * @return this
+         */
+        public Builder fromGrpcCallOptions(@Nonnull final GrpcCallOptions grpcCallOptions) {
+            if (grpcCallOptions.getDeadline() != null) {
+                this.deadline = grpcCallOptions.getDeadline();
+            }
+            if (grpcCallOptions.getExecutor() != null) {
+                this.executor = grpcCallOptions.getExecutor();
+            }
+            if (grpcCallOptions.getCompressorName() != null) {
+                this.compressorName = grpcCallOptions.getCompressorName();
+            }
+            if (grpcCallOptions.getWaitForReady() != null) {
+                this.waitForReady = grpcCallOptions.getWaitForReady();
+            }
+            if (grpcCallOptions.getMaxInboundMessageSize() != null) {
+                this.maxInboundMessageSize = grpcCallOptions.getMaxInboundMessageSize();
+            }
+            if (grpcCallOptions.getMaxOutboundMessageSize() != null) {
+                this.maxOutboundMessageSize = grpcCallOptions.getMaxOutboundMessageSize();
+            }
+            return this;
+        }
+
+        /**
          * Sets the maximum allowed message size acceptable sent to the remote peer.
+         * <p>
+         * Note: this property leads to grpc-java issue 12109 and can lead to the connection hanging indefinitely.
+         * See (<a href="https://github.com/grpc/grpc-java/issues/12109">grpc-java 12109</a>)
          *
          * @param maxOutboundMessageSize The maximum message send size
          * @return this
          */
         public Builder withMaxOutboundMessageSize(@Nonnull final Integer maxOutboundMessageSize) {
+            // TODO remove warning about issue 12109 in javadoc above,
+            //  once 12109 is resolved and dependencies are updated.
             this.maxOutboundMessageSize = maxOutboundMessageSize;
             return this;
         }

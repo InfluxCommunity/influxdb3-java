@@ -54,7 +54,11 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>defaultTags</code> - defaultTags added when writing points to InfluxDB</li>
  *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
  *     <li><code>writeNoSync</code> - skip waiting for WAL persistence on write</li>
- *     <li><code>responseTimeout</code> - timeout when connecting to InfluxDB</li>
+ *     <li><code>timeout</code> - <i>deprecated in 1.4.0</i> timeout when connecting to InfluxDB,
+ *     please use more informative properties <code>writeTimeout</code> and <code>queryTimeout</code></li>
+ *     <li><code>writeTimeout</code> - timeout when writing data to InfluxDB</li>
+ *     <li><code>queryTimeout</code> - timeout used to calculate a default gRPC deadline when querying InfluxDB.
+ *     Can be <code>null</code>, in which case queries can potentially run forever.</li>
  *     <li><code>allowHttpRedirects</code> - allow redirects for InfluxDB connections</li>
  *     <li><code>disableServerCertificateValidation</code> -
  *          disable server certificate validation for HTTPS connections
@@ -99,7 +103,10 @@ public final class ClientConfig {
     private final Integer gzipThreshold;
     private final Boolean writeNoSync;
     private final Map<String, String> defaultTags;
+    @Deprecated
     private final Duration timeout;
+    private final Duration writeTimeout;
+    private final Duration queryTimeout;
     private final Boolean allowHttpRedirects;
     private final Boolean disableServerCertificateValidation;
     private final String proxyUrl;
@@ -203,13 +210,40 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets the default timeout to use for the API calls. Default to '10 seconds'.
+     * Gets the default timeout to use for write API calls.
+     * Defaults to '{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
+     * <p>
+     * Deprecated in v1.4.0.  Please use more informative <code>getWriteTimeout()</code>.
      *
-     * @return the default timeout to use for the API calls
+     * @return the default timeout to use for write API calls
+     * @see #getWriteTimeout()
      */
     @Nonnull
+    @Deprecated
     public Duration getTimeout() {
         return timeout;
+    }
+
+    /**
+     * Gets the default timeout to use for REST Write API calls.  Default is
+     * {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds.
+     *
+     * @return the default timeout to use for REST Write API calls.
+     */
+    @Nonnull
+    public Duration getWriteTimeout() {
+        return writeTimeout;
+    }
+
+    /**
+     * Gets the default timeout Duration to use for calculating a gRPC Deadline when making Query API calls.
+     * Can be null, in which case queries can potentially wait or run forever.
+     *
+     * @return the default timeout Duration to use for Query API calls.
+     */
+    @Nullable
+    public Duration getQueryTimeout() {
+        return queryTimeout;
     }
 
     /**
@@ -312,6 +346,8 @@ public final class ClientConfig {
                 && Objects.equals(writeNoSync, that.writeNoSync)
                 && Objects.equals(defaultTags, that.defaultTags)
                 && Objects.equals(timeout, that.timeout)
+                && Objects.equals(writeTimeout, that.writeTimeout)
+                && Objects.equals(queryTimeout, that.queryTimeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
                 && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
                 && Objects.equals(proxy, that.proxy)
@@ -325,7 +361,7 @@ public final class ClientConfig {
     public int hashCode() {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
                 database, writePrecision, gzipThreshold, writeNoSync,
-                timeout, allowHttpRedirects, disableServerCertificateValidation,
+                timeout, writeTimeout, queryTimeout, allowHttpRedirects, disableServerCertificateValidation,
                 proxy, proxyUrl, authenticator, headers,
                 defaultTags, sslRootsFilePath);
     }
@@ -340,6 +376,8 @@ public final class ClientConfig {
                 .add("gzipThreshold=" + gzipThreshold)
                 .add("writeNoSync=" + writeNoSync)
                 .add("timeout=" + timeout)
+                .add("writeTimeout=" + writeTimeout)
+                .add("queryTimeout=" + queryTimeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
                 .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
                 .add("proxy=" + proxy)
@@ -366,7 +404,10 @@ public final class ClientConfig {
         private Integer gzipThreshold;
         private Boolean writeNoSync;
         private Map<String, String> defaultTags;
+        @Deprecated
         private Duration timeout;
+        private Duration writeTimeout;
+        private Duration queryTimeout;
         private Boolean allowHttpRedirects;
         private Boolean disableServerCertificateValidation;
         private ProxySelector proxy;
@@ -496,16 +537,53 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets the default timeout to use for the API calls. Default to '10 seconds'.
+         * Sets the default timeout to use for Write API calls. Defaults to
+         * '{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
+         * <p>
+         * Deprecated in v1.4.0. This setter is superseded by the clearer <code>writeTimeout()</code>.
          *
-         * @param timeout default timeout to use for the API calls. Default to '10 seconds'.
+         * @param timeout default timeout to use for Write API calls. Default to
+         * ''{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
          * @return this
+         *
+         * @see #writeTimeout(Duration writeTimeout)
          */
+        @Deprecated
         @Nonnull
         public Builder timeout(@Nullable final Duration timeout) {
 
             this.timeout = timeout;
             return this;
+        }
+
+        /**
+         *  Sets the default writeTimeout to use for Write API calls in the REST client.
+         *  Default is {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
+         *
+         * @param writeTimeout default timeout to use for REST API write calls. Default is
+         * {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
+         * @return - this
+         */
+        @Nonnull
+        public Builder writeTimeout(@Nullable final Duration writeTimeout) {
+
+          this.writeTimeout = writeTimeout;
+          return this;
+        }
+
+        /**
+         * Sets standard query timeout used to calculate a gRPC deadline when making Query API calls.
+         * If <code>null</code>, queries can potentially wait or run forever.
+         *
+         * @param queryTimeout default timeout used to calculate deadline for Query API calls.
+         *                     If <code>null</code>, queries can potentially wait or run forever.
+         *                     Default value is <code>null</code>.
+         * @return this
+         */
+        @Nonnull
+        public Builder queryTimeout(@Nullable final Duration queryTimeout) {
+          this.queryTimeout = queryTimeout;
+          return this;
         }
 
         /**
@@ -719,6 +797,16 @@ public final class ClientConfig {
             if (writeNoSync != null) {
                 this.writeNoSync(Boolean.parseBoolean(writeNoSync));
             }
+            final String writeTimeout = get.apply("INFLUX_WRITE_TIMEOUT", "influx.writeTimeout");
+            if (writeTimeout != null) {
+                long to = Long.parseLong(writeTimeout);
+                this.writeTimeout(Duration.ofSeconds(to));
+            }
+            final String queryTimeout = get.apply("INFLUX_QUERY_TIMEOUT", "influx.queryTimeout");
+            if (queryTimeout != null) {
+                long to = Long.parseLong(queryTimeout);
+                this.queryTimeout(Duration.ofSeconds(to));
+            }
 
             return new ClientConfig(this);
         }
@@ -761,7 +849,11 @@ public final class ClientConfig {
         gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : WriteOptions.DEFAULT_GZIP_THRESHOLD;
         writeNoSync = builder.writeNoSync != null ? builder.writeNoSync : WriteOptions.DEFAULT_NO_SYNC;
         defaultTags = builder.defaultTags;
-        timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(10);
+        timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
+        writeTimeout = builder.writeTimeout != null
+            ? builder.writeTimeout : builder.timeout != null
+            ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
+        queryTimeout = builder.queryTimeout;
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
                 ? builder.disableServerCertificateValidation : false;
