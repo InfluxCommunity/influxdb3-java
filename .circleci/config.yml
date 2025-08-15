@@ -82,6 +82,56 @@ jobs:
           - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
           - INFLUXDB3_OBJECT_STORE=file
           - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restoring Maven Cache
+          keys:
+            - &cache-key maven-cache_v1-<< parameters.maven-image >>-{{ checksum "pom.xml" }}
+            - maven-cache_v3-<< parameters.maven-image >>-
+      - run:
+          name: Setup InfluxDB service
+          command: |
+            ./scripts/influxdb-setup.sh \
+              --export-url-as TESTING_INFLUXDB_URL \
+              --export-db-as TESTING_INFLUXDB_DATABASE \
+              --export-token-as TESTING_INFLUXDB_TOKEN
+      - run:
+          name: "Running tests"
+          command: |
+            mvn -B -U clean install -DargLine="@{argLine} << parameters.arg-line >>"
+      - save_cache:
+          name: Saving Maven Cache
+          key: *cache-key
+          paths:
+            - ~/.m2
+      - run:
+          name: "Copying test results"
+          when: always
+          command: |
+            mkdir test-results
+            cp target/surefire-reports/*.xml test-results/ || true
+      - store_test_results:
+          path: test-results
+      - run:
+          name: "Copying artifacts"
+          command: |
+            mkdir artifacts
+            cp -r target/*.jar artifacts/
+      - store_artifacts:
+          path: artifacts
+      - run:
+          name: Collecting coverage reports
+          command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+            curl -s https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            shasum -a 256 -c codecov.SHA256SUM
+            chmod +x ./codecov
+            ./codecov
+
   check-dependencies:
     parameters:
       maven-image:
