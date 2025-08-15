@@ -90,6 +90,11 @@ jobs:
             - &cache-key maven-cache_v1-<< parameters.maven-image >>-{{ checksum "pom.xml" }}
             - maven-cache_v3-<< parameters.maven-image >>-
       - run:
+          name: "aaa"
+          command: |
+            sudo apt update
+            sudo apt install -y jq
+      - run:
           name: Setup InfluxDB service
           command: |
             ./scripts/influxdb-setup.sh \
