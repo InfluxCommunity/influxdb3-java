@@ -124,11 +124,11 @@ jobs:
           name: Collecting coverage reports
           command: |
             
-            curl -o key.gpg https://keybase.io/codecovsecurity/pgp_keys.asc
-            
             cd /etc/apt/trusted.gpg.d && ls -a
-            curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
+            curl -o key.gpg https://keybase.io/codecovsecurity/pgp_keys.asc
             sudo apt-key add key.gpg
+            
+            curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
             
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov.SHA256SUM
             
