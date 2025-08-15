@@ -125,7 +125,7 @@ jobs:
           command: |
             
             cd /etc/apt/trusted.gpg.d && ls -a
-            curl -o key.gpg https://keybase.io/codecovsecurity/pgp_keys.asc
+            sudo curl -o key.gpg https://keybase.io/codecovsecurity/pgp_keys.asc
             sudo apt-key add key.gpg
             
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
