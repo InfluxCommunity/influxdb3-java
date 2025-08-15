@@ -100,8 +100,8 @@ jobs:
       - run:
           name: "aaa"
           command: |
-            apt-get update
-            apt-get install -y jq
+            sudo apt-get update
+            sudo apt-get install -y jq
       - run:
           name: Setup InfluxDB service
           command: |
@@ -138,8 +138,7 @@ jobs:
           command: |
             uname -m
             curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
-            
-            
+  
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
             
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov.SHA256SUM
