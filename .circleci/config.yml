@@ -123,11 +123,12 @@ jobs:
       - run:
           name: Collecting coverage reports
           command: |
-            sudo apt-get update
-            sudo apt-get install ca-certificates
-            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
-  
+            
+            curl -o key.gpg https://keybase.io/codecovsecurity/pgp_keys.asc
+            
+            cd /etc/apt/trusted.gpg.d && ls -a
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
+            sudo apt-key add key.gpg
             
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov.SHA256SUM
             
