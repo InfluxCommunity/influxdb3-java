@@ -92,7 +92,6 @@ jobs:
       - run:
           name: "aaa"
           command: |
-            which sudo
             apt-get update
             apt-get install -y jq
       - run:
