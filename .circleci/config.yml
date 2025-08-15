@@ -258,8 +258,7 @@ workflows:
 #          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - tests-java-arm64:
           name: arm64
-#          maven-image: "cimg/openjdk:21.0"
-          maven-image: "bitnami/java:22"
+          maven-image: "cimg/openjdk:21.0"
           arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - deploy-snapshot:
           requires:
