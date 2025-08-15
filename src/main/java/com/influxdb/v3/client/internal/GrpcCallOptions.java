@@ -289,7 +289,7 @@ public final class GrpcCallOptions {
         }
 
         /**
-         * Helper method to clone already existing options.
+         * Helper method to clone already existing gRPC options.
          *
          * @param grpcCallOptions = options to copy
          * @return this
@@ -326,6 +326,8 @@ public final class GrpcCallOptions {
          * @return this
          */
         public Builder withMaxOutboundMessageSize(@Nonnull final Integer maxOutboundMessageSize) {
+            // TODO remove warning about issue 12109 in javadoc above,
+            //  once 12109 is resolved and dependencies are updated.
             this.maxOutboundMessageSize = maxOutboundMessageSize;
             return this;
         }

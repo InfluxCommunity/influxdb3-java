@@ -39,8 +39,6 @@ import javax.annotation.Nullable;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
 
-// TODO ensure that if writeTimeout is not defined but timeout is that writeTimeout is initialized to timeout
-
 /**
  * The <code>ClientConfig</code> holds the configurations for the
  * {@link com.influxdb.v3.client.InfluxDBClient} client.
@@ -59,7 +57,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>timeout</code> - <i>deprecated in 1.4.0</i> timeout when connecting to InfluxDB,
  *     please use more informative properties <code>writeTimeout</code> and <code>queryTimeout</code></li>
  *     <li><code>writeTimeout</code> - timeout when writing data to InfluxDB</li>
- *     <li><code>queryTimeout</code> - timeout used to calculate a default GRPC deadline when querying InfluxDB.
+ *     <li><code>queryTimeout</code> - timeout used to calculate a default gRPC deadline when querying InfluxDB.
  *     Can be <code>null</code>, in which case queries can potentially run forever.</li>
  *     <li><code>allowHttpRedirects</code> - allow redirects for InfluxDB connections</li>
  *     <li><code>disableServerCertificateValidation</code> -
@@ -212,18 +210,23 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets the default timeout to use for the API calls. Default to '10 seconds'.
+     * Gets the default timeout to use for write API calls.
+     * Defaults to '{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
+     * <p>
+     * Deprecated in v1.4.0.  Please use more informative <code>getWriteTimeout()</code>.
      *
-     * @return the default timeout to use for the API calls
+     * @return the default timeout to use for write API calls
+     * @see #getWriteTimeout()
      */
     @Nonnull
+    @Deprecated
     public Duration getTimeout() {
         return timeout;
     }
 
     /**
      * Gets the default timeout to use for REST Write API calls.  Default is
-     * {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
+     * {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds.
      *
      * @return the default timeout to use for REST Write API calls.
      */
@@ -233,10 +236,10 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets the default timeout in seconds to use for calculating a GRPC Deadline when making Query API calls.
+     * Gets the default timeout Duration to use for calculating a gRPC Deadline when making Query API calls.
      * Can be null, in which case queries can potentially wait or run forever.
      *
-     * @return the default timeout in seconds to use for Query API calls.
+     * @return the default timeout Duration to use for Query API calls.
      */
     @Nullable
     public Duration getQueryTimeout() {
@@ -401,6 +404,7 @@ public final class ClientConfig {
         private Integer gzipThreshold;
         private Boolean writeNoSync;
         private Map<String, String> defaultTags;
+        @Deprecated
         private Duration timeout;
         private Duration writeTimeout;
         private Duration queryTimeout;
@@ -533,12 +537,16 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets the default timeout to use for the API calls. Default to '10 seconds'.
+         * Sets the default timeout to use for Write API calls. Defaults to
+         * '{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
          * <p>
-         * Note that this parameter is being superseded by clearer writeTimeout.
+         * Deprecated in v1.4.0. This setter is superseded by the clearer <code>writeTimeout()</code>.
          *
-         * @param timeout default timeout to use for the API calls. Default to '10 seconds'.
+         * @param timeout default timeout to use for Write API calls. Default to
+         * ''{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
          * @return this
+         *
+         * @see #writeTimeout(Duration writeTimeout)
          */
         @Deprecated
         @Nonnull
@@ -564,7 +572,7 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets standard query timeout used to calculate a GRPC deadline when making Query API calls.
+         * Sets standard query timeout used to calculate a gRPC deadline when making Query API calls.
          * If <code>null</code>, queries can potentially wait or run forever.
          *
          * @param queryTimeout default timeout used to calculate deadline for Query API calls.
