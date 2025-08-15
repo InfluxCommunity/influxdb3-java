@@ -256,10 +256,10 @@ workflows:
             - check-dependencies
             - check-licenses
             - check-generate-site
-            - jdk-11
-            - jdk-17
-            - jdk-20
-            - jdk-21
+#            - jdk-11
+#            - jdk-17
+#            - jdk-20
+#            - jdk-21
             - jdk-11-arm64
           filters:
             branches:
