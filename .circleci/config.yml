@@ -128,8 +128,6 @@ jobs:
       - run:
           name: Collecting coverage reports
           command: |
-            
-            
             uname -m
             curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
             
@@ -259,9 +257,9 @@ workflows:
 #          name: jdk-11-arm64
 #          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - tests-java-arm64:
-          name: jdk-17-arm64
+          name: arm64
 #          maven-image: "cimg/openjdk:21.0"
-          maven-image: "amazoncorretto:17"
+          maven-image: "bitnami/java:22"
           arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - deploy-snapshot:
           requires:
