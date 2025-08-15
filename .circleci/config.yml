@@ -123,10 +123,12 @@ jobs:
       - run:
           name: Collecting coverage reports
           command: |
+            sudo apt-get update
+            sudo apt-get upgrade
             
             cd /etc/apt/trusted.gpg.d && ls -a
-            sudo curl -o key.asc https://keybase.io/codecovsecurity/pgp_keys.asc
-            sudo apt-key add key.asc
+            sudo curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
+            cd /etc/apt/trusted.gpg.d && ls -a
             
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
             
