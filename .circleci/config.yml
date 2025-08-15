@@ -92,8 +92,9 @@ jobs:
       - run:
           name: "aaa"
           command: |
-            sudo apt update
-            sudo apt install -y jq
+            which sudo
+            apt-get update
+            apt-get install -y jq
       - run:
           name: Setup InfluxDB service
           command: |
@@ -128,11 +129,10 @@ jobs:
       - run:
           name: Collecting coverage reports
           command: |
-            sudo apt-get update
-            sudo apt-get upgrade
+            
             
             uname -m
-            sudo curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
+            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
             
             
             curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
