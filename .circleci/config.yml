@@ -270,7 +270,7 @@ workflows:
 #            - jdk-17
 #            - jdk-20
 #            - jdk-21
-            - jdk-17-arm64
+            - arm64
           filters:
             branches:
               only: main
