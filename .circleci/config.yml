@@ -58,7 +58,6 @@ commands:
             uname -m
             sudo chmod +x codecov
 
-
 jobs:
   tests-java:
     parameters:
@@ -112,7 +111,7 @@ jobs:
           path: artifacts
       - when:
           condition: << parameters.exe >> == "docker-amd64"
-          step:
+          steps:
             - upload-codecov-amd64
       - when:
           condition: << parameters.exe >> == "docker-arm64"
