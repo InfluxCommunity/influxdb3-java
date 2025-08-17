@@ -57,22 +57,15 @@ jobs:
       - run:
           name: Collecting coverage reports
           command: |
-            curl -Os https://cli.codecov.io/latest/linux-arm64/codecov
-            sudo chmod +x codecov
-            
-            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
-  
-            curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
-            
-            curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov.SHA256SUM
-            
-            curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov.SHA256SUM.sig
-            
+            command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+            curl -s https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
-            
             shasum -a 256 -c codecov.SHA256SUM
-            
-            chmod +x codecov
+            chmod +x ./codecov
+            ./codecov
 
   tests-java-arm64:
     parameters:
@@ -136,13 +129,13 @@ jobs:
       - run:
           name: Collecting coverage reports
           command: |
-            sudo curl -k https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
-            sudo curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov
-            sudo curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM
-            sudo curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM.sig
+            curl -k https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+            curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov
+            curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM.sig
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
-            chmod +x codecov
+            sudo chmod +x codecov
   check-dependencies:
     parameters:
       maven-image:
