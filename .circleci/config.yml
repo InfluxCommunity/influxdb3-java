@@ -40,6 +40,7 @@ commands:
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
             chmod +x ./codecov
+            uname -m
             ./codecov
   upload-codecov-arm64:
     steps:
@@ -52,6 +53,7 @@ commands:
             curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM.sig
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
+            uname -m
             sudo chmod +x codecov
 
 
