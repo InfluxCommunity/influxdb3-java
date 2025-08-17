@@ -232,23 +232,23 @@ workflows:
       - check-dependencies
       - check-licenses
       - check-generate-site
-#      - tests-java:
-#          name: jdk-11
-#      - tests-java:
-#          name: jdk-17
-#          maven-image: "cimg/openjdk:17.0"
-#          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
-#      - tests-java:
-#          name: jdk-20
-#          maven-image: "cimg/openjdk:20.0"
-#          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
-#      - tests-java:
-#          name: jdk-21
-#          maven-image: "cimg/openjdk:21.0"
-#          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
-#      - tests-java-arm64:
-#          name: jdk-11-arm64
-#          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      - tests-java:
+          name: jdk-11
+      - tests-java:
+          name: jdk-17
+          maven-image: "cimg/openjdk:17.0"
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      - tests-java:
+          name: jdk-20
+          maven-image: "cimg/openjdk:20.0"
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      - tests-java:
+          name: jdk-21
+          maven-image: "cimg/openjdk:21.0"
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+      - tests-java-arm64:
+          name: jdk-11-arm64
+          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - tests-java-arm64:
           name: arm64
           maven-image: "cimg/openjdk:21.0"
@@ -258,10 +258,10 @@ workflows:
             - check-dependencies
             - check-licenses
             - check-generate-site
-#            - jdk-11
-#            - jdk-17
-#            - jdk-20
-#            - jdk-21
+            - jdk-11
+            - jdk-17
+            - jdk-20
+            - jdk-21
             - arm64
           filters:
             branches:
