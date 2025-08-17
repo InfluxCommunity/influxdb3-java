@@ -110,11 +110,13 @@ jobs:
       - store_artifacts:
           path: artifacts
       - when:
-          condition: << parameters.exe >> == "docker-amd64"
+          condition:
+            equal: [  docker-amd64, << parameters.exe >> ]
           steps:
             - upload-codecov-amd64
       - when:
-          condition: << parameters.exe >> == "docker-arm64"
+          condition:
+            equal: [  docker-arm64, << parameters.exe >> ]
           steps:
             - upload-codecov-arm64
 
