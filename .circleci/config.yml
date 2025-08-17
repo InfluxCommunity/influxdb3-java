@@ -1,5 +1,20 @@
 version: 2.1
 
+commands:
+  upload-codecov:
+    steps:
+      - run:
+          name: Collecting coverage reports
+          command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+            curl -s https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            shasum -a 256 -c codecov.SHA256SUM
+            chmod +x ./codecov
+            ./codecov
+
 jobs:
   tests-java:
     parameters:
@@ -54,17 +69,7 @@ jobs:
             cp -r target/*.jar artifacts/
       - store_artifacts:
           path: artifacts
-      - run:
-          name: Collecting coverage reports
-          command: |
-            curl -Os https://uploader.codecov.io/latest/linux/codecov
-            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
-            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
-            curl -s https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
-            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
-            shasum -a 256 -c codecov.SHA256SUM
-            chmod +x ./codecov
-            ./codecov
+      - upload-codecov
 
   tests-java-arm64:
     parameters:
@@ -244,9 +249,6 @@ workflows:
       - tests-java:
           name: jdk-21
           maven-image: "cimg/openjdk:21.0"
-          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
-      - tests-java-arm64:
-          name: jdk-11-arm64
           arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
       - tests-java-arm64:
           name: arm64
