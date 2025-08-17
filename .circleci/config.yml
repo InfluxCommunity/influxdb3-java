@@ -40,6 +40,7 @@ commands:
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
             chmod +x ./codecov
+            echo 11111
             uname -m
             ./codecov
   upload-codecov-arm64:
@@ -53,6 +54,7 @@ commands:
             curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM.sig
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
+            echo 22222
             uname -m
             sudo chmod +x codecov
 
@@ -110,7 +112,7 @@ jobs:
           path: artifacts
       - when:
           condition: << parameters.exe >> == "docker-amd64"
-          steps:
+          step:
             - upload-codecov-amd64
       - when:
           condition: << parameters.exe >> == "docker-arm64"
