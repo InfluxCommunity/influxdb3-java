@@ -136,19 +136,12 @@ jobs:
       - run:
           name: Collecting coverage reports
           command: |
-            uname -m
-            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
-  
-            curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov
-            
-            curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov.SHA256SUM
-            
-            curl -Os https://uploader.codecov.io/latest/linux-arm64/codecov.SHA256SUM.sig
-            
+            sudo curl -k https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+            sudo curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov
+            sudo curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM
+            sudo curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM.sig
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
-            
             shasum -a 256 -c codecov.SHA256SUM
-            
             chmod +x codecov
   check-dependencies:
     parameters:
