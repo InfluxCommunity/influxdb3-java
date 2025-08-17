@@ -57,7 +57,6 @@ jobs:
       - run:
           name: Collecting coverage reports
           command: |
-            command: |
             curl -Os https://uploader.codecov.io/latest/linux/codecov
             curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
             curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
