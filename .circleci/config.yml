@@ -288,14 +288,10 @@ workflows:
               maven-image: [ "cimg/openjdk:17.0", "cimg/openjdk:20.0" ]
       - deploy-snapshot:
           requires:
-#            - check-dependencies
-#            - check-licenses
-#            - check-generate-site
-#            - jdk-11
-#            - jdk-17
-#            - jdk-20
-#            - jdk-21
-#            - arm64
+            - check-dependencies
+            - check-licenses
+            - check-generate-site
+            - tests-java
           filters:
             branches:
               only: main
