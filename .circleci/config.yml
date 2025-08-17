@@ -1,7 +1,7 @@
 version: 2.1
 
 executors:
-  docker-amd64: # Docker using the Base Convenience Image
+  docker-amd64-image:
     parameters:
       maven-image:
         type: string
@@ -13,7 +13,7 @@ executors:
           - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
           - INFLUXDB3_OBJECT_STORE=file
           - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
-  docker-arm64: # Docker using the Base Convenience Image
+  docker-arm64-image:
     parameters:
       maven-image:
         type: string
@@ -58,7 +58,6 @@ commands:
             uname -m
             sudo chmod +x codecov
 
-
 jobs:
   tests-java:
     parameters:
@@ -67,7 +66,7 @@ jobs:
         default: &default-maven-image "cimg/openjdk:11.0"
       exe:
         type: executor
-        default: docker-amd64
+        default: docker-amd64-image
       arg-line:
         type: string
         default: "--add-opens=java.base/java.nio=ALL-UNNAMED"
@@ -112,79 +111,15 @@ jobs:
           path: artifacts
       - when:
           condition:
-            equal: [  docker-amd64, << parameters.exe >> ]
+            equal: [ docker-amd64-image, << parameters.exe >> ]
           steps:
             - upload-codecov-amd64
       - when:
           condition:
-            equal: [  docker-arm64, << parameters.exe >> ]
+            equal: [ docker-arm64-image, << parameters.exe >> ]
           steps:
             - upload-codecov-arm64
 
-
-  #  tests-java-arm64:
-  #    parameters:
-  #      maven-image:
-  #        type: string
-  #        default: &default-maven-image "cimg/openjdk:11.0"
-  #      architecture:
-  #        type: enum
-  #        default: ""
-  #      arg-line:
-  #        type: string
-  #        default: ""
-  #    docker:
-  #      - image: << parameters.maven-image >>
-  #      - image: influxdb:3-core
-  #        environment:
-  #          - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
-  #          - INFLUXDB3_OBJECT_STORE=file
-  #          - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
-  #    resource_class: arm.medium
-  #    steps:
-  #      - checkout
-  #      - restore_cache:
-  #          name: Restoring Maven Cache
-  #          keys:
-  #            - &cache-key maven-cache_v1-<< parameters.maven-image >>-{{ checksum "pom.xml" }}
-  #            - maven-cache_v3-<< parameters.maven-image >>-
-  #      - run:
-  #          name: "aaa"
-  #          command: |
-  #            sudo apt-get update
-  #            sudo apt-get install -y jq
-  #      - run:
-  #          name: Setup InfluxDB service
-  #          command: |
-  #            ./scripts/influxdb-setup.sh \
-  #              --export-url-as TESTING_INFLUXDB_URL \
-  #              --export-db-as TESTING_INFLUXDB_DATABASE \
-  #              --export-token-as TESTING_INFLUXDB_TOKEN
-  #      - run:
-  #          name: "Running tests"
-  #          command: |
-  #            mvn -B -U clean install -DargLine="@{argLine} << parameters.arg-line >>"
-  #      - save_cache:
-  #          name: Saving Maven Cache
-  #          key: *cache-key
-  #          paths:
-  #            - ~/.m2
-  #      - run:
-  #          name: "Copying test results"
-  #          when: always
-  #          command: |
-  #            mkdir test-results
-  #            cp target/surefire-reports/*.xml test-results/ || true
-  #      - store_test_results:
-  #          path: test-results
-  #      - run:
-  #          name: "Copying artifacts"
-  #          command: |
-  #            mkdir artifacts
-  #            cp -r target/*.jar artifacts/
-  #      - store_artifacts:
-  #          path: artifacts
-  #      - upload-codecov
   check-dependencies:
     parameters:
       maven-image:
@@ -284,8 +219,8 @@ workflows:
       - tests-java:
           matrix:
             parameters:
-              exe: [ docker-amd64, docker-arm64 ]
-              maven-image: [ "cimg/openjdk:17.0", "cimg/openjdk:20.0" ]
+              exe: [ docker-amd64-image, docker-arm64-image ]
+              maven-image: [ "cimg/openjdk:11.0", "cimg/openjdk:17.0", "cimg/openjdk:20.0", "cimg/openjdk:21.0" ]
       - deploy-snapshot:
           requires:
             - check-dependencies
