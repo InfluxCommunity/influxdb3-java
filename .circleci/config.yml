@@ -1,5 +1,16 @@
 version: 2.1
 
+parameters:
+  maven-image:
+    type: string
+    default: "cimg/openjdk:11.0"
+#  arg-line:
+#    type: string
+#    default: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+#  exe:
+#    type: executor
+#    default: docker-amd64-image
+
 executors:
   docker-amd64-image:
     parameters:
@@ -40,8 +51,6 @@ commands:
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
             chmod +x ./codecov
-            echo 11111
-            uname -m
             ./codecov
   upload-codecov-arm64:
     steps:
@@ -54,9 +63,8 @@ commands:
             curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM.sig
             gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
             shasum -a 256 -c codecov.SHA256SUM
-            echo 22222
-            uname -m
             sudo chmod +x codecov
+
 
 jobs:
   tests-java:
@@ -124,9 +132,9 @@ jobs:
     parameters:
       maven-image:
         type: string
-        default: *default-maven-image
+        default: << pipeline.parameters.maven-image >>
     docker:
-      - image: *default-maven-image
+      - image: << pipeline.parameters.maven-image >>
     steps:
       - checkout
       - restore_cache:
