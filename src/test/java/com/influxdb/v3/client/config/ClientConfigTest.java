@@ -42,6 +42,8 @@ class ClientConfigTest {
             .database("my-db")
             .writePrecision(WritePrecision.NS)
             .timeout(Duration.ofSeconds(30))
+            .writeTimeout(Duration.ofSeconds(35))
+            .queryTimeout(Duration.ofSeconds(120))
             .allowHttpRedirects(true)
             .disableServerCertificateValidation(true)
             .headers(Map.of("X-device", "ab-01"));
@@ -76,6 +78,10 @@ class ClientConfigTest {
         Assertions.assertThat(configString.contains("database='my-db'")).isEqualTo(true);
         Assertions.assertThat(configString.contains("gzipThreshold=1000")).isEqualTo(true);
         Assertions.assertThat(configString).contains("writeNoSync=false");
+        Assertions.assertThat(configString).contains("timeout=PT30S");
+        Assertions.assertThat(configString).contains("writeTimeout=PT35S");
+        Assertions.assertThat(configString).contains("queryTimeout=PT2M");
+
     }
 
     @Test
@@ -242,6 +248,24 @@ class ClientConfigTest {
     }
 
     @Test
+    void timeoutsFromEnv() {
+        Map<String, String> env = Map.of(
+            "INFLUX_HOST", "http://localhost:9999/",
+            "INFLUX_TOKEN", "my-token",
+            "INFLUX_WRITE_TIMEOUT", "45",
+            "INFLUX_QUERY_TIMEOUT", "180");
+
+        Duration writeTimeout = Duration.ofSeconds(45);
+        Duration queryTimeout = Duration.ofSeconds(180);
+        ClientConfig cfg = new ClientConfig.Builder().build(env, null);
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getWriteTimeout()).isEqualTo(writeTimeout);
+        Assertions.assertThat(cfg.getQueryTimeout()).isEqualTo(queryTimeout);
+
+    }
+
+    @Test
     void fromSystemProperties() {
         // minimal
         Properties properties = new Properties();
@@ -333,6 +357,54 @@ class ClientConfigTest {
         props.put("influx.precision", "second");
         cfg = new ClientConfig.Builder().build(new HashMap<>(), props);
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.S);
+    }
+
+    @Test
+    void fromSystemPropertiesTimeouts() {
+        Properties props = new Properties();
+        props.put("influx.host", "http://localhost:9999/");
+        props.put("influx.token", "my-token");
+        props.put("influx.writeTimeout", "20");
+        props.put("influx.queryTimeout", "300");
+
+        ClientConfig cfg = new ClientConfig.Builder().build(new HashMap<>(), props);
+
+        Duration writeTimeout = Duration.ofSeconds(20);
+        Duration queryTimeout = Duration.ofSeconds(300);
+
+        Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
+        Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
+        Assertions.assertThat(cfg.getWriteTimeout()).isEqualTo(writeTimeout);
+        Assertions.assertThat(cfg.getQueryTimeout()).isEqualTo(queryTimeout);
+
+    }
+
+    @Test
+    void timeoutDefaultsTest() {
+        ClientConfig cfg = new ClientConfig.Builder()
+            .host("http://localhost:9999")
+            .token("my-token".toCharArray())
+            .organization("my-org")
+            .database("my-db")
+            .build();
+
+        Duration defaultTimeout = Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
+        Assertions.assertThat(cfg.getTimeout()).isEqualTo(defaultTimeout);
+        Assertions.assertThat(cfg.getWriteTimeout()).isEqualTo(defaultTimeout);
+        Assertions.assertThat(cfg.getQueryTimeout()).isNull();
+    }
+
+    @Test
+    void standardTimeoutUsedWhenWriteTimeoutUndefinedTest() {
+        int testTimeout = 7;
+        ClientConfig config = new ClientConfig.Builder()
+            .host("http://localhost:8086")
+            .token("my-token".toCharArray())
+            .timeout(Duration.ofSeconds(testTimeout))
+            .build();
+
+        Assertions.assertThat(config.getTimeout()).isEqualTo(Duration.ofSeconds(testTimeout));
+        Assertions.assertThat(config.getWriteTimeout()).isEqualTo(Duration.ofSeconds(testTimeout));
     }
 
 }

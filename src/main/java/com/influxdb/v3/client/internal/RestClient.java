@@ -101,7 +101,7 @@ final class RestClient implements AutoCloseable {
 
         // timeout and redirects
         HttpClient.Builder builder = HttpClient.newBuilder()
-                .connectTimeout(config.getTimeout())
+                .connectTimeout(config.getWriteTimeout())
                 .followRedirects(config.getAllowHttpRedirects()
                         ? HttpClient.Redirect.NORMAL : HttpClient.Redirect.NEVER);
 

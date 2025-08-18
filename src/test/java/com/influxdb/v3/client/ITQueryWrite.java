@@ -23,15 +23,18 @@ package com.influxdb.v3.client;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.grpc.Deadline;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.apache.arrow.flight.FlightStatusCode;
@@ -39,13 +42,17 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.assertj.core.api.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.internal.GrpcCallOptions;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
+
+import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 
 class ITQueryWrite {
 
@@ -298,6 +305,202 @@ class ITQueryWrite {
         }
 
         Assertions.fail("FlightRuntimeException should have been thrown.  Instead final query passed.");
+
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void queryTimeoutExceededTest() {
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+            .host(System.getenv("TESTING_INFLUXDB_URL"))
+            .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+            .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+            .queryTimeout(Duration.ofNanos(5000))
+            .build());
+
+        String measurement = "timeout_test_" + Math.round(Math.random() * 100_000);
+        long testId = System.currentTimeMillis();
+        client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
+
+        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
+
+        Throwable thrown = catchThrowable(() -> {
+            Stream<Object[]> stream = client.query(sql);
+            stream.forEach(row -> {
+                Assertions.assertThat(row).hasSize(1);
+                Assertions.assertThat(row[0]).isEqualTo(123.0);
+            });
+        });
+
+        Assertions.assertThat(thrown).isInstanceOf(FlightRuntimeException.class);
+        Assertions.assertThat(thrown.getMessage()).matches(".*deadline.*exceeded.*");
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void queryTimeoutOKTest() {
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+            .host(System.getenv("TESTING_INFLUXDB_URL"))
+            .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+            .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+            .queryTimeout(Duration.ofSeconds(3))
+            .build());
+
+        String measurement = "timeout_test_" + Math.round(Math.random() * 100_000);
+        long testId = System.currentTimeMillis();
+        client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
+
+        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
+
+        try (Stream<Object[]> stream = client.query(sql)) {
+            stream.forEach(row -> {
+                Assertions.assertThat(row).hasSize(1);
+                Assertions.assertThat(row[0]).isEqualTo(123.0);
+            });
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void queryTimeoutOtherGrpcOptUnaffectedTest() {
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+            .host(System.getenv("TESTING_INFLUXDB_URL"))
+            .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+            .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+            .queryTimeout(Duration.ofSeconds(3))
+            .build());
+
+        String measurement = "timeout_test_" + Math.round(Math.random() * 100_000);
+        long testId = System.currentTimeMillis();
+        client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
+
+        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
+
+        QueryOptions queryOptions = QueryOptions.defaultQueryOptions();
+        queryOptions.setGrpcCallOptions(new GrpcCallOptions.Builder()
+            .withMaxInboundMessageSize(10)
+            .build()
+        );
+
+        Throwable thrown = catchThrowable(() -> {
+            Stream<Object[]> stream = client.query(sql, queryOptions);
+            stream.forEach(row -> {
+                Assertions.assertThat(row).hasSize(1);
+                Assertions.assertThat(row[0]).isEqualTo(123.0);
+            });
+        });
+
+        Assertions.assertThat(thrown).isInstanceOf(FlightRuntimeException.class);
+        Assertions.assertThat(thrown.getMessage()).contains("gRPC message exceeds maximum size");
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void queryTimeoutSuperceededByGrpcOptTest() {
+
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+            .host(System.getenv("TESTING_INFLUXDB_URL"))
+            .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+            .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+            .queryTimeout(Duration.ofSeconds(3))
+            .build());
+
+        String measurement = "timeout_test_" + Math.round(Math.random() * 100_000);
+        long testId = System.currentTimeMillis();
+        client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
+
+        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
+
+        QueryOptions queryOptions = QueryOptions.defaultQueryOptions();
+        queryOptions.setGrpcCallOptions(new GrpcCallOptions.Builder()
+            .withDeadline(Deadline.after(5000, TimeUnit.NANOSECONDS))
+            .build()
+        );
+
+        Throwable thrown = catchThrowable(() -> {
+            Stream<Object[]> stream = client.query(sql, queryOptions);
+            stream.forEach(row -> {
+                Assertions.assertThat(row).hasSize(1);
+                Assertions.assertThat(row[0]).isEqualTo(123.0);
+            });
+        });
+
+        Assertions.assertThat(thrown).isInstanceOf(FlightRuntimeException.class);
+        Assertions.assertThat(thrown.getMessage()).matches(".*deadline.*exceeded.*");
+    }
+
+    @Test
+    public void repeatQueryWithTimeoutTest() {
+        long timeout = 1000;
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+            .host(System.getenv("TESTING_INFLUXDB_URL"))
+            .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+            .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+            .queryTimeout(Duration.ofMillis(timeout))
+            .build());
+
+        String measurement = "timeout_test_" + Math.round(Math.random() * 100_000);
+        long testId = System.currentTimeMillis();
+        client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
+
+        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
+
+        for (int i = 0; i < 3; i++) {
+            try (Stream<Object[]> stream = client.query(sql)) {
+                stream.forEach(row -> {
+                    Assertions.assertThat(row).hasSize(1);
+                    Assertions.assertThat(row[0]).isEqualTo(123.0);
+                });
+                TimeUnit.MILLISECONDS.sleep(timeout + 100);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Test
+    @Disabled("Runs across issue 12109 in Grpc-Java library ")
+    public void queryGrpcMaxOutSizeTest() {
+        // See Grpc-java issue 12109 https://github.com/grpc/grpc-java/issues/12109
+        // TODO - re-enable after 12109 has a fix and dependencies are updated
+        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+            .host(System.getenv("TESTING_INFLUXDB_URL"))
+            .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
+            .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
+            // .queryTimeout(Duration.ofSeconds(3))
+            .build());
+
+        String measurement = "timeout_test_" + Math.round(Math.random() * 100_000);
+        long testId = System.currentTimeMillis();
+        client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
+
+        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
+
+        QueryOptions queryOptions = QueryOptions.defaultQueryOptions();
+        queryOptions.setGrpcCallOptions(new GrpcCallOptions.Builder()
+            .withMaxOutboundMessageSize(10)
+            .build()
+        );
+
+        try (Stream<Object[]> stream = client.query(sql, queryOptions)) {
+            stream.forEach(row -> {
+                Assertions.assertThat(row).hasSize(1);
+                Assertions.assertThat(row[0]).isEqualTo(123.0);
+            });
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
     }
 

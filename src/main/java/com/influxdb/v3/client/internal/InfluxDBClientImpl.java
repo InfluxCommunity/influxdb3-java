@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -37,6 +38,7 @@ import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.grpc.Deadline;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.arrow.flight.CallOption;
@@ -396,6 +398,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         Arguments.checkNotNull(parameters, "parameters");
         Arguments.checkNotNull(options, "options");
 
+        if (options.grpcCallOptions().getDeadline() == null && config.getQueryTimeout() != null) {
+            options.setGrpcCallOptions(new GrpcCallOptions.Builder()
+                .fromGrpcCallOptions(options.grpcCallOptions())
+                .withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS))
+                .build());
+        }
+
         if (closed) {
             throw new IllegalStateException("InfluxDBClient has been closed.");
         }
@@ -413,6 +422,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         });
 
         CallOption[] callOptions = options.grpcCallOptions().getCallOptions();
+
         return flightSqlClient.execute(
                 query,
                 database,

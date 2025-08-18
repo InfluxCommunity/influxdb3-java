@@ -65,10 +65,17 @@ public final class WriteOptions {
      * Default NoSync.
      */
     public static final boolean DEFAULT_NO_SYNC = false;
-    /**
+
+  /**
+   * Default timeout for writes in seconds. Set to {@value}
+   */
+  public static final int DEFAULT_WRITE_TIMEOUT = 10;
+
+  /**
      * Default WriteOptions.
      * Deprecated use {@link #defaultWriteOptions} instead
      */
+
     @Deprecated(forRemoval = true)
     public static final WriteOptions DEFAULTS = new WriteOptions(
             null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null);
