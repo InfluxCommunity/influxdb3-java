@@ -1,22 +1,16 @@
 version: 2.1
 
 parameters:
-  maven-image:
+  default-maven-image:
     type: string
     default: "cimg/openjdk:11.0"
-#  arg-line:
-#    type: string
-#    default: "--add-opens=java.base/java.nio=ALL-UNNAMED"
-#  exe:
-#    type: executor
-#    default: docker-amd64-image
 
 executors:
   docker-amd64-image:
     parameters:
       maven-image:
         type: string
-        default: "cimg/openjdk:11.0"
+        default: << pipeline.parameters.default-maven-image >>
     docker:
       - image: <<parameters.maven-image>>
       - image: influxdb:3-core
@@ -28,7 +22,7 @@ executors:
     parameters:
       maven-image:
         type: string
-        default: "cimg/openjdk:11.0"
+        default: << pipeline.parameters.default-maven-image >>
     docker:
       - image: <<parameters.maven-image>>
       - image: influxdb:3-core
@@ -65,13 +59,12 @@ commands:
             shasum -a 256 -c codecov.SHA256SUM
             sudo chmod +x codecov
 
-
 jobs:
   tests-java:
     parameters:
       maven-image:
         type: string
-        default: &default-maven-image "cimg/openjdk:11.0"
+        default: << pipeline.parameters.default-maven-image >>
       exe:
         type: executor
         default: docker-amd64-image
@@ -132,9 +125,9 @@ jobs:
     parameters:
       maven-image:
         type: string
-        default: << pipeline.parameters.maven-image >>
+        default: << pipeline.parameters.default-maven-image >>
     docker:
-      - image: << pipeline.parameters.maven-image >>
+      - image: << pipeline.parameters.default-maven-image >>
     steps:
       - checkout
       - restore_cache:
@@ -149,7 +142,7 @@ jobs:
     parameters:
       maven-image:
         type: string
-        default: *default-maven-image
+        default: << pipeline.parameters.default-maven-image >>
     docker:
       - image: << parameters.maven-image >>
     steps:
@@ -166,7 +159,7 @@ jobs:
     parameters:
       maven-image:
         type: string
-        default: *default-maven-image
+        default: << pipeline.parameters.default-maven-image >>
     docker:
       - image: << parameters.maven-image >>
     steps:
@@ -181,7 +174,7 @@ jobs:
 
   deploy-snapshot:
     docker:
-      - image: *default-maven-image
+      - image: << pipeline.parameters.default-maven-image >>
     steps:
       - run:
           name: Early return if this build is from a forked repository
@@ -228,7 +221,7 @@ workflows:
           matrix:
             parameters:
               exe: [ docker-amd64-image, docker-arm64-image ]
-              maven-image: [ "cimg/openjdk:11.0", "cimg/openjdk:17.0", "cimg/openjdk:20.0", "cimg/openjdk:21.0" ]
+              maven-image: [ << pipeline.parameters.default-maven-image >>, "cimg/openjdk:17.0", "cimg/openjdk:20.0", "cimg/openjdk:21.0" ]
       - deploy-snapshot:
           requires:
             - check-dependencies
