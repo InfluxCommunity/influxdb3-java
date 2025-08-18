@@ -1,5 +1,9 @@
 ## 1.4.0 [unreleased]
 
+### Features
+
+1. [#266](https://github.com/InfluxCommunity/influxdb3-java/pull/266) Add tests for arm64 CircleCI.
+
 ## 1.3.0 [2025-08-13]
 
 ### Features
