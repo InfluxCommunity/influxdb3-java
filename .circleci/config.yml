@@ -1,13 +1,5 @@
 version: 2.1
 
-parameters:
-  influxdb3-core-env:
-    type: string
-    default: "INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01,INFLUXDB3_OBJECT_STORE=file,INFLUXDB3_DB_DIR=/var/lib/influxdb3/data"
-  default-maven-image:
-    type: string
-    default: "cimg/openjdk:11.0"
-
 executors:
   docker-amd64-image:
     parameters:
