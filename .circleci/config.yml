@@ -1,21 +1,77 @@
 version: 2.1
 
-jobs:
-  tests-java:
+parameters:
+  default-maven-image:
+    type: string
+    default: "cimg/openjdk:11.0"
+
+executors:
+  docker-amd64-image:
     parameters:
       maven-image:
         type: string
-        default: &default-maven-image "cimg/openjdk:11.0"
-      arg-line:
-        type: string
-        default: ""
+        default: << pipeline.parameters.default-maven-image >>
     docker:
-      - image: << parameters.maven-image >>
+      - image: <<parameters.maven-image>>
       - image: influxdb:3-core
         environment:
           - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
           - INFLUXDB3_OBJECT_STORE=file
           - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
+  docker-arm64-image:
+    parameters:
+      maven-image:
+        type: string
+        default: << pipeline.parameters.default-maven-image >>
+    docker:
+      - image: <<parameters.maven-image>>
+      - image: influxdb:3-core
+        environment:
+          - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
+          - INFLUXDB3_OBJECT_STORE=file
+          - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
+    resource_class: arm.medium
+
+commands:
+  upload-codecov-amd64:
+    steps:
+      - run:
+          name: Collecting coverage reports
+          command: |
+            curl -Os https://uploader.codecov.io/latest/linux/codecov
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
+            curl -s https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            shasum -a 256 -c codecov.SHA256SUM
+            chmod +x ./codecov
+            ./codecov
+  upload-codecov-arm64:
+    steps:
+      - run:
+          name: Collecting coverage reports
+          command: |
+            curl -k https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
+            curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov
+            curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM
+            curl -Os https://uploader.codecov.io/v0.8.0/aarch64/codecov.SHA256SUM.sig
+            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            shasum -a 256 -c codecov.SHA256SUM
+            sudo chmod +x codecov
+
+jobs:
+  tests-java:
+    parameters:
+      maven-image:
+        type: string
+        default: << pipeline.parameters.default-maven-image >>
+      exe:
+        type: executor
+        default: docker-amd64-image
+      arg-line:
+        type: string
+        default: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+    executor: << parameters.exe >>
     steps:
       - checkout
       - restore_cache:
@@ -54,25 +110,24 @@ jobs:
             cp -r target/*.jar artifacts/
       - store_artifacts:
           path: artifacts
-      - run:
-          name: Collecting coverage reports
-          command: |
-            curl -Os https://uploader.codecov.io/latest/linux/codecov
-            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM
-            curl -Os https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig
-            curl -s https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import
-            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
-            shasum -a 256 -c codecov.SHA256SUM
-            chmod +x ./codecov
-            ./codecov
+      - when:
+          condition:
+            equal: [ docker-amd64-image, << parameters.exe >> ]
+          steps:
+            - upload-codecov-amd64
+      - when:
+          condition:
+            equal: [ docker-arm64-image, << parameters.exe >> ]
+          steps:
+            - upload-codecov-arm64
 
   check-dependencies:
     parameters:
       maven-image:
         type: string
-        default: *default-maven-image
+        default: << pipeline.parameters.default-maven-image >>
     docker:
-      - image: *default-maven-image
+      - image: << pipeline.parameters.default-maven-image >>
     steps:
       - checkout
       - restore_cache:
@@ -87,7 +142,7 @@ jobs:
     parameters:
       maven-image:
         type: string
-        default: *default-maven-image
+        default: << pipeline.parameters.default-maven-image >>
     docker:
       - image: << parameters.maven-image >>
     steps:
@@ -104,7 +159,7 @@ jobs:
     parameters:
       maven-image:
         type: string
-        default: *default-maven-image
+        default: << pipeline.parameters.default-maven-image >>
     docker:
       - image: << parameters.maven-image >>
     steps:
@@ -119,7 +174,7 @@ jobs:
 
   deploy-snapshot:
     docker:
-      - image: *default-maven-image
+      - image: << pipeline.parameters.default-maven-image >>
     steps:
       - run:
           name: Early return if this build is from a forked repository
@@ -163,28 +218,16 @@ workflows:
       - check-licenses
       - check-generate-site
       - tests-java:
-          name: jdk-11
-      - tests-java:
-          name: jdk-17
-          maven-image: "cimg/openjdk:17.0"
-          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
-      - tests-java:
-          name: jdk-20
-          maven-image: "cimg/openjdk:20.0"
-          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
-      - tests-java:
-          name: jdk-21
-          maven-image: "cimg/openjdk:21.0"
-          arg-line: "--add-opens=java.base/java.nio=ALL-UNNAMED"
+          matrix:
+            parameters:
+              exe: [ docker-amd64-image, docker-arm64-image ]
+              maven-image: [ << pipeline.parameters.default-maven-image >>, "cimg/openjdk:17.0", "cimg/openjdk:20.0", "cimg/openjdk:21.0" ]
       - deploy-snapshot:
           requires:
             - check-dependencies
             - check-licenses
             - check-generate-site
-            - jdk-11
-            - jdk-17
-            - jdk-20
-            - jdk-21
+            - tests-java
           filters:
             branches:
               only: main
