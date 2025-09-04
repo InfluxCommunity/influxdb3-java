@@ -176,6 +176,13 @@ try (Stream<PointValues> stream = client.queryPoints(sql1, QueryOptions.DEFAULTS
 System.out.printf("--------------------------------------------------------%n%n");
 ```
 
+## gRPC Compression
+
+The Java client supports gRPC response compression.
+
+If the server chooses to compress query responses (e.g., with gzip), the client
+will automatically decompress them — no extra configuration is required.
+
 ## Feedback
 
 If you need help, please use our [Community Slack](https://app.slack.com/huddle/TH8RGQX5Z/C02UDUPLQKA)
