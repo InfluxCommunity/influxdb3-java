@@ -33,6 +33,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import io.grpc.Deadline;
 import org.apache.arrow.flight.CallStatus;
@@ -40,7 +41,6 @@ import org.apache.arrow.flight.FlightRuntimeException;
 import org.apache.arrow.flight.FlightStatusCode;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.assertj.core.api.Assertions;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -504,7 +504,7 @@ class ITQueryWrite {
 
     }
 
-    @NotNull
+    @Nonnull
     private static InfluxDBClient getInstance() {
         return InfluxDBClient.getInstance(
                 System.getenv("TESTING_INFLUXDB_URL"),
