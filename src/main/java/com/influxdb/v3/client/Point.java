@@ -32,8 +32,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import com.influxdb.v3.client.internal.Arguments;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
@@ -490,7 +488,7 @@ public final class Point {
    * @return this
    */
   @Nonnull
-  public Point removeField(@NonNull final String name) {
+  public Point removeField(@Nonnull final String name) {
     values.removeField(name);
 
     return  this;

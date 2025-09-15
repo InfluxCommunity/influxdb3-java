@@ -27,12 +27,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import mockwebserver3.RecordedRequest;
 import okhttp3.HttpUrl;
 import org.assertj.core.api.Assertions;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -399,7 +399,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         }
     }
 
-    @NotNull
+    @Nonnull
     private RecordedRequest assertThatServerRequested() throws InterruptedException {
         assertThat(mockServer.getRequestCount()).isEqualTo(1);
         RecordedRequest request = mockServer.takeRequest();
