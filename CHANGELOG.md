@@ -1,5 +1,9 @@
 ## 1.5.0 [unreleased]
 
+### CI
+
+1. [#283](https://github.com/InfluxCommunity/influxdb3-java/pull/283) Fix pipeline not downloading the correct java images.
+
 ## 1.4.0 [2025-09-15]
 
 ### Features
