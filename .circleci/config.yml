@@ -66,12 +66,14 @@ jobs:
         type: string
         default: << pipeline.parameters.default-maven-image >>
       exe:
-        type: executor
+        type: string
         default: docker-amd64-image
       arg-line:
         type: string
         default: "--add-opens=java.base/java.nio=ALL-UNNAMED"
-    executor: << parameters.exe >>
+    executor:
+      name: << parameters.exe >>
+      maven-image: << parameters.maven-image >>
     steps:
       - checkout
       - restore_cache:
