@@ -439,6 +439,9 @@ class ITQueryWrite {
         Assertions.assertThat(thrown.getMessage()).matches(".*deadline.*exceeded.*");
     }
 
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
     public void repeatQueryWithTimeoutTest() {
         long timeout = 1000;
