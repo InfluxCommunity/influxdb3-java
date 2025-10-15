@@ -46,7 +46,8 @@ class ClientConfigTest {
             .queryTimeout(Duration.ofSeconds(120))
             .allowHttpRedirects(true)
             .disableServerCertificateValidation(true)
-            .headers(Map.of("X-device", "ab-01"));
+            .headers(Map.of("X-device", "ab-01"))
+            .disableGRPCCompression(true);
 
     @Test
     void equalConfig() {
@@ -81,6 +82,7 @@ class ClientConfigTest {
         Assertions.assertThat(configString).contains("timeout=PT30S");
         Assertions.assertThat(configString).contains("writeTimeout=PT35S");
         Assertions.assertThat(configString).contains("queryTimeout=PT2M");
+        Assertions.assertThat(configString).contains("disableGRPCCompression=true");
 
     }
 
@@ -131,10 +133,11 @@ class ClientConfigTest {
 
         cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
-                        + "?token=my-token&authScheme=my-auth");
+                        + "?token=my-token&authScheme=my-auth&disableGRPCCompression=true");
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
         Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
         Assertions.assertThat(cfg.getAuthScheme()).isEqualTo("my-auth");
+        Assertions.assertThat(cfg.getDisableGRPCCompression()).isEqualTo(true);
     }
 
     @Test
@@ -204,7 +207,9 @@ class ClientConfigTest {
                 "INFLUX_DATABASE", "my-db",
                 "INFLUX_PRECISION", "ms",
                 "INFLUX_GZIP_THRESHOLD", "64",
-                "INFLUX_WRITE_NO_SYNC", "true"
+                "INFLUX_WRITE_NO_SYNC", "true",
+                "INFLUX_DISABLE_GRPC_COMPRESSION", "true"
+
         );
         cfg = new ClientConfig.Builder()
                 .build(env, null);
@@ -215,6 +220,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(64);
         Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(true);
+        Assertions.assertThat(cfg.getDisableGRPCCompression()).isTrue();
     }
 
     @Test
@@ -318,6 +324,7 @@ class ClientConfigTest {
         properties.put("influx.precision", "ms");
         properties.put("influx.gzipThreshold", "64");
         properties.put("influx.writeNoSync", "true");
+        properties.put("influx.disableGRPCCompression", "true");
         cfg = new ClientConfig.Builder()
                 .build(new HashMap<>(), properties);
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
@@ -327,6 +334,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(64);
         Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(true);
+        Assertions.assertThat(cfg.getDisableGRPCCompression()).isTrue();
     }
 
     @Test

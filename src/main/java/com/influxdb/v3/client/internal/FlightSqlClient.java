@@ -41,6 +41,8 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.grpc.Codec;
+import io.grpc.DecompressorRegistry;
 import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.Metadata;
 import io.grpc.ProxyDetector;
@@ -92,8 +94,6 @@ final class FlightSqlClient implements AutoCloseable {
         if (config.getToken() != null && config.getToken().length > 0) {
             defaultHeaders.put("Authorization", "Bearer " + new String(config.getToken()));
         }
-
-        defaultHeaders.put("User-Agent", Identity.getUserAgent());
 
         if (config.getHeaders() != null) {
             defaultHeaders.putAll(config.getHeaders());
@@ -148,6 +148,8 @@ final class FlightSqlClient implements AutoCloseable {
         URI uri = createLocation(config).getUri();
         final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forAddress(uri.getHost(), uri.getPort());
 
+        nettyChannelBuilder.userAgent(Identity.getUserAgent());
+
         if (LocationSchemes.GRPC_TLS.equals(uri.getScheme())) {
             nettyChannelBuilder.useTransportSecurity();
 
@@ -168,6 +170,11 @@ final class FlightSqlClient implements AutoCloseable {
 
         nettyChannelBuilder.maxTraceEvents(0)
                 .maxInboundMetadataSize(Integer.MAX_VALUE);
+
+        if (config.getDisableGRPCCompression()) {
+            nettyChannelBuilder.decompressorRegistry(DecompressorRegistry.emptyInstance()
+                .with(Codec.Identity.NONE, false));
+        }
 
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
     }

@@ -67,6 +67,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
  *     <li><code>sslRootsFilePath</code> - path to the stored certificates file in PEM format</li>
+ *     <li><code>disableGRPCCompression</code> - disables the default gRPC compression header</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
@@ -113,6 +114,7 @@ public final class ClientConfig {
     private final Authenticator authenticator;
     private final Map<String, String> headers;
     private final String sslRootsFilePath;
+    private final boolean disableGRPCCompression;
 
     /**
      * Deprecated use {@link #proxyUrl}.
@@ -319,6 +321,15 @@ public final class ClientConfig {
     }
 
     /**
+     * Is gRPC compression disabled.
+     *
+     * @return true if gRPC compression is disabled
+     */
+    public boolean getDisableGRPCCompression() {
+        return disableGRPCCompression;
+    }
+
+    /**
      * Validates the configuration properties.
      */
     public void validate() {
@@ -354,7 +365,8 @@ public final class ClientConfig {
                 && Objects.equals(proxyUrl, that.proxyUrl)
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
-                && Objects.equals(sslRootsFilePath, that.sslRootsFilePath);
+                && Objects.equals(sslRootsFilePath, that.sslRootsFilePath)
+                && disableGRPCCompression == that.disableGRPCCompression;
     }
 
     @Override
@@ -363,7 +375,7 @@ public final class ClientConfig {
                 database, writePrecision, gzipThreshold, writeNoSync,
                 timeout, writeTimeout, queryTimeout, allowHttpRedirects, disableServerCertificateValidation,
                 proxy, proxyUrl, authenticator, headers,
-                defaultTags, sslRootsFilePath);
+                defaultTags, sslRootsFilePath, disableGRPCCompression);
     }
 
     @Override
@@ -386,6 +398,7 @@ public final class ClientConfig {
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
                 .add("sslRootsFilePath=" + sslRootsFilePath)
+                .add("disableGRPCCompression=" + disableGRPCCompression)
                 .toString();
     }
 
@@ -415,6 +428,7 @@ public final class ClientConfig {
         private Authenticator authenticator;
         private Map<String, String> headers;
         private String sslRootsFilePath;
+        private boolean disableGRPCCompression;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -698,6 +712,18 @@ public final class ClientConfig {
         }
 
         /**
+         * Sets whether to disable gRPC compression. Default is 'false'.
+         *
+         * @param disableGRPCCompression disable gRPC compression
+         * @return this
+         */
+        @Nonnull
+        public Builder disableGRPCCompression(final boolean disableGRPCCompression) {
+            this.disableGRPCCompression = disableGRPCCompression;
+            return this;
+        }
+
+        /**
          * Build an instance of {@code ClientConfig}.
          *
          * @return the configuration for an {@code InfluxDBClient}.
@@ -744,6 +770,9 @@ public final class ClientConfig {
             }
             if (parameters.containsKey("writeNoSync")) {
                 this.writeNoSync(Boolean.parseBoolean(parameters.get("writeNoSync")));
+            }
+            if (parameters.containsKey("disableGRPCCompression")) {
+                this.disableGRPCCompression(Boolean.parseBoolean(parameters.get("disableGRPCCompression")));
             }
 
             return new ClientConfig(this);
@@ -807,6 +836,11 @@ public final class ClientConfig {
                 long to = Long.parseLong(queryTimeout);
                 this.queryTimeout(Duration.ofSeconds(to));
             }
+            final String disableGRPCCompression = get.apply("INFLUX_DISABLE_GRPC_COMPRESSION",
+                "influx.disableGRPCCompression");
+            if (disableGRPCCompression != null) {
+                this.disableGRPCCompression(Boolean.parseBoolean(disableGRPCCompression));
+            }
 
             return new ClientConfig(this);
         }
@@ -862,5 +896,6 @@ public final class ClientConfig {
         authenticator = builder.authenticator;
         headers = builder.headers;
         sslRootsFilePath = builder.sslRootsFilePath;
+        disableGRPCCompression = builder.disableGRPCCompression;
     }
 }

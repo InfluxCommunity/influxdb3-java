@@ -1,5 +1,9 @@
 ## 1.5.0 [unreleased]
 
+### Features
+
+1. [#289](https://github.com/InfluxCommunity/influxdb3-java/pull/289) Add the possibility to disable gRPC compression via the `disableGRPCCompression` parameter in the `ClientConfig`.
+
 ### CI
 
 1. [#283](https://github.com/InfluxCommunity/influxdb3-java/pull/283) Fix pipeline not downloading the correct java images.

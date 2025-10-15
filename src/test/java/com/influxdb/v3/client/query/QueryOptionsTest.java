@@ -24,14 +24,10 @@ package com.influxdb.v3.client.query;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 
 import io.grpc.Deadline;
 import io.grpc.ManagedChannel;
@@ -41,24 +37,17 @@ import org.apache.arrow.flight.CallOptions;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.apache.arrow.flight.FlightServer;
-import org.apache.arrow.flight.Location;
-import org.apache.arrow.flight.NoOpFlightProducer;
-import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.impl.FlightServiceGrpc;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
-import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.types.pojo.ArrowType;
-import org.apache.arrow.vector.types.pojo.Field;
-import org.apache.arrow.vector.types.pojo.FieldType;
-import org.apache.arrow.vector.types.pojo.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.PointValues;
+import com.influxdb.v3.client.TestUtils;
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.GrpcCallOptions;
 
@@ -121,9 +110,10 @@ class QueryOptionsTest {
         int freePort = findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 100;
-        try (VectorSchemaRoot vectorSchemaRoot = generateVectorSchemaRoot(10, rowCount);
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
              BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
-             FlightServer flightServer = simpleFlightServer(uri, allocator, simpleProducer(vectorSchemaRoot))
+             FlightServer flightServer = TestUtils.simpleFlightServer(uri, allocator,
+                 TestUtils.simpleProducer(vectorSchemaRoot))
         ) {
             flightServer.start();
 
@@ -160,9 +150,10 @@ class QueryOptionsTest {
         int freePort = findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 100;
-        try (VectorSchemaRoot vectorSchemaRoot = generateVectorSchemaRoot(10, rowCount);
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
              BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
-             FlightServer flightServer = simpleFlightServer(uri, allocator, simpleProducer(vectorSchemaRoot))
+             FlightServer flightServer = TestUtils.simpleFlightServer(uri, allocator,
+                 TestUtils.simpleProducer(vectorSchemaRoot))
         ) {
             flightServer.start();
 
@@ -256,46 +247,4 @@ class QueryOptionsTest {
         Assertions.assertThat(stubCallOptions.getDeadline()).isEqualTo(grpcCallOption.getDeadline());
     }
 
-    private FlightServer simpleFlightServer(@Nonnull final URI uri,
-                                            @Nonnull final BufferAllocator allocator,
-                                            @Nonnull final NoOpFlightProducer producer) throws Exception {
-        Location location = Location.forGrpcInsecure(uri.getHost(), uri.getPort());
-        return FlightServer.builder(allocator, location, producer).build();
-    }
-
-    private NoOpFlightProducer simpleProducer(@Nonnull final VectorSchemaRoot vectorSchemaRoot) {
-        return new NoOpFlightProducer() {
-            @Override
-            public void getStream(final CallContext context,
-                                  final Ticket ticket,
-                                  final ServerStreamListener listener) {
-                listener.start(vectorSchemaRoot);
-                if (listener.isReady()) {
-                    listener.putNext();
-                }
-                listener.completed();
-            }
-        };
-    }
-
-    private VectorSchemaRoot generateVectorSchemaRoot(final int fieldCount, final int rowCount) {
-        List<Field> fields = new ArrayList<>();
-        for (int i = 0; i < fieldCount; i++) {
-            Field field = new Field("field" + i, FieldType.nullable(new ArrowType.Utf8()), null);
-            fields.add(field);
-        }
-
-        Schema schema = new Schema(fields);
-        VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema, new RootAllocator(Long.MAX_VALUE));
-        for (Field field : fields) {
-            VarCharVector vector = (VarCharVector) vectorSchemaRoot.getVector(field);
-            vector.allocateNew(rowCount);
-            for (int i = 0; i < rowCount; i++) {
-                vector.set(i, "Value".getBytes(StandardCharsets.UTF_8));
-            }
-        }
-        vectorSchemaRoot.setRowCount(rowCount);
-
-        return vectorSchemaRoot;
-    }
 }
