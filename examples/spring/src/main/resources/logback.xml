@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <logger name="org.springframework" level="ERROR"/>
+    <logger name="org.bonitoo.qa" level="INFO"/>
+    <logger name="org.apache.arrrow" level="DEBUG" />
+
+    <appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>%d{HH:mm:ss.SSS} %blue(%-5level) %magenta(%logger{36}) - %msg %n
+            </Pattern>
+        </encoder>
+    </appender>
+
+    <root>
+        <level value="DEBUG" />
+        <appender-ref ref="consoleAppender" />
+    </root>
+</configuration>
