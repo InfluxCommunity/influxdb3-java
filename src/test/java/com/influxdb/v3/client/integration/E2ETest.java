@@ -25,22 +25,17 @@ import java.math.BigInteger;
 import java.net.ConnectException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-import com.influxdb.v3.client.internal.GrpcCallOptions;
-import io.grpc.Deadline;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -392,6 +387,7 @@ public class E2ETest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
     public void testNoAllocatorMemoryLeak() throws Exception {
+
         // TODO need to get logger Error messages for BaseAllocator and verify none was sent
 
         Instant now = Instant.now();
