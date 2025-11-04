@@ -77,6 +77,7 @@ final class FlightSqlClient implements AutoCloseable {
 
     private final Map<String, String> defaultHeaders = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final List<AutoCloseable> autoCloseables = new ArrayList<>();
 
     FlightSqlClient(@Nonnull final ClientConfig config) {
         this(config, null);
@@ -133,6 +134,7 @@ final class FlightSqlClient implements AutoCloseable {
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
         FlightStream stream = client.getStream(ticket, callOptionArray);
         FlightSqlIterator iterator = new FlightSqlIterator(stream);
+        autoCloseables.add(stream);
 
         Spliterator<VectorSchemaRoot> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL);
         return StreamSupport.stream(spliterator, false).onClose(iterator::close);
@@ -140,7 +142,8 @@ final class FlightSqlClient implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        client.close();
+        autoCloseables.add(client);
+        AutoCloseables.close(autoCloseables);
     }
 
     @Nonnull

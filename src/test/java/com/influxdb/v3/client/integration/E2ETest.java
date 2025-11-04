@@ -25,16 +25,22 @@ import java.math.BigInteger;
 import java.net.ConnectException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import com.influxdb.v3.client.internal.GrpcCallOptions;
+import io.grpc.Deadline;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -380,6 +386,65 @@ public class E2ETest {
             Assertions.assertThat(client.getServerVersion()).isNotEmpty();
         }
     }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testNoAllocatorMemoryLeak() throws Exception {
+        // TODO need to get logger Error messages for BaseAllocator and verify none was sent
+
+        Instant now = Instant.now();
+        String measurement = "test_" + now.toEpochMilli() % 1000;
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+            System.getenv("TESTING_INFLUXDB_URL"),
+            System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+            System.getenv("TESTING_INFLUXDB_DATABASE"),
+            null)) {
+
+            List<Point> points = List.of(
+                Point.measurement(measurement)
+                    .setTag("type", "test")
+                    .setFloatField("rads", 3.14)
+                    .setIntegerField("life", 42)
+                    .setTimestamp(now.minus(2, ChronoUnit.SECONDS)),
+                Point.measurement(measurement)
+                    .setTag("type", "test")
+                    .setFloatField("rads", 3.14)
+                    .setIntegerField("life", 42)
+                    .setTimestamp(now.minus(1, ChronoUnit.SECONDS)),
+                Point.measurement(measurement)
+                    .setTag("type", "test")
+                    .setFloatField("rads", 3.14)
+                    .setIntegerField("life", 42)
+                    .setTimestamp(now));
+
+            client.writePoints(points);
+            String query = "SELECT * FROM " + measurement;
+
+            Assertions.assertThatNoException().isThrownBy(() -> {
+                // System.out.println("PASS");
+                // throw new Exception("NO PASS");
+
+                try (Stream<PointValues> stream = client.queryPoints(query)) {
+                    // PointValues[] pvs = stream.toArray(PointValues[]::new);
+                    stream.findFirst()
+                        .ifPresent(pointValues -> {
+                            System.out.println(pointValues.getField("rads"));
+                        });
+                    //stream.forEach(pointValues -> {
+                    //    System.out.println("DEBUG PointValues: " + pointValues.getField("pi"));
+                    //});
+                }
+            });
+
+
+
+
+        }
+
+    }
+
 
     private void assertGetDataSuccess(@Nonnull final InfluxDBClient influxDBClient) {
         influxDBClient.writePoint(
