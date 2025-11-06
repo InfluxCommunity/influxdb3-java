@@ -257,7 +257,16 @@ final class FlightSqlClient implements AutoCloseable {
 
         @Override
         public boolean hasNext() {
-            return flightStream.next();
+            boolean nextable = flightStream.next();
+            if (!nextable) {
+                // Nothing left to read - close the stream
+                try {
+                    flightStream.close();
+                } catch (Exception e) {
+                    LOG.error("Error while closing FlightStream: ", e);
+                }
+            }
+            return nextable;
         }
 
         @Override
