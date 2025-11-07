@@ -74,8 +74,8 @@ import com.influxdb.v3.client.query.QueryType;
 final class FlightSqlClient implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlightSqlClient.class);
-    private static int AUTOCLOSEABLE_CHECK_LIMIT = 10;
-    private static Map<AutoCloseable, Boolean> CLOSEABLE_CLOSED_LEDGER = new ConcurrentHashMap<>();
+    private static final int AUTOCLOSEABLE_CHECK_LIMIT = 10;
+    private static final Map<AutoCloseable, Boolean> CLOSEABLE_CLOSED_LEDGER = new ConcurrentHashMap<>();
 
     private final FlightClient client;
 
@@ -144,16 +144,16 @@ final class FlightSqlClient implements AutoCloseable {
         return StreamSupport.stream(spliterator, false).onClose(iterator::close);
     }
 
-    private void addToAutoCloseable(AutoCloseable closeable) {
+    private void addToAutoCloseable(@Nonnull final AutoCloseable closeable) {
         // need to occasionally clean up references to closed streams
         // in order to ensure memory can get freed.
-        if(autoCloseables.size() > AUTOCLOSEABLE_CHECK_LIMIT) {
+        if (autoCloseables.size() > AUTOCLOSEABLE_CHECK_LIMIT) {
             LOG.info("checking to cleanup stale flight streams from {} known streams", autoCloseables.size());
 
             ListIterator<AutoCloseable> iter = autoCloseables.listIterator();
-            while(iter.hasNext()){
+            while (iter.hasNext()) {
                 AutoCloseable autoCloseable = iter.next();
-                if(CLOSEABLE_CLOSED_LEDGER.get(autoCloseable)){
+                if (CLOSEABLE_CLOSED_LEDGER.get(autoCloseable)) {
                     LOG.info("removing closed stream {}", autoCloseable);
                     CLOSEABLE_CLOSED_LEDGER.keySet().remove(autoCloseable);
                     iter.remove();
