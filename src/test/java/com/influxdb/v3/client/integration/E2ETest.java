@@ -435,6 +435,55 @@ public class E2ETest {
 
     }
 
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testMultipleQueries() throws Exception {
+
+        Instant now = Instant.now();
+        String measurement = "test_" + now.toEpochMilli() % 1000;
+
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+            System.getenv("TESTING_INFLUXDB_URL"),
+            System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+            System.getenv("TESTING_INFLUXDB_DATABASE"),
+            null)) {
+
+            List<Point> points = List.of(
+                Point.measurement(measurement)
+                    .setTag("type", "test")
+                    .setFloatField("rads", 3.14)
+                    .setIntegerField("life", 42)
+                    .setTimestamp(now.minus(2, ChronoUnit.SECONDS)),
+                Point.measurement(measurement)
+                    .setTag("type", "test")
+                    .setFloatField("rads", 3.14)
+                    .setIntegerField("life", 42)
+                    .setTimestamp(now.minus(1, ChronoUnit.SECONDS)),
+                Point.measurement(measurement)
+                    .setTag("type", "test")
+                    .setFloatField("rads", 3.14)
+                    .setIntegerField("life", 42)
+                    .setTimestamp(now));
+
+            client.writePoints(points);
+            String query = "SELECT * FROM " + measurement;
+
+            // TODO just checking FlightStream cleanup should be test in FlightSqlClient
+            for(int i = 0; i < 20; i++) {
+                try (Stream<PointValues> stream = client.queryPoints(query)) {
+                    stream.forEach(pointValues -> {
+                        Assertions.assertThat(pointValues.getField("life")).isEqualTo(42L);
+                        Assertions.assertThat(pointValues.getField("rads")).isEqualTo(3.14);
+                    });
+                }
+            }
+        }
+
+
+    }
+
 
     private void assertGetDataSuccess(@Nonnull final InfluxDBClient influxDBClient) {
         influxDBClient.writePoint(
