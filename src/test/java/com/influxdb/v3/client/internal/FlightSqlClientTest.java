@@ -23,7 +23,9 @@ package com.influxdb.v3.client.internal;
 
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -380,6 +382,7 @@ public class FlightSqlClientTest {
 
         try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
 
+            List<AutoCloseable> autoCloseables = new ArrayList<>();
             for (int i = 0; i < 20; i++) {
                 Stream<VectorSchemaRoot> stream = flightSqlClient.execute(
                     "select * from cpu",
@@ -389,14 +392,19 @@ public class FlightSqlClientTest {
                     Map.of());
 
                 stream.forEach(VectorSchemaRoot::contentToTSVString);
+                autoCloseables.add(flightSqlClient.autoCloseables.get(flightSqlClient.autoCloseables.size() - 1));
+
             }
             Assertions.assertThat(flightSqlClient.autoCloseables.size()).isEqualTo(9);
-            // N.B. can pick up references from other tests...
-            Assertions.assertThat(FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.size()).isLessThan(20);
-            for (AutoCloseable closeable : FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.keySet()) {
-                Assertions.assertThat(FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.get(closeable)).isTrue(); // Is closed
+            for (int i = 0; i < autoCloseables.size(); i++) {
+                if (i < FlightSqlClient.AUTOCLOSEABLE_CHECK_LIMIT + 1) {
+                    Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isFalse();
+                    Assertions.assertThat(FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.get(autoCloseables.get(i))).isNull();
+                } else {
+                    Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isTrue();
+                    Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isTrue();
+                }
             }
-
         }
     }
 

@@ -74,7 +74,7 @@ import com.influxdb.v3.client.query.QueryType;
 final class FlightSqlClient implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlightSqlClient.class);
-    private static final int AUTOCLOSEABLE_CHECK_LIMIT = 10;
+    static final int AUTOCLOSEABLE_CHECK_LIMIT = 10;
     static final Map<AutoCloseable, Boolean> CLOSEABLE_CLOSED_LEDGER = new ConcurrentHashMap<>();
 
     private final FlightClient client;
