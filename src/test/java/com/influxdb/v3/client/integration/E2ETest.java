@@ -470,7 +470,6 @@ public class E2ETest {
             client.writePoints(points);
             String query = "SELECT * FROM " + measurement;
 
-            // TODO just checking FlightStream cleanup should be test in FlightSqlClient
             for (int i = 0; i < 20; i++) {
                 try (Stream<PointValues> stream = client.queryPoints(query)) {
                     stream.forEach(pointValues -> {

@@ -75,13 +75,13 @@ final class FlightSqlClient implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlightSqlClient.class);
     private static final int AUTOCLOSEABLE_CHECK_LIMIT = 10;
-    private static final Map<AutoCloseable, Boolean> CLOSEABLE_CLOSED_LEDGER = new ConcurrentHashMap<>();
+    static final Map<AutoCloseable, Boolean> CLOSEABLE_CLOSED_LEDGER = new ConcurrentHashMap<>();
 
     private final FlightClient client;
 
     private final Map<String, String> defaultHeaders = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final List<AutoCloseable> autoCloseables = new ArrayList<>();
+    final List<AutoCloseable> autoCloseables = new ArrayList<>();
 
     FlightSqlClient(@Nonnull final ClientConfig config) {
         this(config, null);
@@ -144,17 +144,17 @@ final class FlightSqlClient implements AutoCloseable {
         return StreamSupport.stream(spliterator, false).onClose(iterator::close);
     }
 
-    private void addToAutoCloseable(@Nonnull final AutoCloseable closeable) {
+    private synchronized void addToAutoCloseable(@Nonnull final AutoCloseable closeable) {
         // need to occasionally clean up references to closed streams
         // in order to ensure memory can get freed.
         if (autoCloseables.size() > AUTOCLOSEABLE_CHECK_LIMIT) {
-            LOG.info("checking to cleanup stale flight streams from {} known streams", autoCloseables.size());
+            LOG.debug("checking to cleanup stale flight streams from {} known streams", autoCloseables.size());
 
             ListIterator<AutoCloseable> iter = autoCloseables.listIterator();
             while (iter.hasNext()) {
                 AutoCloseable autoCloseable = iter.next();
                 if (CLOSEABLE_CLOSED_LEDGER.get(autoCloseable)) {
-                    LOG.info("removing closed stream {}", autoCloseable);
+                    LOG.debug("removing closed stream {}", autoCloseable);
                     CLOSEABLE_CLOSED_LEDGER.keySet().remove(autoCloseable);
                     iter.remove();
                 }

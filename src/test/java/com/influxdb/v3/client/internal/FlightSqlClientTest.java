@@ -370,6 +370,36 @@ public class FlightSqlClientTest {
         }
     }
 
+
+    @Test
+    public void multipleFlightStreamsFreed() throws Exception {
+        ClientConfig clientConfig = new ClientConfig.Builder()
+            .host(server.getLocation().getUri().toString())
+            .token("my-token".toCharArray())
+            .build();
+
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
+
+            for (int i = 0; i < 20; i++) {
+                Stream<VectorSchemaRoot> stream = flightSqlClient.execute(
+                    "select * from cpu",
+                    "mydb",
+                    QueryType.SQL,
+                    Map.of(),
+                    Map.of());
+
+                stream.forEach(VectorSchemaRoot::contentToTSVString);
+            }
+            Assertions.assertThat(flightSqlClient.autoCloseables.size()).isEqualTo(9);
+            // N.B. can pick up references from other tests...
+            Assertions.assertThat(FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.size()).isLessThan(20);
+            for (AutoCloseable closeable : FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.keySet()) {
+                Assertions.assertThat(FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.get(closeable)).isTrue(); // Is closed
+            }
+
+        }
+    }
+
     static class HeaderCaptureMiddleware implements FlightServerMiddleware {
 
         private final Map<String, String> headers = new HashMap<>();
@@ -418,4 +448,5 @@ public class FlightSqlClientTest {
             return lastInstance;
         }
     }
+
 }
