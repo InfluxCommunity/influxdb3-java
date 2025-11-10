@@ -418,5 +418,4 @@ public class FlightSqlClientTest {
             return lastInstance;
         }
     }
-
 }

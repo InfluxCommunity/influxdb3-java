@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -52,7 +53,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 public class E2ETest {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(E2ETest.class.getName());
+    private static final Logger LOG = Logger.getLogger(E2ETest.class.getName());
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
