@@ -399,7 +399,6 @@ public class FlightSqlClientTest {
             for (int i = 0; i < autoCloseables.size(); i++) {
                 if (i < FlightSqlClient.AUTOCLOSEABLE_CHECK_LIMIT + 1) {
                     Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isFalse();
-                    Assertions.assertThat(FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.get(autoCloseables.get(i))).isNull();
                 } else {
                     Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isTrue();
                     Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isTrue();

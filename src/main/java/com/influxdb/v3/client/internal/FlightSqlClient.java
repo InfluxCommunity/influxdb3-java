@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
@@ -75,7 +74,6 @@ final class FlightSqlClient implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlightSqlClient.class);
     static final int AUTOCLOSEABLE_CHECK_LIMIT = 10;
-    static final Map<AutoCloseable, Boolean> CLOSEABLE_CLOSED_LEDGER = new ConcurrentHashMap<>();
 
     private final FlightClient client;
 
@@ -136,7 +134,7 @@ final class FlightSqlClient implements AutoCloseable {
         CallOption[] callOptionArray = GrpcCallOptions.mergeCallOptions(callOptions, headerCallOption);
 
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
-        FlightStream stream = client.getStream(ticket, callOptionArray);
+        StatefulFlightStream stream = new StatefulFlightStream(client.getStream(ticket, callOptionArray));
         FlightSqlIterator iterator = new FlightSqlIterator(stream);
         addToAutoCloseable(stream);
 
@@ -150,29 +148,30 @@ final class FlightSqlClient implements AutoCloseable {
         if (autoCloseables.size() > AUTOCLOSEABLE_CHECK_LIMIT) {
             LOG.debug("checking to cleanup stale flight streams from {} known streams", autoCloseables.size());
 
-            ListIterator<AutoCloseable> iter = autoCloseables.listIterator();
-            while (iter.hasNext()) {
-                AutoCloseable autoCloseable = iter.next();
-                if (CLOSEABLE_CLOSED_LEDGER.get(autoCloseable)) {
-                    LOG.debug("removing closed stream {}", autoCloseable);
-                    CLOSEABLE_CLOSED_LEDGER.keySet().remove(autoCloseable);
+            cleanAutoCloseables();
+        }
+
+        autoCloseables.add(closeable);
+        LOG.debug("autoCloseables count {}", autoCloseables.size());
+    }
+
+    public void cleanAutoCloseables() {
+        ListIterator<AutoCloseable> iter = autoCloseables.listIterator();
+        while (iter.hasNext()) {
+            AutoCloseable autoCloseable = iter.next();
+            if (autoCloseable.getClass() == FlightSqlClient.StatefulFlightStream.class) {
+                if (((FlightSqlClient.StatefulFlightStream) autoCloseable).closed) {
                     iter.remove();
                 }
             }
         }
-
-        autoCloseables.add(closeable);
-        CLOSEABLE_CLOSED_LEDGER.put(closeable, false);
-        LOG.debug("autoCloseables count {}, LEDGER count {}", autoCloseables.size(),  CLOSEABLE_CLOSED_LEDGER.size());
     }
 
     @Override
     public void close() throws Exception {
         autoCloseables.add(client);
         AutoCloseables.close(autoCloseables);
-        for (AutoCloseable closeable : autoCloseables) {
-            CLOSEABLE_CLOSED_LEDGER.remove(closeable);
-        }
+        cleanAutoCloseables();
     }
 
     @Nonnull
@@ -274,24 +273,39 @@ final class FlightSqlClient implements AutoCloseable {
         };
     }
 
+    private static final class StatefulFlightStream implements AutoCloseable {
+        FlightStream flightStream;
+        Boolean closed;
+
+        public StatefulFlightStream(@Nonnull final FlightStream flightStream) {
+            this.flightStream = flightStream;
+            this.closed = false;
+        }
+
+        @Override
+        public void close() throws Exception {
+            this.flightStream.close();
+            this.closed = true;
+        }
+    }
+
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {
 
         private final List<AutoCloseable> autoCloseable = new ArrayList<>();
 
-        private final FlightStream flightStream;
+        private final StatefulFlightStream sFlightStream;
 
-        private FlightSqlIterator(@Nonnull final FlightStream flightStream) {
-            this.flightStream = flightStream;
+        private FlightSqlIterator(@Nonnull final StatefulFlightStream sFlightStream) {
+            this.sFlightStream = sFlightStream;
         }
 
         @Override
         public boolean hasNext() {
-            boolean nextable = flightStream.next();
+            boolean nextable = sFlightStream.flightStream.next();
             if (!nextable) {
                 // Nothing left to read - close the stream
                 try {
-                    flightStream.close();
-                    CLOSEABLE_CLOSED_LEDGER.replace(flightStream, true);
+                    sFlightStream.close();
                 } catch (Exception e) {
                     LOG.error("Error while closing FlightStream: ", e);
                 }
@@ -301,13 +315,13 @@ final class FlightSqlClient implements AutoCloseable {
 
         @Override
         public VectorSchemaRoot next() {
-            if (flightStream.getRoot() == null) {
+            if (sFlightStream.flightStream.getRoot() == null) {
                 throw new NoSuchElementException();
             }
 
-            autoCloseable.add(flightStream.getRoot());
+            autoCloseable.add(sFlightStream.flightStream.getRoot());
 
-            return flightStream.getRoot();
+            return sFlightStream.flightStream.getRoot();
         }
 
         @Override
