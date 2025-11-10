@@ -23,9 +23,7 @@ package com.influxdb.v3.client.internal;
 
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
