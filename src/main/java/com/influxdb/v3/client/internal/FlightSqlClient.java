@@ -170,6 +170,9 @@ final class FlightSqlClient implements AutoCloseable {
     public void close() throws Exception {
         autoCloseables.add(client);
         AutoCloseables.close(autoCloseables);
+        for (AutoCloseable closeable : autoCloseables) {
+            CLOSEABLE_CLOSED_LEDGER.remove(closeable);
+        }
     }
 
     @Nonnull

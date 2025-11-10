@@ -405,7 +405,11 @@ public class FlightSqlClientTest {
                     Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isTrue();
                 }
             }
+            Assertions.assertThat(FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.size())
+                .isEqualTo(FlightSqlClient.AUTOCLOSEABLE_CHECK_LIMIT - 1);
         }
+        Assertions.assertThat(FlightSqlClient.CLOSEABLE_CLOSED_LEDGER.size()).isEqualTo(0);
+
     }
 
     static class HeaderCaptureMiddleware implements FlightServerMiddleware {
