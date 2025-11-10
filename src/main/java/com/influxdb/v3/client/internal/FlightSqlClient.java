@@ -73,13 +73,11 @@ import com.influxdb.v3.client.query.QueryType;
 final class FlightSqlClient implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlightSqlClient.class);
-    static final int AUTOCLOSEABLE_CHECK_LIMIT = 10;
 
     private final FlightClient client;
 
     private final Map<String, String> defaultHeaders = new HashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    final List<AutoCloseable> autoCloseables = new ArrayList<>();
 
     FlightSqlClient(@Nonnull final ClientConfig config) {
         this(config, null);
@@ -134,44 +132,16 @@ final class FlightSqlClient implements AutoCloseable {
         CallOption[] callOptionArray = GrpcCallOptions.mergeCallOptions(callOptions, headerCallOption);
 
         Ticket ticket = new Ticket(json.getBytes(StandardCharsets.UTF_8));
-        StatefulFlightStream stream = new StatefulFlightStream(client.getStream(ticket, callOptionArray));
+        FlightStream stream = client.getStream(ticket, callOptionArray);
         FlightSqlIterator iterator = new FlightSqlIterator(stream);
-        addToAutoCloseable(stream);
 
         Spliterator<VectorSchemaRoot> spliterator = Spliterators.spliteratorUnknownSize(iterator, Spliterator.NONNULL);
         return StreamSupport.stream(spliterator, false).onClose(iterator::close);
     }
 
-    private synchronized void addToAutoCloseable(@Nonnull final AutoCloseable closeable) {
-        // need to occasionally clean up references to closed streams
-        // in order to ensure memory can get freed.
-        if (autoCloseables.size() > AUTOCLOSEABLE_CHECK_LIMIT) {
-            LOG.debug("checking to cleanup stale flight streams from {} known streams", autoCloseables.size());
-
-            cleanAutoCloseables();
-        }
-
-        autoCloseables.add(closeable);
-        LOG.debug("autoCloseables count {}", autoCloseables.size());
-    }
-
-    public void cleanAutoCloseables() {
-        ListIterator<AutoCloseable> iter = autoCloseables.listIterator();
-        while (iter.hasNext()) {
-            AutoCloseable autoCloseable = iter.next();
-            if (autoCloseable.getClass() == FlightSqlClient.StatefulFlightStream.class) {
-                if (((FlightSqlClient.StatefulFlightStream) autoCloseable).closed) {
-                    iter.remove();
-                }
-            }
-        }
-    }
-
     @Override
     public void close() throws Exception {
-        autoCloseables.add(client);
-        AutoCloseables.close(autoCloseables);
-        cleanAutoCloseables();
+        client.close();
     }
 
     @Nonnull
@@ -273,60 +243,36 @@ final class FlightSqlClient implements AutoCloseable {
         };
     }
 
-    private static final class StatefulFlightStream implements AutoCloseable {
-        FlightStream flightStream;
-        Boolean closed;
-
-        public StatefulFlightStream(@Nonnull final FlightStream flightStream) {
-            this.flightStream = flightStream;
-            this.closed = false;
-        }
-
-        @Override
-        public void close() throws Exception {
-            this.flightStream.close();
-            this.closed = true;
-        }
-    }
-
     private static final class FlightSqlIterator implements Iterator<VectorSchemaRoot>, AutoCloseable {
 
         private final List<AutoCloseable> autoCloseable = new ArrayList<>();
 
-        private final StatefulFlightStream sFlightStream;
+        private final FlightStream flightStream;
 
-        private FlightSqlIterator(@Nonnull final StatefulFlightStream sFlightStream) {
-            this.sFlightStream = sFlightStream;
+        private FlightSqlIterator(@Nonnull final FlightStream flightStream) {
+            this.flightStream = flightStream;
         }
 
         @Override
         public boolean hasNext() {
-            boolean nextable = sFlightStream.flightStream.next();
-            if (!nextable) {
-                // Nothing left to read - close the stream
-                try {
-                    sFlightStream.close();
-                } catch (Exception e) {
-                    LOG.error("Error while closing FlightStream: ", e);
-                }
-            }
-            return nextable;
+            return flightStream.next();
         }
 
         @Override
         public VectorSchemaRoot next() {
-            if (sFlightStream.flightStream.getRoot() == null) {
+            if (flightStream.getRoot() == null) {
                 throw new NoSuchElementException();
             }
 
-            autoCloseable.add(sFlightStream.flightStream.getRoot());
+            autoCloseable.add(flightStream.getRoot());
 
-            return sFlightStream.flightStream.getRoot();
+            return flightStream.getRoot();
         }
 
         @Override
         public void close() {
             try {
+                flightStream.close();
                 AutoCloseables.close(autoCloseable);
             } catch (Exception e) {
                 throw new RuntimeException(e);

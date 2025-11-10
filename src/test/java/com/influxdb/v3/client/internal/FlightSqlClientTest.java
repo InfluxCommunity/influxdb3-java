@@ -372,41 +372,6 @@ public class FlightSqlClientTest {
         }
     }
 
-
-    @Test
-    public void multipleFlightStreamsFreed() throws Exception {
-        ClientConfig clientConfig = new ClientConfig.Builder()
-            .host(server.getLocation().getUri().toString())
-            .token("my-token".toCharArray())
-            .build();
-
-        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig)) {
-
-            List<AutoCloseable> autoCloseables = new ArrayList<>();
-            for (int i = 0; i < 20; i++) {
-                Stream<VectorSchemaRoot> stream = flightSqlClient.execute(
-                    "select * from cpu",
-                    "mydb",
-                    QueryType.SQL,
-                    Map.of(),
-                    Map.of());
-
-                stream.forEach(VectorSchemaRoot::contentToTSVString);
-                autoCloseables.add(flightSqlClient.autoCloseables.get(flightSqlClient.autoCloseables.size() - 1));
-
-            }
-            Assertions.assertThat(flightSqlClient.autoCloseables.size()).isEqualTo(9);
-            for (int i = 0; i < autoCloseables.size(); i++) {
-                if (i < FlightSqlClient.AUTOCLOSEABLE_CHECK_LIMIT + 1) {
-                    Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isFalse();
-                } else {
-                    Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isTrue();
-                    Assertions.assertThat(flightSqlClient.autoCloseables.contains(autoCloseables.get(i))).isTrue();
-                }
-            }
-        }
-    }
-
     static class HeaderCaptureMiddleware implements FlightServerMiddleware {
 
         private final Map<String, String> headers = new HashMap<>();
