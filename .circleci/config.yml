@@ -232,6 +232,4 @@ workflows:
             - tests-java
           filters:
             branches:
-              only:
-                - main
-                - fix/arrowBaseAllocatorMemoryLeak
+              only: main
