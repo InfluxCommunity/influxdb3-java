@@ -1,15 +1,16 @@
 package org.influxdb.v3.sensor;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import java.util.List;
+import javax.annotation.Nonnull;
+
+import org.springframework.beans.factory.annotation.Autowired;
 
 public class SensorCollection {
 
     List<Sensor> sensors;
 
     @Autowired
-    public SensorCollection(List<Sensor> sensors){
+    public SensorCollection(final @Nonnull List<Sensor> sensors) {
         this.sensors = sensors;
     }
 
@@ -17,7 +18,7 @@ public class SensorCollection {
         return sensors;
     }
 
-    public void setSensors(List<Sensor> sensors) {
+    public void setSensors(final @Nonnull List<Sensor> sensors) {
         this.sensors = sensors;
     }
 }

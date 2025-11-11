@@ -1,10 +1,14 @@
 package org.influxdb.v3.reading;
 
+import javax.annotation.Nonnull;
+
 import org.influxdb.v3.sensor.Sensor;
 
-public class RandomEnvReading {
+public final class RandomEnvReading {
 
-    public static EnvReading genReading(Sensor sensor){
+    private RandomEnvReading() { }
+
+    public static EnvReading genReading(final @Nonnull Sensor sensor) {
         return new EnvReading(sensor,
             (Math.random() * 40.0) + (Math.random() * 40.0) - 20.0,
             (Math.random() * 60) + (Math.random() * 40),

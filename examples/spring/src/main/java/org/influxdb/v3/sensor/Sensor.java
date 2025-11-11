@@ -8,7 +8,9 @@ public class Sensor {
     String model;
     String id;
 
-    public Sensor(String name, String model, String id) {
+    public Sensor(final String name,
+                  final String model,
+                  final String id) {
         this.name = name;
         this.model = model;
         this.id = id;
