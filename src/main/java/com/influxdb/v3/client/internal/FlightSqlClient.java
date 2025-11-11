@@ -271,6 +271,7 @@ final class FlightSqlClient implements AutoCloseable {
         @Override
         public void close() {
             try {
+                flightStream.close();
                 AutoCloseables.close(autoCloseable);
             } catch (Exception e) {
                 throw new RuntimeException(e);

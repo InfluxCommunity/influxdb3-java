@@ -1,5 +1,9 @@
 ## 1.6.0 [unreleased]
 
+### Features
+
+1. [#306](https://github.com/InfluxCommunity/influxdb3-java/pull/306): Improve closing of Arrow `FlightStream`.
+
 ## 1.5.0 [2025-10-22]
 
 ### Features
