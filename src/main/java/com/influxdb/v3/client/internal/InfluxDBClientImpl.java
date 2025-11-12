@@ -398,13 +398,6 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         Arguments.checkNotNull(parameters, "parameters");
         Arguments.checkNotNull(options, "options");
 
-        if (options.grpcCallOptions().getDeadline() == null && config.getQueryTimeout() != null) {
-            options.setGrpcCallOptions(new GrpcCallOptions.Builder()
-                .fromGrpcCallOptions(options.grpcCallOptions())
-                .withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS))
-                .build());
-        }
-
         if (closed) {
             throw new IllegalStateException("InfluxDBClient has been closed.");
         }
@@ -421,7 +414,16 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
         });
 
-        CallOption[] callOptions = options.grpcCallOptions().getCallOptions();
+        // Create a fresh deadline for this query if queryTimeout is configured and no explicit deadline is set
+        GrpcCallOptions grpcCallOptions = options.grpcCallOptions();
+        if (grpcCallOptions.getDeadline() == null && config.getQueryTimeout() != null) {
+            grpcCallOptions = new GrpcCallOptions.Builder()
+                .fromGrpcCallOptions(grpcCallOptions)
+                .withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS))
+                .build();
+        }
+
+        CallOption[] callOptions = grpcCallOptions.getCallOptions();
 
         return flightSqlClient.execute(
                 query,
