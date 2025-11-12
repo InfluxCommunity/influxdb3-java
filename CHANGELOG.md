@@ -4,6 +4,10 @@
 
 1. [#306](https://github.com/InfluxCommunity/influxdb3-java/pull/306): Improve closing of Arrow `FlightStream`.
 
+### Bug Fixes
+
+1. [#301](https://github.com/InfluxCommunity/influxdb3-java/issues/301): Fix gRPC deadline reuse issue causing "deadline exceeded" errors when `QueryOptions` instances are reused across multiple queries.
+
 ## 1.5.0 [2025-10-22]
 
 ### Features
