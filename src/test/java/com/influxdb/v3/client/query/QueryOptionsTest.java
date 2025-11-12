@@ -256,6 +256,8 @@ class QueryOptionsTest {
             .withMaxInboundMessageSize(1024 * 1024 * 1024)
             .withMaxOutboundMessageSize(1024 * 1024 * 1024)
             .withDeadline(Deadline.after(2, TimeUnit.MINUTES))
+            .withCompressorName("my-compressor")
+            .withWaitForReady()
             .build();
 
         Map<String, String> headers = Map.of("k1", "v1", "k2", "v2", "k3", "v3");
@@ -271,6 +273,16 @@ class QueryOptionsTest {
         Assertions.assertThat(queryOptions.grpcCallOptions() == clone.grpcCallOptions()).isFalse();
         // deep copy headers
         Assertions.assertThat(queryOptions.headersSafe() == clone.headersSafe()).isFalse();
+    }
+
+    @Test
+    public void queryOptionsCompareTest() {
+        Map<String, String> headers = Map.of("k1", "v1", "k2", "v2", "k3", "v3");
+
+        QueryOptions queryOptions = new QueryOptions("myQueryOptions", QueryType.SQL, headers);
+        Assertions.assertThat(queryOptions).isEqualTo(queryOptions);
+        Assertions.assertThat(queryOptions).isNotEqualTo("Some String");
+        Assertions.assertThat(queryOptions).isNotEqualTo(null);
     }
 
     @Test
