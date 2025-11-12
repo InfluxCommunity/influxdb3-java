@@ -29,8 +29,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 
-import io.grpc.Deadline;
-
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.Arguments;
 import com.influxdb.v3.client.internal.GrpcCallOptions;
@@ -211,9 +209,7 @@ public final class QueryOptions {
         if (this.grpcCallOptions != null) {
             GrpcCallOptions.Builder grpcOptsBuilder = new  GrpcCallOptions.Builder();
             if (this.grpcCallOptions.getDeadline() != null) {
-                grpcOptsBuilder.withDeadline(Deadline.after(this.grpcCallOptions
-                    .getDeadline()
-                    .timeRemaining(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS));
+                grpcOptsBuilder.withDeadline(this.grpcCallOptions.getDeadline().offset(0, TimeUnit.MILLISECONDS));
             }
             grpcOptsBuilder.withExecutor(this.grpcCallOptions.getExecutor());
             grpcOptsBuilder.withCompressorName(this.grpcCallOptions.getCompressorName());

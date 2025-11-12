@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -249,6 +250,30 @@ class QueryOptionsTest {
     }
 
     @Test
+    public void queryOptionsCloneTest() {
+
+        GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
+            .withMaxInboundMessageSize(1024 * 1024 * 1024)
+            .withMaxOutboundMessageSize(1024 * 1024 * 1024)
+            .withDeadline(Deadline.after(2, TimeUnit.MINUTES))
+            .build();
+
+        Map<String, String> headers = Map.of("k1", "v1", "k2", "v2", "k3", "v3");
+
+        QueryOptions queryOptions = new QueryOptions("myQueryOptions", QueryType.SQL, headers);
+        queryOptions.setGrpcCallOptions(grpcCallOption);
+
+        QueryOptions clone = queryOptions.clone();
+        Assertions.assertThat(clone).isEqualTo(queryOptions);
+        // not the same object
+        Assertions.assertThat(queryOptions == clone).isFalse();
+        // deep copy grpc options
+        Assertions.assertThat(queryOptions.grpcCallOptions() == clone.grpcCallOptions()).isFalse();
+        // deep copy headers
+        Assertions.assertThat(queryOptions.headersSafe() == clone.headersSafe()).isFalse();
+    }
+
+    @Test
     public void queryOptionsUnchangedByCall() throws IOException {
         int freePort = findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
@@ -276,6 +301,8 @@ class QueryOptionsTest {
             queryOptions.setGrpcCallOptions(grpcCallOption);
             QueryOptions originalQueryOptions = queryOptions.clone();
             Assertions.assertThat(originalQueryOptions).isEqualTo(queryOptions);
+            System.out.println("DEBUG queryOptions.grpcOptions " + queryOptions.grpcCallOptions());
+            System.out.println("DEBUG originalQueryOptions.grpcOptions " + originalQueryOptions.grpcCallOptions());
 
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
                 Assertions.assertThatNoException().isThrownBy(() -> {
