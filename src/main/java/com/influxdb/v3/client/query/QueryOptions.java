@@ -220,8 +220,6 @@ public final class QueryOptions {
             grpcOptsBuilder.withMaxInboundMessageSize(this.grpcCallOptions.getMaxInboundMessageSize());
             grpcOptsBuilder.withMaxOutboundMessageSize(this.grpcCallOptions.getMaxOutboundMessageSize());
             clone.grpcCallOptions = grpcOptsBuilder.build();
-        } else {
-            clone.setGrpcCallOptions(null);
         }
         return clone;
     }

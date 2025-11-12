@@ -266,7 +266,9 @@ class QueryOptionsTest {
         queryOptions.setGrpcCallOptions(grpcCallOption);
 
         QueryOptions clone = queryOptions.clone();
+
         Assertions.assertThat(clone).isEqualTo(queryOptions);
+        Assertions.assertThat(queryOptions.hashCode()).isEqualTo(clone.hashCode());
         // not the same object
         Assertions.assertThat(queryOptions == clone).isFalse();
         // deep copy grpc options
