@@ -21,10 +21,15 @@
  */
 package com.influxdb.v3.client.query;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
+
+import io.grpc.Deadline;
 
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.internal.Arguments;
@@ -189,5 +194,59 @@ public final class QueryOptions {
 
     private boolean isNotDefined(final String option) {
         return option == null || option.isEmpty();
+    }
+
+    @Override
+    protected QueryOptions clone() {
+        QueryOptions clone;
+        HashMap<String, String> cloneHeaders = new HashMap<>(this.headers);
+        for (String key : this.headers.keySet()) {
+            cloneHeaders.put(key, this.headers.get(key));
+        }
+        try {
+            clone = (QueryOptions) super.clone();
+        } catch (final CloneNotSupportedException e) {
+            clone = new QueryOptions(this.database, this.queryType, cloneHeaders);
+        }
+        if (this.grpcCallOptions != null) {
+            GrpcCallOptions.Builder grpcOptsBuilder = new  GrpcCallOptions.Builder();
+            if (this.grpcCallOptions.getDeadline() != null) {
+                grpcOptsBuilder.withDeadline(Deadline.after(this.grpcCallOptions
+                    .getDeadline()
+                    .timeRemaining(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS));
+            }
+            grpcOptsBuilder.withExecutor(this.grpcCallOptions.getExecutor());
+            grpcOptsBuilder.withCompressorName(this.grpcCallOptions.getCompressorName());
+            if (this.grpcCallOptions.getWaitForReady() != null
+                && this.grpcCallOptions.getWaitForReady()) {
+                grpcOptsBuilder.withWaitForReady();
+            }
+            grpcOptsBuilder.withMaxInboundMessageSize(this.grpcCallOptions.getMaxInboundMessageSize());
+            grpcOptsBuilder.withMaxOutboundMessageSize(this.grpcCallOptions.getMaxOutboundMessageSize());
+            clone.grpcCallOptions = grpcOptsBuilder.build();
+        } else {
+            clone.setGrpcCallOptions(null);
+        }
+        return clone;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        QueryOptions that = (QueryOptions) o;
+        return Objects.equals(this.database, that.database)
+            && Objects.equals(this.queryType, that.queryType)
+            && Objects.equals(this.headers, that.headers)
+            && Objects.equals(this.grpcCallOptions, that.grpcCallOptions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(database, queryType, headers, grpcCallOptions);
     }
 }
