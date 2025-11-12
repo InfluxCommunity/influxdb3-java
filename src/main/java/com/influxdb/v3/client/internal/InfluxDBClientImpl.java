@@ -397,7 +397,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         Arguments.checkNonEmpty(query, "query");
         Arguments.checkNotNull(parameters, "parameters");
         Arguments.checkNotNull(options, "options");
-        
+
         if (closed) {
             throw new IllegalStateException("InfluxDBClient has been closed.");
         }
