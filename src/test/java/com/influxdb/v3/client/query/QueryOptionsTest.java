@@ -329,6 +329,50 @@ class QueryOptionsTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
 
+    @Test
+    public void impracticalGRPCDeadlineReplacedByQueryTimeout() throws IOException {
+        int freePort = findFreePort();
+        URI uri = URI.create("http://127.0.0.1:" + freePort);
+        int rowCount = 10;
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
+             BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+             FlightServer flightServer = TestUtils.simpleFlightServer(uri, allocator,
+                 TestUtils.simpleProducer(vectorSchemaRoot))
+        ) {
+            flightServer.start();
+
+            String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
+            ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(host)
+                .database("test")
+                .writeTimeout(Duration.ofSeconds(60))
+                .queryTimeout(Duration.ofSeconds(60))
+                .build();
+
+            GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(1024 * 1024 * 1024)
+                .withDeadline(Deadline.after(-2, TimeUnit.MILLISECONDS))
+                .build();
+
+            QueryOptions queryOptions = new QueryOptions("test");
+            queryOptions.setGrpcCallOptions(grpcCallOption);
+            QueryOptions originalQueryOptions = queryOptions.clone();
+            Assertions.assertThat(originalQueryOptions).isEqualTo(queryOptions);
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+                Assertions.assertThatNoException().isThrownBy(() -> {
+                    Stream<PointValues> stream = influxDBClient.queryPoints(
+                        "Select * from \"sensors\"",
+                        queryOptions);
+                    Assertions.assertThat(stream.count()).isEqualTo(rowCount);
+                    stream.close();
+                });
+            }
+            Assertions.assertThat(queryOptions).isEqualTo(originalQueryOptions);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

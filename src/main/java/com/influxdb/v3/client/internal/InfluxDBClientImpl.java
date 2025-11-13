@@ -414,17 +414,24 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
         });
 
-        // Copy call options to create a new deadline for this query
-        // if queryTimeout is configured and deadline isn't explicitly set
-        GrpcCallOptions grpcCallOptionsCopy = options.grpcCallOptions();
-        if (grpcCallOptionsCopy.getDeadline() == null && config.getQueryTimeout() != null) {
-            grpcCallOptionsCopy = new GrpcCallOptions.Builder()
-                .fromGrpcCallOptions(grpcCallOptionsCopy)
-                .withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS))
-                .build();
+        GrpcCallOptions.Builder builder = new GrpcCallOptions.Builder()
+            .fromGrpcCallOptions(options.grpcCallOptions());
+
+        if (options.grpcCallOptions().getDeadline() == null) {
+            if (config.getQueryTimeout() != null) {
+                builder.withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS));
+            }
+        } else if (options.grpcCallOptions().getDeadline().timeRemaining(TimeUnit.NANOSECONDS) <= 0) {
+            LOG.warning("Received impractical gRPC call options deadline "
+                + options.grpcCallOptions().getDeadline());
+            if (config.getQueryTimeout() != null) {
+                LOG.warning("Using configuration query timeout "
+                    + config.getQueryTimeout() + " as a replacement.");
+                builder.withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS));
+            }
         }
 
-        CallOption[] callOptions = grpcCallOptionsCopy.getCallOptions();
+        CallOption[] callOptions = builder.build().getCallOptions();
 
         return flightSqlClient.execute(
                 query,
