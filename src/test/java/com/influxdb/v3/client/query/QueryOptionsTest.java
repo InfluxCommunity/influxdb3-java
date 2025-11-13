@@ -315,8 +315,6 @@ class QueryOptionsTest {
             queryOptions.setGrpcCallOptions(grpcCallOption);
             QueryOptions originalQueryOptions = queryOptions.clone();
             Assertions.assertThat(originalQueryOptions).isEqualTo(queryOptions);
-            System.out.println("DEBUG queryOptions.grpcOptions " + queryOptions.grpcCallOptions());
-            System.out.println("DEBUG originalQueryOptions.grpcOptions " + originalQueryOptions.grpcCallOptions());
 
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
                 Assertions.assertThatNoException().isThrownBy(() -> {
