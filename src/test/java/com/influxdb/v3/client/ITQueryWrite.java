@@ -435,9 +435,6 @@ class ITQueryWrite {
                 });
             }
         });
-
-        // Assertions.assertThat(thrown).isInstanceOf(FlightRuntimeException.class);
-        // Assertions.assertThat(thrown.getMessage()).matches(".*deadline.*exceeded.*");
     }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
