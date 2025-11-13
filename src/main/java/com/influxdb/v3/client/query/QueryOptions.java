@@ -22,6 +22,7 @@
 package com.influxdb.v3.client.query;
 
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -189,5 +190,25 @@ public final class QueryOptions {
 
     private boolean isNotDefined(final String option) {
         return option == null || option.isEmpty();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        QueryOptions that = (QueryOptions) o;
+        return Objects.equals(this.database, that.database)
+            && Objects.equals(this.queryType, that.queryType)
+            && Objects.equals(this.headers, that.headers)
+            && Objects.equals(this.grpcCallOptions, that.grpcCallOptions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(database, queryType, headers, grpcCallOptions);
     }
 }

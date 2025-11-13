@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client.internal;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -226,11 +227,27 @@ public final class GrpcCallOptions {
         /**
          * Sets the absolute deadline for a rpc call.
          *
+         * <p><i>Please note</i> the preferred approach is to set a <code>queryTimeout</code>
+         * Duration value globally in the ClientConfig
+         * ({@link com.influxdb.v3.client.config.ClientConfig.Builder#queryTimeout(Duration)}).
+         * This value will then be used to calculate a new Deadline with each call.</p>
+         *
          * @param deadline The deadline
          * @return this
          */
         public Builder withDeadline(final @Nonnull Deadline deadline) {
             this.deadline = deadline;
+            return this;
+        }
+
+        /**
+         * Unsets absolute deadline.  Note deadline may have been set
+         * via {@link #fromGrpcCallOptions(GrpcCallOptions)} method.
+         *
+         * @return this
+         */
+        public Builder withoutDeadline() {
+            this.deadline = null;
             return this;
         }
 

@@ -4,6 +4,10 @@
 
 1. [#306](https://github.com/InfluxCommunity/influxdb3-java/pull/306): Improve closing of Arrow `FlightStream`.
 
+### Bug Fixes
+
+1. [#310](https://github.com/InfluxCommunity/influxdb3-java/pull/310): Ensure `QueryOptions` objects are left unchanged within the `queryData` implementation.
+
 ## 1.5.0 [2025-10-22]
 
 ### Features

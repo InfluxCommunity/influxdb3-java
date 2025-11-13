@@ -252,4 +252,25 @@ class GrpcCallOptionsTest {
                 + "maxOutboundMessageSize=5000}";
         assertEquals(expected, options.toString());
     }
+
+    @Test
+    void testDeadlineIsNotZeroOrStale() throws InterruptedException {
+        // Create a deadline 3 seconds from now
+        Deadline deadline = Deadline.after(3000, TimeUnit.MILLISECONDS);
+        GrpcCallOptions options = new GrpcCallOptions.Builder()
+            .withDeadline(deadline)
+            .build();
+
+        // Verify the deadline is in the future
+        assertNotNull(options.getDeadline());
+        long timeRemaining = options.getDeadline().timeRemaining(TimeUnit.MILLISECONDS);
+        Assertions.assertTrue(timeRemaining > 0, "Deadline should be in the future");
+        Assertions.assertTrue(timeRemaining <= 3000, "Deadline should not exceed 3 seconds");
+
+        // Wait a bit and verify deadline is still valid but closer
+        TimeUnit.MILLISECONDS.sleep(100);
+        long timeRemainingAfter = options.getDeadline().timeRemaining(TimeUnit.MILLISECONDS);
+        Assertions.assertTrue(timeRemainingAfter > 0, "Deadline should still be in the future");
+        Assertions.assertTrue(timeRemainingAfter < timeRemaining, "Deadline should be closer to expiration");
+    }
 }

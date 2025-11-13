@@ -24,10 +24,14 @@ package com.influxdb.v3.client.query;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import io.grpc.Deadline;
 import io.grpc.ManagedChannel;
@@ -65,15 +69,15 @@ class QueryOptionsTest {
     @BeforeEach
     void before() {
         configBuilder = new ClientConfig.Builder()
-                .host("http://localhost:8086")
-                .token("my-token".toCharArray());
+            .host("http://localhost:8086")
+            .token("my-token".toCharArray());
     }
 
     @Test
     void optionsOverrideAll() {
         ClientConfig config = configBuilder
-                .database("my-database")
-                .build();
+            .database("my-database")
+            .build();
 
         QueryOptions options = new QueryOptions("your-database", QueryType.InfluxQL);
 
@@ -84,8 +88,8 @@ class QueryOptionsTest {
     @Test
     void optionsOverrideDatabase() {
         ClientConfig config = configBuilder
-                .database("my-database")
-                .build();
+            .database("my-database")
+            .build();
 
         QueryOptions options = new QueryOptions("your-database");
 
@@ -96,8 +100,8 @@ class QueryOptionsTest {
     @Test
     void optionsOverrideQueryType() {
         ClientConfig config = configBuilder
-                .database("my-database")
-                .build();
+            .database("my-database")
+            .build();
 
         QueryOptions options = new QueryOptions(QueryType.InfluxQL);
 
@@ -119,21 +123,21 @@ class QueryOptionsTest {
 
             String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
             ClientConfig.Builder builder = new ClientConfig.Builder()
-                    .host(host)
-                    .database("test");
+                .host(host)
+                .database("test");
 
             // Set very small message size for testing
             GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
-                    .withMaxInboundMessageSize(200)
-                    .build();
+                .withMaxInboundMessageSize(200)
+                .build();
 
             QueryOptions queryOptions = new QueryOptions("test");
             queryOptions.setGrpcCallOptions(grpcCallOption);
 
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(builder.build())) {
                 try (Stream<PointValues> stream = influxDBClient.queryPoints(
-                        "Select * from \"nothing\"",
-                        queryOptions
+                    "Select * from \"nothing\"",
+                    queryOptions
                 )) {
                     try {
                         Assertions.assertThatThrownBy(stream::count);
@@ -159,13 +163,13 @@ class QueryOptionsTest {
 
             String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
             ClientConfig clientConfig = new ClientConfig.Builder()
-                    .host(host)
-                    .database("test")
-                    .build();
+                .host(host)
+                .database("test")
+                .build();
 
             GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
-                    .withMaxInboundMessageSize(1024 * 1024 * 1024)
-                    .build();
+                .withMaxInboundMessageSize(1024 * 1024 * 1024)
+                .build();
 
             QueryOptions queryOptions = new QueryOptions("test");
             queryOptions.setGrpcCallOptions(grpcCallOption);
@@ -173,8 +177,8 @@ class QueryOptionsTest {
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
                 Assertions.assertThatNoException().isThrownBy(() -> {
                     Stream<PointValues> stream = influxDBClient.queryPoints(
-                            "Select * from \"nothing\"",
-                            queryOptions);
+                        "Select * from \"nothing\"",
+                        queryOptions);
                     Assertions.assertThat(stream.count()).isEqualTo(rowCount);
                     stream.close();
                 });
@@ -197,12 +201,12 @@ class QueryOptionsTest {
         String compressorName = "name";
 
         GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder().withExecutor(executor)
-                .withMaxInboundMessageSize(1024)
-                .withMaxOutboundMessageSize(1024)
-                .withWaitForReady()
-                .withDeadline(deadline)
-                .withCompressorName(compressorName)
-                .build();
+            .withMaxInboundMessageSize(1024)
+            .withMaxOutboundMessageSize(1024)
+            .withWaitForReady()
+            .withDeadline(deadline)
+            .withCompressorName(compressorName)
+            .build();
 
         QueryOptions options = new QueryOptions("test");
         options.setGrpcCallOptions(grpcCallOption);
@@ -221,16 +225,16 @@ class QueryOptionsTest {
         Executor executor = Executors.newSingleThreadExecutor();
         Deadline deadline = Deadline.after(2, TimeUnit.SECONDS);
         GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
-                .withMaxInboundMessageSize(1024)
-                .withMaxOutboundMessageSize(1024)
-                .withCompressorName("my-compressor")
-                .withWaitForReady()
-                .withExecutor(executor)
-                .withDeadline(deadline)
-                .build();
+            .withMaxInboundMessageSize(1024)
+            .withMaxOutboundMessageSize(1024)
+            .withCompressorName("my-compressor")
+            .withWaitForReady()
+            .withExecutor(executor)
+            .withDeadline(deadline)
+            .build();
         ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 3333)
-                .usePlaintext()
-                .build();
+            .usePlaintext()
+            .build();
         FlightServiceGrpc.FlightServiceStub stub = FlightServiceGrpc.newStub(channel);
         for (CallOption option : grpcCallOption.getCallOptions()) {
             stub = ((CallOptions.GrpcCallOption) option).wrapStub(stub);
@@ -238,13 +242,174 @@ class QueryOptionsTest {
 
         io.grpc.CallOptions stubCallOptions = stub.getCallOptions();
         Assertions.assertThat(stubCallOptions.getMaxInboundMessageSize())
-                .isEqualTo(grpcCallOption.getMaxInboundMessageSize());
+            .isEqualTo(grpcCallOption.getMaxInboundMessageSize());
         Assertions.assertThat(stubCallOptions.getMaxOutboundMessageSize())
-                .isEqualTo(grpcCallOption.getMaxOutboundMessageSize());
+            .isEqualTo(grpcCallOption.getMaxOutboundMessageSize());
         Assertions.assertThat(stubCallOptions.getCompressor()).isEqualTo(grpcCallOption.getCompressorName());
         Assertions.assertThat(stubCallOptions.isWaitForReady()).isEqualTo(grpcCallOption.getWaitForReady());
         Assertions.assertThat(stubCallOptions.getExecutor()).isEqualTo(grpcCallOption.getExecutor());
         Assertions.assertThat(stubCallOptions.getDeadline()).isEqualTo(grpcCallOption.getDeadline());
     }
 
+    @Test
+    public void queryOptionsCompareTest() {
+        Map<String, String> headers = Map.of("k1", "v1", "k2", "v2", "k3", "v3");
+
+        QueryOptions queryOptions = new QueryOptions("myQueryOptions", QueryType.SQL, headers);
+        Assertions.assertThat(queryOptions).isEqualTo(queryOptions);
+        Assertions.assertThat(queryOptions).isNotEqualTo("Some String");
+        Assertions.assertThat(queryOptions).isNotEqualTo(null);
+    }
+
+    @Test
+    public void queryOptionsUnchangedByCall() throws IOException {
+        int freePort = findFreePort();
+        URI uri = URI.create("http://127.0.0.1:" + freePort);
+        int rowCount = 10;
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
+             BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+             FlightServer flightServer = TestUtils.simpleFlightServer(uri, allocator,
+                 TestUtils.simpleProducer(vectorSchemaRoot))
+        ) {
+            flightServer.start();
+
+            String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
+            ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(host)
+                .database("test")
+                .writeTimeout(Duration.ofSeconds(60))
+                .queryTimeout(Duration.ofSeconds(60))
+                .build();
+
+            GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(1024 * 1024 * 1024)
+                .build();
+
+            QueryOptions queryOptions = new QueryOptions("test");
+            queryOptions.setGrpcCallOptions(grpcCallOption);
+            QueryOptions originalQueryOptions = cloneQueryOptions(queryOptions, clientConfig);
+            Assertions.assertThat(originalQueryOptions).isEqualTo(queryOptions);
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+                Assertions.assertThatNoException().isThrownBy(() -> {
+                    Stream<PointValues> stream = influxDBClient.queryPoints(
+                        "Select * from \"sensors\"",
+                        queryOptions);
+                    Assertions.assertThat(stream.count()).isEqualTo(rowCount);
+                    stream.close();
+                });
+            }
+            Assertions.assertThat(queryOptions).isEqualTo(originalQueryOptions);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void impracticalGRPCDeadlineReplacedByQueryTimeout() throws IOException {
+        int freePort = findFreePort();
+        URI uri = URI.create("http://127.0.0.1:" + freePort);
+        int rowCount = 10;
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
+             BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+             FlightServer flightServer = TestUtils.simpleFlightServer(uri, allocator,
+                 TestUtils.simpleProducer(vectorSchemaRoot))
+        ) {
+            flightServer.start();
+
+            String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
+            ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(host)
+                .database("test")
+                .writeTimeout(Duration.ofSeconds(60))
+                .queryTimeout(Duration.ofSeconds(60))
+                .build();
+
+            GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(1024 * 1024 * 1024)
+                .withDeadline(Deadline.after(-2, TimeUnit.MILLISECONDS))
+                .build();
+
+            QueryOptions queryOptions = new QueryOptions("test");
+            queryOptions.setGrpcCallOptions(grpcCallOption);
+            QueryOptions originalQueryOptions = cloneQueryOptions(queryOptions, clientConfig);
+            Assertions.assertThat(originalQueryOptions).isEqualTo(queryOptions);
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+                Assertions.assertThatNoException().isThrownBy(() -> {
+                    Stream<PointValues> stream = influxDBClient.queryPoints(
+                        "Select * from \"sensors\"",
+                        queryOptions);
+                    Assertions.assertThat(stream.count()).isEqualTo(rowCount);
+                    stream.close();
+                });
+            }
+            Assertions.assertThat(queryOptions).isEqualTo(originalQueryOptions);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void impracticalGRPCTimeoutIgnored() throws IOException {
+        int freePort = findFreePort();
+        URI uri = URI.create("http://127.0.0.1:" + freePort);
+        int rowCount = 10;
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
+             BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+             FlightServer flightServer = TestUtils.simpleFlightServer(uri, allocator,
+                 TestUtils.simpleProducer(vectorSchemaRoot))
+        ) {
+            flightServer.start();
+
+            String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
+            ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(host)
+                .database("test")
+                .writeTimeout(Duration.ofSeconds(60))
+                .build();
+
+            GrpcCallOptions grpcCallOption = new GrpcCallOptions.Builder()
+                .withMaxInboundMessageSize(1024 * 1024 * 1024)
+                .withDeadline(Deadline.after(-2, TimeUnit.MILLISECONDS))
+                .build();
+
+            QueryOptions queryOptions = new QueryOptions("test");
+            queryOptions.setGrpcCallOptions(grpcCallOption);
+            QueryOptions originalQueryOptions = cloneQueryOptions(queryOptions, clientConfig);
+            Assertions.assertThat(originalQueryOptions).isEqualTo(queryOptions);
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+                Assertions.assertThatNoException().isThrownBy(() -> {
+                    Stream<PointValues> stream = influxDBClient.queryPoints(
+                        "Select * from \"sensors\"",
+                        queryOptions);
+                    Assertions.assertThat(stream.count()).isEqualTo(rowCount);
+                    stream.close();
+                });
+            }
+            Assertions.assertThat(queryOptions).isEqualTo(originalQueryOptions);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static QueryOptions cloneQueryOptions(@Nonnull final QueryOptions orig,
+                                                  @Nonnull final ClientConfig clientConfig) {
+
+        HashMap<String, String> cloneHeaders = new HashMap<>(orig.headersSafe());
+        for (String key : orig.headersSafe().keySet()) {
+            cloneHeaders.put(key, orig.headersSafe().get(key));
+        }
+
+        QueryOptions clone = new QueryOptions(orig.databaseSafe(clientConfig),
+            orig.queryTypeSafe(),
+            cloneHeaders);
+
+        GrpcCallOptions.Builder grpcOptsBuilder = new  GrpcCallOptions.Builder()
+            .fromGrpcCallOptions(orig.grpcCallOptions());
+
+        clone.setGrpcCallOptions(grpcOptsBuilder.build());
+        return clone;
+    }
 }
