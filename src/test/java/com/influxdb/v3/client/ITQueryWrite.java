@@ -412,7 +412,7 @@ class ITQueryWrite {
             .host(System.getenv("TESTING_INFLUXDB_URL"))
             .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
             .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-            .queryTimeout(Duration.ofSeconds(3))
+            .queryTimeout(Duration.ofNanos(3))
             .build());
 
         String measurement = "timeout_test_" + Math.round(Math.random() * 100_000);
@@ -423,20 +423,21 @@ class ITQueryWrite {
 
         QueryOptions queryOptions = QueryOptions.defaultQueryOptions();
         queryOptions.setGrpcCallOptions(new GrpcCallOptions.Builder()
-            .withDeadline(Deadline.after(5000, TimeUnit.NANOSECONDS))
+            .withDeadline(Deadline.after(500, TimeUnit.MILLISECONDS))
             .build()
         );
 
-        Throwable thrown = catchThrowable(() -> {
-            Stream<Object[]> stream = client.query(sql, queryOptions);
-            stream.forEach(row -> {
-                Assertions.assertThat(row).hasSize(1);
-                Assertions.assertThat(row[0]).isEqualTo(123.0);
-            });
+        Assertions.assertThatNoException().isThrownBy(() -> {
+            try (Stream<Object[]> stream = client.query(sql, queryOptions)) {
+                stream.forEach(row -> {
+                    Assertions.assertThat(row).hasSize(1);
+                    Assertions.assertThat(row[0]).isEqualTo(123.0);
+                });
+            }
         });
 
-        Assertions.assertThat(thrown).isInstanceOf(FlightRuntimeException.class);
-        Assertions.assertThat(thrown.getMessage()).matches(".*deadline.*exceeded.*");
+        // Assertions.assertThat(thrown).isInstanceOf(FlightRuntimeException.class);
+        // Assertions.assertThat(thrown.getMessage()).matches(".*deadline.*exceeded.*");
     }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")

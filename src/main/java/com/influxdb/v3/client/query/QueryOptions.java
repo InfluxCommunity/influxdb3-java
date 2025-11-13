@@ -21,10 +21,8 @@
  */
 package com.influxdb.v3.client.query;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -192,36 +190,6 @@ public final class QueryOptions {
 
     private boolean isNotDefined(final String option) {
         return option == null || option.isEmpty();
-    }
-
-    @Override
-    protected QueryOptions clone() {
-        QueryOptions clone;
-        HashMap<String, String> cloneHeaders = new HashMap<>(this.headers);
-        for (String key : this.headers.keySet()) {
-            cloneHeaders.put(key, this.headers.get(key));
-        }
-        try {
-            clone = (QueryOptions) super.clone();
-        } catch (final CloneNotSupportedException e) {
-            clone = new QueryOptions(this.database, this.queryType, cloneHeaders);
-        }
-        if (this.grpcCallOptions != null) {
-            GrpcCallOptions.Builder grpcOptsBuilder = new  GrpcCallOptions.Builder();
-            if (this.grpcCallOptions.getDeadline() != null) {
-                grpcOptsBuilder.withDeadline(this.grpcCallOptions.getDeadline().offset(0, TimeUnit.MILLISECONDS));
-            }
-            grpcOptsBuilder.withExecutor(this.grpcCallOptions.getExecutor());
-            grpcOptsBuilder.withCompressorName(this.grpcCallOptions.getCompressorName());
-            if (this.grpcCallOptions.getWaitForReady() != null
-                && this.grpcCallOptions.getWaitForReady()) {
-                grpcOptsBuilder.withWaitForReady();
-            }
-            grpcOptsBuilder.withMaxInboundMessageSize(this.grpcCallOptions.getMaxInboundMessageSize());
-            grpcOptsBuilder.withMaxOutboundMessageSize(this.grpcCallOptions.getMaxOutboundMessageSize());
-            clone.grpcCallOptions = grpcOptsBuilder.build();
-        }
-        return clone;
     }
 
     @Override

@@ -235,6 +235,17 @@ public final class GrpcCallOptions {
         }
 
         /**
+         * Unsets absolute deadline.  Note deadline may have been set
+         * via {@link #fromGrpcCallOptions(GrpcCallOptions)} method.
+         *
+         * @return this
+         */
+        public Builder withoutDeadline() {
+            this.deadline = null;
+            return this;
+        }
+
+        /**
          * Sets an {@code executor} to be used instead of the default
          * executor specified with {@link ManagedChannelBuilder#executor}.
          *

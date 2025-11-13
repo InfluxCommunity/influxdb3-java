@@ -417,16 +417,23 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         GrpcCallOptions.Builder builder = new GrpcCallOptions.Builder()
             .fromGrpcCallOptions(options.grpcCallOptions());
 
-        if (options.grpcCallOptions().getDeadline() == null) {
-            if (config.getQueryTimeout() != null) {
-                builder.withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS));
+        if (config.getQueryTimeout() == null) {
+            if (options.grpcCallOptions().getDeadline() != null
+                && options.grpcCallOptions().getDeadline().timeRemaining(TimeUnit.MILLISECONDS) <= 0) {
+                LOG.warning("Query timeout "
+                    + options.grpcCallOptions().getDeadline()
+                    + " is 0 or negative and will be ignored.");
+                builder.withoutDeadline();
             }
-        } else if (options.grpcCallOptions().getDeadline().timeRemaining(TimeUnit.NANOSECONDS) <= 0) {
-            LOG.warning("Received impractical gRPC call options deadline "
-                + options.grpcCallOptions().getDeadline());
-            if (config.getQueryTimeout() != null) {
-                LOG.warning("Using configuration query timeout "
-                    + config.getQueryTimeout() + " as a replacement.");
+        } else {
+            if (options.grpcCallOptions().getDeadline() == null) {
+                builder.withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS));
+            } else if (options.grpcCallOptions().getDeadline().timeRemaining(TimeUnit.MILLISECONDS) <= 0) {
+                LOG.warning("Query timeout "
+                    +  options.grpcCallOptions().getDeadline()
+                    + " is 0 or negative. Using config.queryTimeout "
+                    + config.getQueryTimeout()
+                    + " instead.");
                 builder.withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS));
             }
         }
