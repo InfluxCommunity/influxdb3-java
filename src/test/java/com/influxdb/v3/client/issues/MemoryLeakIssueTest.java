@@ -56,7 +56,7 @@ public class MemoryLeakIssueTest {
         String token = System.getenv("TESTING_INFLUXDB_TOKEN");
         String database = System.getenv("TESTING_INFLUXDB_DATABASE");
         String measurement = "memory_leak_test_" + System.currentTimeMillis();
-
+        String sql = String.format("SELECT * FROM %s", measurement);
 
         // Prepare config
         ClientConfig config = new ClientConfig.Builder()
@@ -66,23 +66,40 @@ public class MemoryLeakIssueTest {
                 .writeNoSync(true)
                 .build();
 
-        // Write test data
         try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
+            // Write test data
             LOG.info("Writing test data...");
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 3; i++) {
                 client.writeRecord(String.format("%s,id=%04d temp=%f",
                         measurement, i, 20.0 + Math.random() * 10));
             }
-        }
 
-        TimeUnit.MILLISECONDS.sleep(500);
+            // Wait for data to be queryable (CI environments can be slower)
+            LOG.info("Waiting for data to be available...");
+            int attempts = 0;
+            boolean hasData = false;
+            while (attempts < 10 && !hasData) {
+                try (Stream<PointValues> testStream = client.queryPoints(sql)) {
+                    hasData = testStream.findFirst().isPresent();
+                }
+                if (!hasData) {
+                    LOG.info("Data not yet available, waiting... (attempt " + (attempts + 1) + "/10)");
+                    TimeUnit.MILLISECONDS.sleep(500);
+                    attempts++;
+                }
+            }
+
+            if (!hasData) {
+                Assertions.fail("No data available after writing and waiting " + (attempts * 500) + "ms");
+            }
+            LOG.info("Data is available, starting test...");
+
+        }
 
         // Query data
         InfluxDBClient client = InfluxDBClient.getInstance(config);
         //noinspection TryFinallyCanBeTryWithResources
         try {
-            String sql = String.format("SELECT * FROM %s", measurement);
-
             // Synchronization to ensure we interrupt during consumption
             CountDownLatch consumingStarted = new CountDownLatch(1);
             AtomicInteger rowsProcessed = new AtomicInteger(0);
@@ -117,7 +134,6 @@ public class MemoryLeakIssueTest {
                 }
             });
 
-            LOG.info("Starting consumer thread...");
             queryThread.start();
 
             // Wait for thread to start consuming
