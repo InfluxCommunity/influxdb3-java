@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client;
 
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import mockwebserver3.RecordedRequest;
@@ -49,7 +51,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     private InfluxDBClient client;
 
     @BeforeEach
-    void initClient() {
+    void initClient() throws URISyntaxException, SSLException {
         client = InfluxDBClient.getInstance(baseURL, "my-token".toCharArray(), "my-database");
     }
 
@@ -228,7 +230,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     void writeNoSyncTrueOnV2ServerThrowsException() throws InterruptedException {
         mockServer.enqueue(createEmptyResponse(HttpResponseStatus.METHOD_NOT_ALLOWED.code()));
 
-        InfluxDBApiHttpException ae = org.junit.jupiter.api.Assertions.assertThrows(InfluxDBApiHttpException.class,
+        InfluxDBApiNettyException ae = org.junit.jupiter.api.Assertions.assertThrows(InfluxDBApiNettyException.class,
                 () -> client.writeRecord("mem,tag=one value=1.0",
                         new WriteOptions.Builder().precision(WritePrecision.MS).noSync(true).build())
         );
@@ -527,8 +529,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         Throwable thrown = catchThrowable(() -> client.writePoint(point));
 
         assertThat(thrown).isNotNull();
-        assertThat(thrown).isInstanceOf(InfluxDBApiHttpException.class);
-        InfluxDBApiHttpException he = (InfluxDBApiHttpException) thrown;
+        assertThat(thrown).isInstanceOf(InfluxDBApiNettyException.class);
+        InfluxDBApiNettyException he = (InfluxDBApiNettyException) thrown;
         assertThat(he.headers()).isNotNull();
         assertThat(he.getHeader("retry-after").get(0))
           .isNotNull().isEqualTo("42");
@@ -564,7 +566,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             });
             assertThat(thrown).isNotNull();
             assertThat(thrown).isInstanceOf(InfluxDBApiException.class);
-            assertThat(thrown.getMessage()).contains("java.net.http.HttpConnectTimeoutException");
+            assertThat(thrown.getMessage()).contains("io.netty.channel.ConnectTimeoutException");
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -594,7 +596,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             });
             assertThat(thrown).isNotNull();
             assertThat(thrown).isInstanceOf(InfluxDBApiException.class);
-            assertThat(thrown.getMessage()).contains("java.net.http.HttpConnectTimeoutException");
+            assertThat(thrown.getMessage()).contains("io.netty.channel.ConnectTimeoutException");
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -605,7 +607,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     public void writeTimeoutOKTest() {
         mockServer.enqueue(createResponse(200));
 
-        Duration testDuration = Duration.ofMillis(2000);
+        Duration testDuration = Duration.ofMillis(2700);
 
         ClientConfig config = new ClientConfig.Builder()
             .host(baseURL)

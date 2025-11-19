@@ -21,10 +21,12 @@
  */
 package com.influxdb.v3.durable;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 import java.util.logging.Logger;
+import javax.net.ssl.SSLException;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.config.ClientConfig;
@@ -75,7 +77,7 @@ public class InfluxClientPool implements AutoCloseable {
    *
    * @return - An InfluxDBClient ready for use.
    */
-  public synchronized InfluxDBClient borrowClient() {
+  public synchronized InfluxDBClient borrowClient() throws URISyntaxException, SSLException {
     InfluxDBClient client;
     if (idlers.isEmpty()) {
       client = InfluxDBClient.getInstance(clientConfig);

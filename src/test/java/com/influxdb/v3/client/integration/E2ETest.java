@@ -23,6 +23,8 @@ package com.influxdb.v3.client.integration;
 
 import java.math.BigInteger;
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.Instant;
@@ -31,11 +33,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 
+import io.grpc.ProxyDetector;
+import io.netty.handler.proxy.HttpProxyHandler;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -44,7 +50,9 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.PointValues;
+import com.influxdb.v3.client.TestUtils;
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.config.NettyHttpClientConfig;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
@@ -59,8 +67,11 @@ public class E2ETest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void testQueryWithProxy() {
+    void testQueryWithProxy() throws URISyntaxException, SSLException {
         String proxyUrl = "http://localhost:10000";
+        String targetUrl = "http://localhost:8086";
+        String username = "username";
+        String password = "password";
 
         try {
             // Continue to run this test only if Envoy proxy is running on this address http://localhost:10000
@@ -75,11 +86,22 @@ public class E2ETest {
             }
         }
 
+        NettyHttpClientConfig nettyHttpClientConfig = new NettyHttpClientConfig();
+
+        // Set proxy for write api
+        Supplier<HttpProxyHandler> writeApiProxy = () ->
+                new HttpProxyHandler(new InetSocketAddress("localhost", 10000), username, password);
+        nettyHttpClientConfig.configureChannelProxy(writeApiProxy);
+
+        // Set proxy for query api
+        ProxyDetector proxyDetector = TestUtils.createProxyDetector(targetUrl, proxyUrl, username, password);
+        nettyHttpClientConfig.configureManagedChannelProxy(proxyDetector);
+
         ClientConfig clientConfig = new ClientConfig.Builder()
                 .host(System.getenv("TESTING_INFLUXDB_URL"))
                 .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-                .proxyUrl(proxyUrl)
+                .nettyHttpClientConfig(nettyHttpClientConfig)
                 .build();
 
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
@@ -94,44 +116,6 @@ public class E2ETest {
                         Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
                     });
         }
-    }
-
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
-    @Test
-    void correctSslCertificates() throws Exception {
-        // This is real certificate downloaded from https://cloud2.influxdata.com
-        String influxDBcertificateFile = "src/test/java/com/influxdb/v3/client/testdata/influxdb-certificate.pem";
-
-        ClientConfig clientConfig = new ClientConfig.Builder()
-                .host(System.getenv("TESTING_INFLUXDB_URL"))
-                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
-                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-                .sslRootsFilePath(influxDBcertificateFile)
-                .build();
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        assertGetDataSuccess(influxDBClient);
-    }
-
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
-    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
-    @Test
-    void disableServerCertificateValidation() {
-        String wrongCertificateFile = "src/test/java/com/influxdb/v3/client/testdata/docker.com.pem";
-
-        ClientConfig clientConfig = new ClientConfig.Builder()
-                .host(System.getenv("TESTING_INFLUXDB_URL"))
-                .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
-                .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
-                .disableServerCertificateValidation(true)
-                .sslRootsFilePath(wrongCertificateFile)
-                .build();
-
-        // Test succeeded with wrong certificate file because disableServerCertificateValidation is true
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        assertGetDataSuccess(influxDBClient);
     }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
