@@ -23,6 +23,7 @@ package com.influxdb.v3.client.integration;
 
 import java.math.BigInteger;
 import java.net.ConnectException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.Instant;
@@ -35,7 +36,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 
+import io.netty.handler.proxy.HttpProxyHandler;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -59,7 +62,7 @@ public class E2ETest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void testQueryWithProxy() {
+    void testQueryWithProxy() throws URISyntaxException, SSLException {
         String proxyUrl = "http://localhost:10000";
 
         try {
@@ -82,16 +85,20 @@ public class E2ETest {
                 .proxyUrl(proxyUrl)
                 .build();
 
+        var testId = UUID.randomUUID().toString();
         InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
         influxDBClient.writePoint(
-                Point.measurement("test1")
+                Point.measurement("test5")
+                        .setTag("tag", "tagValue1")
                         .setField("field", "field1")
+                        .setField("testId", testId)
         );
 
-        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
+        String query = String.format("SELECT * FROM \"test5\" WHERE \"testId\" = '%s'", testId);
+        try (Stream<PointValues> stream = influxDBClient.queryPoints(query)) {
             stream.findFirst()
                     .ifPresent(pointValues -> {
-                        Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
+                        Assertions.assertThat(pointValues.getField("testId")).isEqualTo(testId);
                     });
         }
     }
@@ -118,7 +125,7 @@ public class E2ETest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void disableServerCertificateValidation() {
+    void disableServerCertificateValidation() throws URISyntaxException, SSLException {
         String wrongCertificateFile = "src/test/java/com/influxdb/v3/client/testdata/docker.com.pem";
 
         ClientConfig clientConfig = new ClientConfig.Builder()
@@ -394,27 +401,27 @@ public class E2ETest {
         Assertions.assertThatNoException().isThrownBy(() -> {
 
             try (InfluxDBClient client = InfluxDBClient.getInstance(
-                System.getenv("TESTING_INFLUXDB_URL"),
-                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
-                System.getenv("TESTING_INFLUXDB_DATABASE"),
-                null)) {
+                    System.getenv("TESTING_INFLUXDB_URL"),
+                    System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+                    System.getenv("TESTING_INFLUXDB_DATABASE"),
+                    null)) {
 
                 List<Point> points = List.of(
-                    Point.measurement(measurement)
-                        .setTag("type", "test")
-                        .setFloatField("rads", 3.14)
-                        .setIntegerField("life", 42)
-                        .setTimestamp(now.minus(2, ChronoUnit.SECONDS)),
-                    Point.measurement(measurement)
-                        .setTag("type", "test")
-                        .setFloatField("rads", 3.14)
-                        .setIntegerField("life", 42)
-                        .setTimestamp(now.minus(1, ChronoUnit.SECONDS)),
-                    Point.measurement(measurement)
-                        .setTag("type", "test")
-                        .setFloatField("rads", 3.14)
-                        .setIntegerField("life", 42)
-                        .setTimestamp(now));
+                        Point.measurement(measurement)
+                                .setTag("type", "test")
+                                .setFloatField("rads", 3.14)
+                                .setIntegerField("life", 42)
+                                .setTimestamp(now.minus(2, ChronoUnit.SECONDS)),
+                        Point.measurement(measurement)
+                                .setTag("type", "test")
+                                .setFloatField("rads", 3.14)
+                                .setIntegerField("life", 42)
+                                .setTimestamp(now.minus(1, ChronoUnit.SECONDS)),
+                        Point.measurement(measurement)
+                                .setTag("type", "test")
+                                .setFloatField("rads", 3.14)
+                                .setIntegerField("life", 42)
+                                .setTimestamp(now));
 
                 client.writePoints(points);
                 String query = "SELECT * FROM " + measurement;
@@ -426,10 +433,10 @@ public class E2ETest {
                     // Test to ensure FlightStream was closed even though two more records
                     // remain in the stream
                     stream.findFirst()
-                        .ifPresent(pointValues -> {
-                            Assertions.assertThat(pointValues.getField("life")).isEqualTo(42L);
-                            Assertions.assertThat(pointValues.getField("rads")).isEqualTo(3.14);
-                        });
+                            .ifPresent(pointValues -> {
+                                Assertions.assertThat(pointValues.getField("life")).isEqualTo(42L);
+                                Assertions.assertThat(pointValues.getField("rads")).isEqualTo(3.14);
+                            });
                 }
             }
         });
@@ -480,10 +487,7 @@ public class E2ETest {
                 }
             }
         }
-
-
     }
-
 
     private void assertGetDataSuccess(@Nonnull final InfluxDBClient influxDBClient) {
         influxDBClient.writePoint(

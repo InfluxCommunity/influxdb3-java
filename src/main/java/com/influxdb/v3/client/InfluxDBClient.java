@@ -22,12 +22,16 @@
 package com.influxdb.v3.client;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.net.ssl.SSLException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 import com.influxdb.v3.client.config.ClientConfig;
@@ -456,7 +460,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * Returns <code>null</code> if the server version can't be determined.
      */
     @Nullable
-    String getServerVersion();
+    String getServerVersion() throws RuntimeException, ExecutionException, InterruptedException, JsonProcessingException;
 
     /**
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
@@ -470,7 +474,7 @@ public interface InfluxDBClient extends AutoCloseable {
     @Nonnull
     static InfluxDBClient getInstance(@Nonnull final String host,
                                       @Nullable final char[] token,
-                                      @Nullable final String database) {
+                                      @Nullable final String database) throws URISyntaxException, SSLException {
         ClientConfig config = new ClientConfig.Builder()
                 .host(host)
                 .token(token)
@@ -494,7 +498,7 @@ public interface InfluxDBClient extends AutoCloseable {
     static InfluxDBClient getInstance(@Nonnull final String host,
                                       @Nullable final char[] token,
                                       @Nullable final String database,
-                                      @Nullable Map<String, String> defaultTags) {
+                                      @Nullable Map<String, String> defaultTags) throws URISyntaxException, SSLException {
 
         ClientConfig config = new ClientConfig.Builder()
                 .host(host)
@@ -515,7 +519,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * @return new instance of the {@link InfluxDBClient}
      */
     @Nonnull
-    static InfluxDBClient getInstance(@Nonnull final ClientConfig config) {
+    static InfluxDBClient getInstance(@Nonnull final ClientConfig config) throws URISyntaxException, SSLException {
         return new InfluxDBClientImpl(config);
     }
 
@@ -545,7 +549,7 @@ public interface InfluxDBClient extends AutoCloseable {
     static InfluxDBClient getInstance(@Nonnull final String connectionString) {
         try {
             return getInstance(new ClientConfig.Builder().build(connectionString));
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException | URISyntaxException | SSLException e) {
             throw new IllegalArgumentException(e); // same exception as ClientConfig.validate()
         }
     }
@@ -585,7 +589,7 @@ public interface InfluxDBClient extends AutoCloseable {
      * @return instance of {@link InfluxDBClient}
      */
     @Nonnull
-    static InfluxDBClient getInstance() {
+    static InfluxDBClient getInstance() throws URISyntaxException, SSLException {
         return getInstance(new ClientConfig.Builder().build(System.getenv(), System.getProperties()));
     }
 }

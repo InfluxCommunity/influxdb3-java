@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client;
 
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import mockwebserver3.RecordedRequest;
@@ -49,7 +51,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     private InfluxDBClient client;
 
     @BeforeEach
-    void initClient() {
+    void initClient() throws URISyntaxException, SSLException {
         client = InfluxDBClient.getInstance(baseURL, "my-token".toCharArray(), "my-database");
     }
 

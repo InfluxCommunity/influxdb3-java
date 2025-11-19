@@ -176,6 +176,12 @@
 
         <dependency>
             <groupId>io.netty</groupId>
+            <artifactId>netty-handler-proxy</artifactId>
+            <version>${netty-handler.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
             <artifactId>netty-buffer</artifactId>
             <version>${netty-handler.version}</version>
         </dependency>

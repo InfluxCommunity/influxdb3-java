@@ -115,6 +115,7 @@ public final class ClientConfig {
     private final Map<String, String> headers;
     private final String sslRootsFilePath;
     private final boolean disableGRPCCompression;
+    private final NettyHttpClientConfig nettyHttpClientConfig;
 
     /**
      * Deprecated use {@link #proxyUrl}.
@@ -205,6 +206,7 @@ public final class ClientConfig {
 
     /**
      * Gets default tags used when writing points.
+     *
      * @return default tags
      */
     public Map<String, String> getDefaultTags() {
@@ -329,6 +331,11 @@ public final class ClientConfig {
         return disableGRPCCompression;
     }
 
+    //fixme comments
+    public NettyHttpClientConfig getNettyHttpClientConfig() {
+        return nettyHttpClientConfig;
+    }
+
     /**
      * Validates the configuration properties.
      */
@@ -429,6 +436,7 @@ public final class ClientConfig {
         private Map<String, String> headers;
         private String sslRootsFilePath;
         private boolean disableGRPCCompression;
+        private NettyHttpClientConfig nettyHttpClientConfig;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -557,9 +565,8 @@ public final class ClientConfig {
          * Deprecated in v1.4.0. This setter is superseded by the clearer <code>writeTimeout()</code>.
          *
          * @param timeout default timeout to use for Write API calls. Default to
-         * ''{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
+         *                ''{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
          * @return this
-         *
          * @see #writeTimeout(Duration writeTimeout)
          */
         @Deprecated
@@ -571,18 +578,18 @@ public final class ClientConfig {
         }
 
         /**
-         *  Sets the default writeTimeout to use for Write API calls in the REST client.
-         *  Default is {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
+         * Sets the default writeTimeout to use for Write API calls in the REST client.
+         * Default is {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
          *
          * @param writeTimeout default timeout to use for REST API write calls. Default is
-         * {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
+         *                     {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
          * @return - this
          */
         @Nonnull
         public Builder writeTimeout(@Nullable final Duration writeTimeout) {
 
-          this.writeTimeout = writeTimeout;
-          return this;
+            this.writeTimeout = writeTimeout;
+            return this;
         }
 
         /**
@@ -596,8 +603,8 @@ public final class ClientConfig {
          */
         @Nonnull
         public Builder queryTimeout(@Nullable final Duration queryTimeout) {
-          this.queryTimeout = queryTimeout;
-          return this;
+            this.queryTimeout = queryTimeout;
+            return this;
         }
 
         /**
@@ -723,6 +730,12 @@ public final class ClientConfig {
             return this;
         }
 
+        @Nonnull
+        public Builder nettyHttpClientConfig(NettyHttpClientConfig nettyHttpClientConfig) {
+            this.nettyHttpClientConfig = nettyHttpClientConfig;
+            return this;
+        }
+
         /**
          * Build an instance of {@code ClientConfig}.
          *
@@ -837,7 +850,7 @@ public final class ClientConfig {
                 this.queryTimeout(Duration.ofSeconds(to));
             }
             final String disableGRPCCompression = get.apply("INFLUX_DISABLE_GRPC_COMPRESSION",
-                "influx.disableGRPCCompression");
+                    "influx.disableGRPCCompression");
             if (disableGRPCCompression != null) {
                 this.disableGRPCCompression(Boolean.parseBoolean(disableGRPCCompression));
             }
@@ -885,8 +898,8 @@ public final class ClientConfig {
         defaultTags = builder.defaultTags;
         timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
         writeTimeout = builder.writeTimeout != null
-            ? builder.writeTimeout : builder.timeout != null
-            ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
+                ? builder.writeTimeout : builder.timeout != null
+                ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
         queryTimeout = builder.queryTimeout;
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
         disableServerCertificateValidation = builder.disableServerCertificateValidation != null
@@ -897,5 +910,6 @@ public final class ClientConfig {
         headers = builder.headers;
         sslRootsFilePath = builder.sslRootsFilePath;
         disableGRPCCompression = builder.disableGRPCCompression;
+        nettyHttpClientConfig = builder.nettyHttpClientConfig;
     }
 }

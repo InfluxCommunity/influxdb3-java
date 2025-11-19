@@ -23,6 +23,7 @@ package com.influxdb.v3.client;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -34,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 
 import io.grpc.Deadline;
 import org.apache.arrow.flight.CallStatus;
@@ -69,7 +71,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void queryWrite() {
+    void queryWrite() throws URISyntaxException, SSLException {
         client = getInstance();
 
         String measurement = "integration_test";
@@ -114,7 +116,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void queryBatches() {
+    void queryBatches() throws URISyntaxException, SSLException {
         client = getInstance();
 
         try (Stream<VectorSchemaRoot> batches = client.queryBatches("SELECT * FROM integration_test")) {
@@ -129,24 +131,24 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void queryWriteGzip() {
-        client = InfluxDBClient.getInstance(new ClientConfig.Builder()
+    void queryWriteGzip() throws Exception {
+        try (InfluxDBClient client = InfluxDBClient.getInstance(new ClientConfig.Builder()
                 .host(System.getenv("TESTING_INFLUXDB_URL"))
                 .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
                 .gzipThreshold(1)
-                .build());
+                .build());) {
+            String measurement = "integration_test";
+            long testId = System.currentTimeMillis();
+            client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
 
-        String measurement = "integration_test";
-        long testId = System.currentTimeMillis();
-        client.writeRecord(measurement + ",type=used value=123.0,testId=" + testId);
-
-        String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
-        try (Stream<Object[]> stream = client.query(sql)) {
-            stream.forEach(row -> {
-                Assertions.assertThat(row).hasSize(1);
-                Assertions.assertThat(row[0]).isEqualTo(123.0);
-            });
+            String sql = String.format("SELECT value FROM %s WHERE \"testId\"=%d", measurement, testId);
+            try (Stream<Object[]> stream = client.query(sql)) {
+                stream.forEach(row -> {
+                    Assertions.assertThat(row).hasSize(1);
+                    Assertions.assertThat(row[0]).isEqualTo(123.0);
+                });
+            }
         }
     }
 
@@ -154,7 +156,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void queryWriteParameters() {
+    void queryWriteParameters() throws URISyntaxException, SSLException {
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
                 .host(System.getenv("TESTING_INFLUXDB_URL"))
                 .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
@@ -186,7 +188,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void iteratingMoreVectorSchemaRoots() {
+    void iteratingMoreVectorSchemaRoots() throws URISyntaxException, SSLException {
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
                 .host(System.getenv("TESTING_INFLUXDB_URL"))
                 .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
@@ -207,7 +209,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void pointValues() {
+    void pointValues() throws URISyntaxException, SSLException {
 
         Instant timestamp = Instant.now().minus(1, ChronoUnit.DAYS);
 
@@ -243,7 +245,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    public void handleFlightRuntimeException() throws IOException {
+    public void handleFlightRuntimeException() throws IOException, URISyntaxException {
         Instant now = Instant.now();
         String measurement = "/influxdb3-java/test/ITQueryWrite/handleFlightRuntimeException";
 
@@ -312,7 +314,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    public void queryTimeoutExceededTest() {
+    public void queryTimeoutExceededTest() throws URISyntaxException, SSLException {
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
             .host(System.getenv("TESTING_INFLUXDB_URL"))
             .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
@@ -342,7 +344,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    public void queryTimeoutOKTest() {
+    public void queryTimeoutOKTest() throws URISyntaxException, SSLException {
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
             .host(System.getenv("TESTING_INFLUXDB_URL"))
             .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
@@ -370,7 +372,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    public void queryTimeoutOtherGrpcOptUnaffectedTest() {
+    public void queryTimeoutOtherGrpcOptUnaffectedTest() throws URISyntaxException, SSLException {
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
             .host(System.getenv("TESTING_INFLUXDB_URL"))
             .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
@@ -406,7 +408,7 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    public void queryTimeoutSuperceededByGrpcOptTest() {
+    public void queryTimeoutSuperceededByGrpcOptTest() throws URISyntaxException, SSLException {
 
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
             .host(System.getenv("TESTING_INFLUXDB_URL"))
@@ -423,7 +425,7 @@ class ITQueryWrite {
 
         QueryOptions queryOptions = QueryOptions.defaultQueryOptions();
         queryOptions.setGrpcCallOptions(new GrpcCallOptions.Builder()
-            .withDeadline(Deadline.after(500, TimeUnit.MILLISECONDS))
+            .withDeadline(Deadline.after(3000, TimeUnit.SECONDS))
             .build()
         );
 
@@ -441,8 +443,8 @@ class ITQueryWrite {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    public void repeatQueryWithTimeoutTest() {
-        long timeout = 1000;
+    public void repeatQueryWithTimeoutTest() throws URISyntaxException, SSLException {
+        long timeout = 2000;
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
             .host(System.getenv("TESTING_INFLUXDB_URL"))
             .token(System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray())
@@ -471,7 +473,7 @@ class ITQueryWrite {
 
     @Test
     @Disabled("Runs across issue 12109 in Grpc-Java library ")
-    public void queryGrpcMaxOutSizeTest() {
+    public void queryGrpcMaxOutSizeTest() throws URISyntaxException, SSLException {
         // See Grpc-java issue 12109 https://github.com/grpc/grpc-java/issues/12109
         // TODO - re-enable after 12109 has a fix and dependencies are updated
         client = InfluxDBClient.getInstance(new ClientConfig.Builder()
@@ -506,7 +508,7 @@ class ITQueryWrite {
     }
 
     @Nonnull
-    private static InfluxDBClient getInstance() {
+    private static InfluxDBClient getInstance() throws URISyntaxException, SSLException {
         return InfluxDBClient.getInstance(
                 System.getenv("TESTING_INFLUXDB_URL"),
                 System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),

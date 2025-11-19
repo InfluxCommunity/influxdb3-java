@@ -21,12 +21,10 @@
  */
 package com.influxdb.v3.client;
 
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import javax.annotation.Nonnull;
-
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslProvider;
 import org.apache.arrow.flight.FlightServer;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.NoOpFlightProducer;
@@ -39,6 +37,22 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class TestUtils {
 
@@ -87,6 +101,53 @@ public final class TestUtils {
         vectorSchemaRoot.setRowCount(rowCount);
 
         return vectorSchemaRoot;
+    }
+
+
+    // fixme
+    // Create SslContext for mTLS only
+    public static SslContext createNettySslContext(boolean isServer, String format, String password, String keyFilePath, String trustFilePath, boolean isDisableKeystore, boolean isJdkSslContext)
+            throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
+        KeyManagerFactory keyManagerFactory = getKeyManagerFactory(format, password, keyFilePath);
+
+        TrustManagerFactory trustManagerFactory = getTrustManagerFactory(format, password, trustFilePath);
+
+        SslContextBuilder sslContextBuilder;
+        if (isServer) {
+            sslContextBuilder = SslContextBuilder.forServer(keyManagerFactory).clientAuth(ClientAuth.REQUIRE);
+        } else {
+            sslContextBuilder = SslContextBuilder.forClient();
+        }
+
+        sslContextBuilder.trustManager(trustManagerFactory);
+
+        if (isJdkSslContext) {
+            sslContextBuilder.sslProvider(SslProvider.JDK);
+        }
+
+        if (!isDisableKeystore) {
+            sslContextBuilder.keyManager(keyManagerFactory);
+        }
+
+        return sslContextBuilder.build();
+    }
+
+    @NotNull
+    private static TrustManagerFactory getTrustManagerFactory(String format, String password, String trustFilePath) throws NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException {
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        KeyStore trustStore = KeyStore.getInstance(format);
+        trustStore.load(new FileInputStream(trustFilePath), password.toCharArray());
+        trustManagerFactory.init(trustStore);
+        return trustManagerFactory;
+    }
+
+    @NotNull
+    private static KeyManagerFactory getKeyManagerFactory(String format, String password, String keyFilePath) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
+        KeyStore keyStore = KeyStore.getInstance(format);
+        keyStore.load(new FileInputStream(keyFilePath), password.toCharArray());
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        keyManagerFactory.init(keyStore, password.toCharArray());
+        return keyManagerFactory;
     }
 }
 

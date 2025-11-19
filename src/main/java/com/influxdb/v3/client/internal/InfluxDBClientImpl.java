@@ -23,12 +23,10 @@ package com.influxdb.v3.client.internal;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -37,7 +35,9 @@ import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.net.ssl.SSLException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.grpc.Deadline;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -92,7 +92,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
      *
      * @param config the client config.
      */
-    public InfluxDBClientImpl(@Nonnull final ClientConfig config) {
+    public InfluxDBClientImpl(@Nonnull final ClientConfig config) throws URISyntaxException, SSLException {
         this(config, null, null);
     }
 
@@ -105,13 +105,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
      */
     InfluxDBClientImpl(@Nonnull final ClientConfig config,
                        @Nullable final RestClient restClient,
-                       @Nullable final FlightSqlClient flightSqlClient) {
+                       @Nullable final FlightSqlClient flightSqlClient) throws URISyntaxException, SSLException {
         Arguments.checkNotNull(config, "config");
 
         config.validate();
 
         this.config = config;
-        this.restClient = restClient != null ? restClient : new RestClient(config);
+        this.restClient = new RestClient(config);
         this.flightSqlClient = flightSqlClient != null ? flightSqlClient : new FlightSqlClient(config);
         this.emptyWriteOptions = new WriteOptions(null);
     }
@@ -293,7 +293,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     }
 
     @Override
-    public String getServerVersion() {
+    public String getServerVersion() throws RuntimeException, ExecutionException, InterruptedException, JsonProcessingException {
         return this.restClient.getServerVersion();
     }
 
@@ -378,7 +378,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         headers.putAll(options.headersSafe());
 
         try {
-            restClient.request(path, HttpMethod.POST, body, queryParams, headers);
+            //fixme should body string or byte, gzip?
+            restClient.request(HttpMethod.POST, path, headers, body, queryParams);
         } catch (InfluxDBApiHttpException e) {
             if (noSync && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
                 // Server does not support the v3 write API, can't use the NoSync option.
@@ -386,6 +387,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                         + "(supported by InfluxDB 3 Core/Enterprise servers only).", e.headers(), e.statusCode());
             }
             throw e;
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
