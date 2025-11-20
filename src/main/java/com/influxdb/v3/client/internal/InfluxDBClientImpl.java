@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -187,14 +188,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     public Stream<Object[]> query(@Nonnull final String query,
                                   @Nonnull final Map<String, Object> parameters,
                                   @Nonnull final QueryOptions options) {
-        return queryData(query, parameters, options)
-                .flatMap(vector -> IntStream.range(0, vector.getRowCount())
-                                        .mapToObj(rowNumber ->
-                                        VectorSchemaRootConverter.INSTANCE
-                                                                 .getArrayObjectFromVectorSchemaRoot(
-                                                                         vector,
-                                                                         rowNumber
-                                                                 )));
+        return queryDataAndProcess(query, parameters, options,
+                VectorSchemaRootConverter.INSTANCE::getArrayObjectFromVectorSchemaRoot);
     }
 
     @Nonnull
@@ -222,14 +217,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     public Stream<Map<String, Object>> queryRows(@Nonnull final String query,
                                                  @Nonnull final Map<String, Object> parameters,
                                                  @Nonnull final QueryOptions options) {
-        return queryData(query, parameters, options)
-                .flatMap(vector -> IntStream.range(0, vector.getRowCount())
-                                            .mapToObj(rowNumber ->
-                                                              VectorSchemaRootConverter.INSTANCE
-                                                                      .getMapFromVectorSchemaRoot(
-                                                                              vector,
-                                                                              rowNumber
-                                                                      )));
+        return queryDataAndProcess(query, parameters, options,
+                VectorSchemaRootConverter.INSTANCE::getMapFromVectorSchemaRoot);
     }
 
     @Nonnull
@@ -255,13 +244,10 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     public Stream<PointValues> queryPoints(@Nonnull final String query,
                                            @Nonnull final Map<String, Object> parameters,
                                            @Nonnull final QueryOptions options) {
-        return queryData(query, parameters, options)
-                .flatMap(vector -> {
+        return queryDataAndProcess(query, parameters, options,
+                (vector, rowNumber) -> {
                     List<FieldVector> fieldVectors = vector.getFieldVectors();
-                    return IntStream
-                            .range(0, vector.getRowCount())
-                            .mapToObj(row ->
-                                    VectorSchemaRootConverter.INSTANCE.toPointValues(row, fieldVectors));
+                    return VectorSchemaRootConverter.INSTANCE.toPointValues(rowNumber, fieldVectors);
                 });
     }
 
@@ -387,6 +373,19 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
             }
             throw e;
         }
+    }
+
+    @Nonnull
+    private <T> Stream<T> queryDataAndProcess(@Nonnull final String query,
+                                              @Nonnull final Map<String, Object> parameters,
+                                              @Nonnull final QueryOptions options,
+                                              @Nonnull final BiFunction<VectorSchemaRoot, Integer, T> processor) {
+        return queryData(query, parameters, options)
+                .flatMap(vector ->
+                        IntStream.range(0, vector.getRowCount())
+                                .mapToObj(rowNumber -> processor.apply(vector, rowNumber))
+                                .onClose(vector::close)
+                );
     }
 
     @Nonnull
