@@ -43,6 +43,7 @@ import io.grpc.Deadline;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.arrow.flight.CallOption;
+import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 import com.influxdb.v3.client.InfluxDBApiException;
@@ -216,7 +217,8 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     public Stream<Map<String, Object>> queryRows(@Nonnull final String query,
                                                  @Nonnull final Map<String, Object> parameters,
                                                  @Nonnull final QueryOptions options) {
-        return queryDataAndProcess(query, parameters, options, VectorSchemaRootConverter.INSTANCE::getMapFromVectorSchemaRoot);
+        return queryDataAndProcess(query, parameters, options,
+                VectorSchemaRootConverter.INSTANCE::getMapFromVectorSchemaRoot);
     }
 
     @Nonnull
@@ -243,7 +245,10 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                                            @Nonnull final Map<String, Object> parameters,
                                            @Nonnull final QueryOptions options) {
         return queryDataAndProcess(query, parameters, options,
-                (vector, rowNumber) -> VectorSchemaRootConverter.INSTANCE.toPointValues(rowNumber, vector.getFieldVectors()));
+                (vector, rowNumber) -> {
+                    List<FieldVector> fieldVectors = vector.getFieldVectors();
+                    return VectorSchemaRootConverter.INSTANCE.toPointValues(rowNumber, fieldVectors);
+                });
     }
 
     @Nonnull
