@@ -1,5 +1,9 @@
 ## 1.7.0 [unreleased]
 
+### Bug Fixes
+
+1. [#317](https://github.com/InfluxCommunity/influxdb3-java/pull/317): Fix Arrow memory leak when stream close fails due to thread interrupts. 
+
 ## 1.6.0 [2025-11-14]
 
 ### Features
