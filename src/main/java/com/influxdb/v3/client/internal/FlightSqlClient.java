@@ -270,11 +270,43 @@ final class FlightSqlClient implements AutoCloseable {
 
         @Override
         public void close() {
+            Exception pendingException = null;
+
+            // Try to close FlightStream
             try {
                 flightStream.close();
+            } catch (Exception e) {
+                LOG.warn("FlightStream close failed: {}", e.toString());
+                pendingException = e;
+
+                // Retry close - first attempt drained stream but threw exception before cleanup,
+                // retry finds stream already drained and completes cleanup successfully
+                try {
+                    flightStream.close();
+                    // Retry succeeded - clear the exception
+                    pendingException = null;
+                } catch (Exception retryException) {
+                    // Retry also failed - keep original exception
+                    // but continue to close collected Arrow resources anyway
+                    LOG.error("FlightStream close failed even after retry attempt", retryException);
+                }
+            }
+
+            // ALWAYS try to close collected Arrow resources
+            try {
                 AutoCloseables.close(autoCloseable);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                LOG.error("AutoCloseable close failed", e);
+                if (pendingException != null) {
+                    pendingException.addSuppressed(e);
+                } else {
+                    pendingException = e;
+                }
+            }
+
+            // Throw pending exceptions
+            if (pendingException != null) {
+                throw new RuntimeException(pendingException);
             }
         }
     }
