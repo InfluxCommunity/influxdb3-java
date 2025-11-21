@@ -15,14 +15,14 @@ import java.util.concurrent.ExecutionException;
 public class Main {
     public static void main(String[] args) throws URISyntaxException, SSLException, ExecutionException, InterruptedException {
         ClientConfig clientConfig = configCloud();
-//        ClientConfig clientConfig = new ClientConfig.Builder().host("http://localhost:8080").token("sda".toCharArray()).build();
 
         var testId = UUID.randomUUID().toString();
-        try (
-                RestClient restClient = new RestClient(clientConfig);
-        ) {
+        try (RestClient restClient = new RestClient(clientConfig)) {
+
+            // Get server version.
             System.out.println("Server version: " + restClient.getServerVersion());
-            FullHttpResponse response = restClient.request(HttpMethod.POST, "/", null, null);
+
+            // Write data
             System.out.println("Write data with testId " + testId);
             var p = Point.measurement("cpu_sonnh")
                     .setTag("host", "server1")
@@ -31,6 +31,7 @@ public class Main {
             var lineProtocol = p.toLineProtocol();
             restClient.write(lineProtocol);
 
+            // Read data
             System.out.println("Read data with testId " + testId);
             String query = String.format("SELECT * FROM \"cpu_sonnh\" WHERE \"testId\" = '%s'", testId);
             InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
