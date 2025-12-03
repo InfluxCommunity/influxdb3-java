@@ -376,10 +376,10 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         try {
             //fixme should body string or byte, gzip?
             restClient.request(HttpMethod.POST, path, headers, body, queryParams);
-        } catch (InfluxDBApiHttpException e) {
+        } catch (InfluxDBApiNettyException e) {
             if (noSync && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
                 // Server does not support the v3 write API, can't use the NoSync option.
-                throw new InfluxDBApiHttpException("Server doesn't support write with NoSync=true "
+                throw new InfluxDBApiNettyException("Server doesn't support write with NoSync=true "
                         + "(supported by InfluxDB 3 Core/Enterprise servers only).", e.headers(), e.statusCode());
             }
             throw e;
