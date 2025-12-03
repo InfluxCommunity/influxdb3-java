@@ -259,7 +259,7 @@ final class RestClient implements AutoCloseable {
 
 
         if (this.channel == null || !this.channel.isOpen()) {
-            ChannelFuture channelFuture = getBootstrap().connect();
+            ChannelFuture channelFuture = getBootstrap().connect().sync();
             if (!channelFuture.await(this.timeout.toMillis(), TimeUnit.MILLISECONDS)) {
                 throw new InfluxDBApiException(new ConnectTimeoutException());
             } else {
@@ -268,7 +268,7 @@ final class RestClient implements AutoCloseable {
         }
 
         //fixme remove syncUninterruptibly
-        this.channel.writeAndFlush(request).syncUninterruptibly();
+        this.channel.writeAndFlush(request).sync();
 
         FullHttpResponse fullHttpResponse = this.clientHandler.getResponseFuture().get();
 

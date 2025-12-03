@@ -3,7 +3,7 @@ package com.influxdb.v3.client.internal;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.oio.OioSocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.logging.LogLevel;
@@ -15,7 +15,7 @@ import io.netty.handler.ssl.SslContext;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> {
+public class ClientChannelInitializer extends ChannelInitializer<OioSocketChannel> {
 
     private final SslContext sslCtx;
 
@@ -44,7 +44,7 @@ public class ClientChannelInitializer extends ChannelInitializer<SocketChannel> 
     }
 
     @Override
-    public void initChannel(SocketChannel ch) {
+    public void initChannel(OioSocketChannel ch) {
         ChannelPipeline p = ch.pipeline();
         p.addLast(new LoggingHandler(LogLevel.INFO));
         if (proxyHandler != null) {
