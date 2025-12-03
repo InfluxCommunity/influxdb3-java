@@ -7,14 +7,15 @@ import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.Promise;
+
+import java.util.concurrent.CompletableFuture;
 
 public class ClientHandler extends SimpleChannelInboundHandler<FullHttpResponse> {
 
-    private final Promise<FullHttpResponse> promise;
+    private final CompletableFuture<FullHttpResponse> responseFuture = new CompletableFuture<>();
 
-    public ClientHandler(Promise<FullHttpResponse> promise) {
-        this.promise = promise;
+    public ClientHandler() {
+
     }
 
     @Override
@@ -32,8 +33,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<FullHttpResponse>
                 System.err.println("} END OF CONTENT");
             }
         }
-        System.out.println(msg);
-        this.promise.trySuccess(msg.retain());
+        this.responseFuture.complete(msg.retain());
 
     }
 
@@ -44,9 +44,13 @@ public class ClientHandler extends SimpleChannelInboundHandler<FullHttpResponse>
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        this.promise.tryFailure(cause);
+        this.responseFuture.completeExceptionally(cause);
         cause.printStackTrace();
         ctx.close();
+    }
+
+    public CompletableFuture<FullHttpResponse> getResponseFuture() {
+        return responseFuture;
     }
 
 }

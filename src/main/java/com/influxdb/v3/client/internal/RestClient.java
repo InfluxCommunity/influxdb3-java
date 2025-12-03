@@ -28,9 +28,10 @@ import com.influxdb.v3.client.InfluxDBApiNettyException;
 import com.influxdb.v3.client.config.ClientConfig;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
-import io.netty.channel.nio.NioIoHandler;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.channel.Channel;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.oio.OioEventLoopGroup;
+import io.netty.channel.socket.oio.OioSocketChannel;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -38,7 +39,6 @@ import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +54,6 @@ import java.net.URISyntaxException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,8 +91,7 @@ final class RestClient implements AutoCloseable {
 
     private final EventLoopGroup eventLoopGroup;
 
-    private final Promise<FullHttpResponse> promise;
-
+    private final ClientHandler clientHandler;
     private HttpProxyHandler proxyHandler;
 
 
@@ -136,9 +134,9 @@ final class RestClient implements AutoCloseable {
             }
         }
 
-        this.eventLoopGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
+        this.eventLoopGroup = new OioEventLoopGroup();
 
-        this.promise = this.eventLoopGroup.next().newPromise();
+//        this.promise = this.eventLoopGroup.next().newPromise();
 
 //        ------- Config proxy
 //        if (config.getProxyUrl() != null) {
@@ -159,6 +157,9 @@ final class RestClient implements AutoCloseable {
         // default headers
         this.defaultHeaders = config.getHeaders() != null ? Map.copyOf(config.getHeaders()) : null;
 
+        //fixme `clientHandler`should store in a list and pass to `ClientChannelInitializer()`
+        this.clientHandler = new ClientHandler();
+
 //        if (config.getProxyUrl() != null) {
 //            URI proxyUri = URI.create(config.getProxyUrl());
 //            ProxySelector proxy = ProxySelector.of(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()));
@@ -175,21 +176,34 @@ final class RestClient implements AutoCloseable {
     }
 
     public Bootstrap getBootstrap() {
-        //fixme handler follow-redirect
-        int timeoutMillis = (int) this.timeout.toMillis();
         Bootstrap b = new Bootstrap();
-        return b.group(this.eventLoopGroup)
-                .channel(NioSocketChannel.class)
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis)
+        b.group(this.eventLoopGroup)
+                .channel(OioSocketChannel.class)
+//                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis)
 //                .option(ChannelOption.SO_KEEPALIVE, true)
 //                .option(ChannelOption.AUTO_READ, true)
 //                .option(ChannelOption.AUTO_CLOSE, true)
                 .handler(new LoggingHandler(LogLevel.INFO))
-                .handler(new ClientChannelInitializer(this.host, this.port, this.promise, this.sslContext, this.proxyHandler))
+                .handler(new ClientChannelInitializer(this.host, this.port, this.sslContext, this.proxyHandler, this.clientHandler))
                 .remoteAddress(this.host, this.port);
+        return b;
     }
 
+//    public Bootstrap getBootstrap() {
+//        //fixme handler follow-redirect
+//        int timeoutMillis = (int) this.timeout.toMillis();
+//        Bootstrap b = new Bootstrap();
+//        return b.group(this.eventLoopGroup)
+//                .channel(NioSocketChannel.class)
+//                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis)
 
+    /// /                .option(ChannelOption.SO_KEEPALIVE, true)
+    /// /                .option(ChannelOption.AUTO_READ, true)
+    /// /                .option(ChannelOption.AUTO_CLOSE, true)
+//                .handler(new LoggingHandler(LogLevel.INFO))
+//                .handler(new ClientChannelInitializer(this.host, this.port, this.promise, this.sslContext, this.proxyHandler))
+//                .remoteAddress(this.host, this.port);
+//    }
     public String getServerVersion() throws ExecutionException, InterruptedException {
         String influxdbVersion;
         FullHttpResponse response = this.request(HttpMethod.GET, "/ping");
@@ -266,8 +280,10 @@ final class RestClient implements AutoCloseable {
             this.channel = getBootstrap().connect().syncUninterruptibly().channel();
         }
 
-        this.channel.writeAndFlush(request).syncUninterruptibly();
-        FullHttpResponse fullHttpResponse = this.promise.get();
+        //fixme remove syncUninterruptibly
+        this.channel.writeAndFlush(request).syncUninterruptibly();;
+        FullHttpResponse fullHttpResponse = this.clientHandler.getResponseFuture().get();
+
         // Extract headers into io.netty.handler.codec.http.HttpHeaders;
         HttpHeaders responseHeaders = new DefaultHttpHeaders();
         fullHttpResponse.headers().forEach(entry -> responseHeaders.add(entry.getKey(), entry.getValue()));
