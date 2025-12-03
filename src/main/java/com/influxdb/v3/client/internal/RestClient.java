@@ -24,12 +24,12 @@ package com.influxdb.v3.client.internal;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBApiNettyException;
 import com.influxdb.v3.client.config.ClientConfig;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.oio.OioEventLoopGroup;
 import io.netty.channel.socket.oio.OioSocketChannel;
 import io.netty.handler.codec.http.*;
@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 final class RestClient implements AutoCloseable {
 
@@ -179,31 +180,12 @@ final class RestClient implements AutoCloseable {
         Bootstrap b = new Bootstrap();
         b.group(this.eventLoopGroup)
                 .channel(OioSocketChannel.class)
-//                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis)
-//                .option(ChannelOption.SO_KEEPALIVE, true)
-//                .option(ChannelOption.AUTO_READ, true)
-//                .option(ChannelOption.AUTO_CLOSE, true)
                 .handler(new LoggingHandler(LogLevel.INFO))
                 .handler(new ClientChannelInitializer(this.host, this.port, this.sslContext, this.proxyHandler, this.clientHandler))
                 .remoteAddress(this.host, this.port);
         return b;
     }
 
-//    public Bootstrap getBootstrap() {
-//        //fixme handler follow-redirect
-//        int timeoutMillis = (int) this.timeout.toMillis();
-//        Bootstrap b = new Bootstrap();
-//        return b.group(this.eventLoopGroup)
-//                .channel(NioSocketChannel.class)
-//                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutMillis)
-
-    /// /                .option(ChannelOption.SO_KEEPALIVE, true)
-    /// /                .option(ChannelOption.AUTO_READ, true)
-    /// /                .option(ChannelOption.AUTO_CLOSE, true)
-//                .handler(new LoggingHandler(LogLevel.INFO))
-//                .handler(new ClientChannelInitializer(this.host, this.port, this.promise, this.sslContext, this.proxyHandler))
-//                .remoteAddress(this.host, this.port);
-//    }
     public String getServerVersion() throws ExecutionException, InterruptedException {
         String influxdbVersion;
         FullHttpResponse response = this.request(HttpMethod.GET, "/ping");
@@ -277,11 +259,17 @@ final class RestClient implements AutoCloseable {
 
 
         if (this.channel == null || !this.channel.isOpen()) {
-            this.channel = getBootstrap().connect().syncUninterruptibly().channel();
+            ChannelFuture channelFuture = getBootstrap().connect();
+            if (!channelFuture.await(this.timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+                throw new InfluxDBApiException(new ConnectTimeoutException());
+            } else {
+                this.channel = channelFuture.channel();
+            }
         }
 
         //fixme remove syncUninterruptibly
-        this.channel.writeAndFlush(request).syncUninterruptibly();;
+        this.channel.writeAndFlush(request).syncUninterruptibly();
+
         FullHttpResponse fullHttpResponse = this.clientHandler.getResponseFuture().get();
 
         // Extract headers into io.netty.handler.codec.http.HttpHeaders;

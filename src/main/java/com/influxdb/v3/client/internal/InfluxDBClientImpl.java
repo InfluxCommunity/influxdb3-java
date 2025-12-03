@@ -38,6 +38,7 @@ import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.influxdb.v3.client.*;
 import io.grpc.Deadline;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -45,11 +46,6 @@ import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
-import com.influxdb.v3.client.InfluxDBApiException;
-import com.influxdb.v3.client.InfluxDBApiHttpException;
-import com.influxdb.v3.client.InfluxDBClient;
-import com.influxdb.v3.client.Point;
-import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.write.WriteOptions;
