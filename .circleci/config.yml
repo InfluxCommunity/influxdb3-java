@@ -219,17 +219,28 @@ workflows:
       - check-dependencies
       - check-licenses
       - check-generate-site
+      # Java tests matrix for JDK under 25
       - tests-java:
           matrix:
+            alias: tests-java-jdk-old
             parameters:
               exe: [ docker-amd64-image, docker-arm64-image ]
               maven-image: [ << pipeline.parameters.default-maven-image >>, "cimg/openjdk:17.0", "cimg/openjdk:21.0", "cimg/openjdk:25.0" ]
+      # Java test matrix for JDK 25+
+      - tests-java:
+          matrix:
+            alias: tests-java-jdk-25+
+            parameters:
+              exe: [ docker-amd64-image, docker-arm64-image ]
+              maven-image: [ "cimg/openjdk:25.0" ]
+              arg-line: [ "--add-opens=java.base/java.nio=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow" ]
       - deploy-snapshot:
           requires:
             - check-dependencies
             - check-licenses
             - check-generate-site
-            - tests-java
+            - tests-java-jdk-old
+            - tests-java-jdk-25+
           filters:
             branches:
               only: main
