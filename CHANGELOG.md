@@ -1,5 +1,9 @@
 ## 1.8.0 [unreleased]
 
+### CI
+
+1. [#313](https://github.com/InfluxCommunity/influxdb3-java/pull/313): Clarify JDK 25+ requirements.
+
 ## 1.7.0 [2025-11-21]
 
 ### Bug Fixes
