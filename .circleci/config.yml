@@ -70,7 +70,7 @@ jobs:
         default: docker-amd64-image
       arg-line:
         type: string
-        default: "--add-opens=java.base/java.nio=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow"
+        default: "--add-opens=java.base/java.nio=ALL-UNNAMED"
     executor:
       name: << parameters.exe >>
       maven-image: << parameters.maven-image >>
