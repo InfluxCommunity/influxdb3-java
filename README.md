@@ -38,7 +38,7 @@ We offer this [Getting Started: InfluxDB 3.0 Java Client Library](https://www.yo
 ## Installation
 
 > :warning: Some JDK internals must be exposed by adding `--add-opens=java.base/java.nio=ALL-UNNAMED` to your JVM arguments.
- 
+
 If you are using JDK 25 or later, you also need to add `--sun-misc-unsafe-memory-access=allow`.
 
 Add the latest version of the client to your project:
