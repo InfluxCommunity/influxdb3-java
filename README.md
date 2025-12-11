@@ -33,11 +33,13 @@ which allows you to execute SQL queries against InfluxDB IOx.
 
 We offer this [Getting Started: InfluxDB 3.0 Java Client Library](https://www.youtube.com/watch?v=EFnG7rUDvR4) video for learning more about the library.
 
-> :warning: This client requires Java 11 and is compatible up to and including Java 21.
+> :warning: This client requires Java 11 and is compatible up to and including Java 25.
 
 ## Installation
 
 > :warning: Some JDK internals must be exposed by adding `--add-opens=java.base/java.nio=ALL-UNNAMED` to your JVM arguments.
+
+If you are using JDK 25 or later, you also need to add `--sun-misc-unsafe-memory-access=allow`.
 
 Add the latest version of the client to your project:
 
