@@ -21,9 +21,7 @@
  */
 package com.influxdb.v3.client.config;
 
-import java.net.Authenticator;
 import java.net.MalformedURLException;
-import java.net.ProxySelector;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
@@ -60,13 +58,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>queryTimeout</code> - timeout used to calculate a default gRPC deadline when querying InfluxDB.
  *     Can be <code>null</code>, in which case queries can potentially run forever.</li>
  *     <li><code>allowHttpRedirects</code> - allow redirects for InfluxDB connections</li>
- *     <li><code>disableServerCertificateValidation</code> -
- *          disable server certificate validation for HTTPS connections
- *     </li>
- *     <li><code>proxyUrl</code> - proxy url for query api and write api</li>
- *     <li><code>authenticator</code> - HTTP proxy authenticator</li>
  *     <li><code>headers</code> - headers to be added to requests</li>
- *     <li><code>sslRootsFilePath</code> - path to the stored certificates file in PEM format</li>
  *     <li><code>disableGRPCCompression</code> - disables the default gRPC compression header</li>
  * </ul>
  * <p>
@@ -81,7 +73,6 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     .writePrecision(WritePrecision.S)
  *     .gzipThreshold(4096)
  *     .writeNoSync(true)
- *     .proxyUrl("http://localhost:10000")
  *     .build();
  *
  * try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
@@ -109,18 +100,9 @@ public final class ClientConfig {
     private final Duration writeTimeout;
     private final Duration queryTimeout;
     private final Boolean allowHttpRedirects;
-    private final Boolean disableServerCertificateValidation;
-    private final String proxyUrl;
-    private final Authenticator authenticator;
     private final Map<String, String> headers;
-    private final String sslRootsFilePath;
     private final boolean disableGRPCCompression;
-
-    /**
-     * Deprecated use {@link #proxyUrl}.
-     */
-    @Deprecated
-    private final ProxySelector proxy;
+    private final NettyHttpClientConfig nettyHttpClientConfig;
 
     /**
      * Gets URL of the InfluxDB server.
@@ -205,6 +187,7 @@ public final class ClientConfig {
 
     /**
      * Gets default tags used when writing points.
+     *
      * @return default tags
      */
     public Map<String, String> getDefaultTags() {
@@ -259,58 +242,6 @@ public final class ClientConfig {
     }
 
     /**
-     * Gets the disable server SSL certificate validation. Default to 'false'.
-     *
-     * @return the disable server SSL certificate validation
-     */
-    @Nonnull
-    public Boolean getDisableServerCertificateValidation() {
-        return disableServerCertificateValidation;
-    }
-
-    /**
-     * Gets the proxy.
-     *
-     * @return the proxy, may be null
-     * Deprecated use {@link #proxyUrl}
-     */
-    @Nullable
-    @Deprecated
-    public ProxySelector getProxy() {
-        return proxy;
-    }
-
-    /**
-     * Gets the proxy url.
-     *
-     * @return the proxy url, may be null
-     */
-    @Nullable
-    public String getProxyUrl() {
-        return proxyUrl;
-    }
-
-    /**
-     * Gets certificates file path.
-     *
-     * @return the certificates file path, may be null
-     */
-    @Nullable
-    public String sslRootsFilePath() {
-        return sslRootsFilePath;
-    }
-
-    /**
-     * Gets the (proxy) authenticator.
-     *
-     * @return the (proxy) authenticator
-     */
-    @Nullable
-    public Authenticator getAuthenticator() {
-        return authenticator;
-    }
-
-    /**
      * Gets custom headers for requests.
      *
      * @return the headers
@@ -327,6 +258,11 @@ public final class ClientConfig {
      */
     public boolean getDisableGRPCCompression() {
         return disableGRPCCompression;
+    }
+
+    //fixme comments
+    public NettyHttpClientConfig getNettyHttpClientConfig() {
+        return nettyHttpClientConfig;
     }
 
     /**
@@ -360,12 +296,7 @@ public final class ClientConfig {
                 && Objects.equals(writeTimeout, that.writeTimeout)
                 && Objects.equals(queryTimeout, that.queryTimeout)
                 && Objects.equals(allowHttpRedirects, that.allowHttpRedirects)
-                && Objects.equals(disableServerCertificateValidation, that.disableServerCertificateValidation)
-                && Objects.equals(proxy, that.proxy)
-                && Objects.equals(proxyUrl, that.proxyUrl)
-                && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
-                && Objects.equals(sslRootsFilePath, that.sslRootsFilePath)
                 && disableGRPCCompression == that.disableGRPCCompression;
     }
 
@@ -373,9 +304,8 @@ public final class ClientConfig {
     public int hashCode() {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
                 database, writePrecision, gzipThreshold, writeNoSync,
-                timeout, writeTimeout, queryTimeout, allowHttpRedirects, disableServerCertificateValidation,
-                proxy, proxyUrl, authenticator, headers,
-                defaultTags, sslRootsFilePath, disableGRPCCompression);
+                timeout, writeTimeout, queryTimeout, allowHttpRedirects,
+                headers, defaultTags, disableGRPCCompression);
     }
 
     @Override
@@ -391,13 +321,8 @@ public final class ClientConfig {
                 .add("writeTimeout=" + writeTimeout)
                 .add("queryTimeout=" + queryTimeout)
                 .add("allowHttpRedirects=" + allowHttpRedirects)
-                .add("disableServerCertificateValidation=" + disableServerCertificateValidation)
-                .add("proxy=" + proxy)
-                .add("proxyUrl=" + proxyUrl)
-                .add("authenticator=" + authenticator)
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
-                .add("sslRootsFilePath=" + sslRootsFilePath)
                 .add("disableGRPCCompression=" + disableGRPCCompression)
                 .toString();
     }
@@ -422,13 +347,9 @@ public final class ClientConfig {
         private Duration writeTimeout;
         private Duration queryTimeout;
         private Boolean allowHttpRedirects;
-        private Boolean disableServerCertificateValidation;
-        private ProxySelector proxy;
-        private String proxyUrl;
-        private Authenticator authenticator;
         private Map<String, String> headers;
-        private String sslRootsFilePath;
         private boolean disableGRPCCompression;
+        private NettyHttpClientConfig nettyHttpClientConfig;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -557,9 +478,8 @@ public final class ClientConfig {
          * Deprecated in v1.4.0. This setter is superseded by the clearer <code>writeTimeout()</code>.
          *
          * @param timeout default timeout to use for Write API calls. Default to
-         * ''{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
+         *                ''{@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT} seconds'.
          * @return this
-         *
          * @see #writeTimeout(Duration writeTimeout)
          */
         @Deprecated
@@ -571,18 +491,18 @@ public final class ClientConfig {
         }
 
         /**
-         *  Sets the default writeTimeout to use for Write API calls in the REST client.
-         *  Default is {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
+         * Sets the default writeTimeout to use for Write API calls in the REST client.
+         * Default is {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
          *
          * @param writeTimeout default timeout to use for REST API write calls. Default is
-         * {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
+         *                     {@value com.influxdb.v3.client.write.WriteOptions#DEFAULT_WRITE_TIMEOUT}
          * @return - this
          */
         @Nonnull
         public Builder writeTimeout(@Nullable final Duration writeTimeout) {
 
-          this.writeTimeout = writeTimeout;
-          return this;
+            this.writeTimeout = writeTimeout;
+            return this;
         }
 
         /**
@@ -596,8 +516,8 @@ public final class ClientConfig {
          */
         @Nonnull
         public Builder queryTimeout(@Nullable final Duration queryTimeout) {
-          this.queryTimeout = queryTimeout;
-          return this;
+            this.queryTimeout = queryTimeout;
+            return this;
         }
 
         /**
@@ -610,59 +530,6 @@ public final class ClientConfig {
         public Builder allowHttpRedirects(@Nullable final Boolean allowHttpRedirects) {
 
             this.allowHttpRedirects = allowHttpRedirects;
-            return this;
-        }
-
-        /**
-         * Sets the disable server SSL certificate validation. Default to 'false'.
-         *
-         * @param disableServerCertificateValidation Disable server SSL certificate validation. Default to 'false'.
-         * @return this
-         */
-        @Nonnull
-        public Builder disableServerCertificateValidation(@Nullable final Boolean disableServerCertificateValidation) {
-
-            this.disableServerCertificateValidation = disableServerCertificateValidation;
-            return this;
-        }
-
-        /**
-         * Sets the proxy selector. Default is 'null'.
-         *
-         * @param proxy Proxy selector.
-         * @return this
-         * Deprecated use {@link #proxyUrl}
-         */
-        @Nonnull
-        public Builder proxy(@Nullable final ProxySelector proxy) {
-
-            this.proxy = proxy;
-            return this;
-        }
-
-        /**
-         * Sets the proxy url. Default is 'null'.
-         *
-         * @param proxyUrl Proxy url.
-         * @return this
-         */
-        @Nonnull
-        public Builder proxyUrl(@Nullable final String proxyUrl) {
-
-            this.proxyUrl = proxyUrl;
-            return this;
-        }
-
-        /**
-         * Sets the proxy authenticator. Default is 'null'.
-         *
-         * @param authenticator Proxy authenticator. Ignored if 'proxy' is not set.
-         * @return this
-         */
-        @Nonnull
-        public Builder authenticator(@Nullable final Authenticator authenticator) {
-
-            this.authenticator = authenticator;
             return this;
         }
 
@@ -699,19 +566,6 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets certificate file path. Default is 'null'.
-         *
-         * @param sslRootsFilePath The certificate file path
-         * @return this
-         */
-        @Nonnull
-        public Builder sslRootsFilePath(@Nullable final String sslRootsFilePath) {
-
-            this.sslRootsFilePath = sslRootsFilePath;
-            return this;
-        }
-
-        /**
          * Sets whether to disable gRPC compression. Default is 'false'.
          *
          * @param disableGRPCCompression disable gRPC compression
@@ -720,6 +574,12 @@ public final class ClientConfig {
         @Nonnull
         public Builder disableGRPCCompression(final boolean disableGRPCCompression) {
             this.disableGRPCCompression = disableGRPCCompression;
+            return this;
+        }
+
+        @Nonnull
+        public Builder nettyHttpClientConfig(final NettyHttpClientConfig nettyHttpClientConfig) {
+            this.nettyHttpClientConfig = nettyHttpClientConfig;
             return this;
         }
 
@@ -837,7 +697,7 @@ public final class ClientConfig {
                 this.queryTimeout(Duration.ofSeconds(to));
             }
             final String disableGRPCCompression = get.apply("INFLUX_DISABLE_GRPC_COMPRESSION",
-                "influx.disableGRPCCompression");
+                    "influx.disableGRPCCompression");
             if (disableGRPCCompression != null) {
                 this.disableGRPCCompression(Boolean.parseBoolean(disableGRPCCompression));
             }
@@ -885,17 +745,12 @@ public final class ClientConfig {
         defaultTags = builder.defaultTags;
         timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
         writeTimeout = builder.writeTimeout != null
-            ? builder.writeTimeout : builder.timeout != null
-            ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
+                ? builder.writeTimeout : builder.timeout != null
+                ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
         queryTimeout = builder.queryTimeout;
         allowHttpRedirects = builder.allowHttpRedirects != null ? builder.allowHttpRedirects : false;
-        disableServerCertificateValidation = builder.disableServerCertificateValidation != null
-                ? builder.disableServerCertificateValidation : false;
-        proxy = builder.proxy;
-        proxyUrl = builder.proxyUrl;
-        authenticator = builder.authenticator;
         headers = builder.headers;
-        sslRootsFilePath = builder.sslRootsFilePath;
         disableGRPCCompression = builder.disableGRPCCompression;
+        nettyHttpClientConfig = builder.nettyHttpClientConfig;
     }
 }

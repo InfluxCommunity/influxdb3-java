@@ -165,12 +165,22 @@
                     <groupId>com.google.code.gson</groupId>
                     <artifactId>gson</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-handler-proxy</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-handler</artifactId>
+            <version>${netty-handler.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler-proxy</artifactId>
             <version>${netty-handler.version}</version>
         </dependency>
 
@@ -417,7 +427,7 @@
                                 **/target/**, **/*.jar, **/.git/**, **/.*, **/*.png, **/*.iml, **/*.bolt, .idea/**,
                                 **/*nightly*/**, **/.m2/**, LICENSE, **/*.md, **/.github/**, license_header.txt,
                                 release.properties/, **/pom.xml.releaseBackup, **/pom.xml.tag, **/semantic.yml,
-                                .circleci/config.yml, **/*.pem
+                                .circleci/config.yml, **/*.pem, **/*.p12
                             </excludes>
                         </licenseSet>
                     </licenseSets>
