@@ -306,6 +306,20 @@
             <scope>test</scope>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>io.grpc</groupId>-->
+<!--            <artifactId>grpc-okhttp</artifactId>-->
+<!--            <version>1.72.0-SNAPSHOT</version>-->
+<!--        </dependency>-->
+
+        <dependency>
+            <groupId>com.yourgroup</groupId>
+            <artifactId>your-artifact</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/repo/com/yourgroup/your-artifact/1.0.0/your-artifact-1.0.0.jar</systemPath>
+        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>

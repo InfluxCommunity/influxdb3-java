@@ -47,7 +47,7 @@ import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.Metadata;
 import io.grpc.ProxyDetector;
 import io.grpc.netty.GrpcSslContexts;
-import io.grpc.netty.NettyChannelBuilder;
+import io.grpc.okhttp.OkHttpChannelBuilder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -146,15 +146,14 @@ final class FlightSqlClient implements AutoCloseable {
     @Nonnull
     private FlightClient createFlightClient(@Nonnull final ClientConfig config) {
         URI uri = createLocation(config).getUri();
-        final NettyChannelBuilder nettyChannelBuilder = NettyChannelBuilder.forAddress(uri.getHost(), uri.getPort());
-
+        final OkHttpChannelBuilder nettyChannelBuilder = OkHttpChannelBuilder.forAddress(uri.getHost(), uri.getPort());
         nettyChannelBuilder.userAgent(Identity.getUserAgent());
 
         if (LocationSchemes.GRPC_TLS.equals(uri.getScheme())) {
             nettyChannelBuilder.useTransportSecurity();
 
             SslContext nettySslContext = createNettySslContext(config);
-            nettyChannelBuilder.sslContext(nettySslContext);
+//            nettyChannelBuilder.sslSocketFactory(nettySslContext);
         } else {
             nettyChannelBuilder.usePlaintext();
         }
