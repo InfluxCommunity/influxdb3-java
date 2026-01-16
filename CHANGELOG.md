@@ -3,6 +3,7 @@
 ### CI
 
 1. [#313](https://github.com/InfluxCommunity/influxdb3-java/pull/313): Clarify JDK 25+ requirements.
+1. [#340](https://github.com/InfluxCommunity/influxdb3-java/pull/340): Turn off deploy workflow for Nighly builds.
 
 ## 1.7.0 [2025-11-21]
 
