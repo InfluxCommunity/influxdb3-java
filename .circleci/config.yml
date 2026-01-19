@@ -228,6 +228,9 @@ workflows:
               maven-image: [ << pipeline.parameters.default-maven-image >>, "cimg/openjdk:17.0", "cimg/openjdk:21.0" ]
       # Java test matrix for JDK 25+
       - tests-java:
+          when:
+            not:
+              equal: [ "Nightly", << pipeline.schedule.name >> ]
           matrix:
             alias: tests-java-jdk-25+
             parameters:
