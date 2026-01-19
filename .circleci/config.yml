@@ -235,6 +235,9 @@ workflows:
               maven-image: [ "cimg/openjdk:25.0" ]
               arg-line: [ "--add-opens=java.base/java.nio=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow" ]
       - deploy-snapshot:
+          when:
+            not:
+              equal: [ "Nightly", << pipeline.schedule.name >> ]
           requires:
             - check-dependencies
             - check-licenses
