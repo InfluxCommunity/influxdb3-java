@@ -213,6 +213,7 @@ jobs:
             - ~/.m2
 
 workflows:
+  version: 2
   test:
     jobs:
       - check-dependencies
@@ -233,8 +234,13 @@ workflows:
               exe: [ docker-amd64-image, docker-arm64-image ]
               maven-image: [ "cimg/openjdk:25.0" ]
               arg-line: [ "--add-opens=java.base/java.nio=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow" ]
-  build-deploy:
-    when:
-      equal: [ 'scheduled_pipeline', '<< pipeline.trigger_source >>' ]
-    jobs:
-      - deploy-snapshot
+      - deploy-snapshot:
+          requires:
+            - check-dependencies
+            - check-licenses
+            - check-generate-site
+            - tests-java-jdk-old
+            - tests-java-jdk-25+
+          filters:
+            branches:
+              only: main
