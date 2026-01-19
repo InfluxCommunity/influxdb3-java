@@ -235,9 +235,7 @@ workflows:
               arg-line: [ "--add-opens=java.base/java.nio=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow" ]
   build-deploy:
     when:
-      or:
-        - equal: [ 'scheduled_pipeline', '<< pipeline.trigger_source >>' ]
-        - equal: [ '<< pipeline.schedule.name >>', 'Nightly' ]
+      equal: [ 'scheduled_pipeline', '<< pipeline.trigger_source >>' ]
     jobs:
       - deploy-snapshot:
           filters:
