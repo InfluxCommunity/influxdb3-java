@@ -237,7 +237,4 @@ workflows:
     when:
       equal: [ 'scheduled_pipeline', '<< pipeline.trigger_source >>' ]
     jobs:
-      - deploy-snapshot:
-          filters:
-            branches:
-              only: main
+      - deploy-snapshot
