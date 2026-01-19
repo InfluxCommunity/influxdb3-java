@@ -241,6 +241,4 @@ workflows:
             - check-generate-site
             - tests-java-jdk-old
             - tests-java-jdk-25+
-          filters:
-            branches:
-              only: main
+          filters: pipeline.git.branch == "main" and pipeline.schedule.name != "Nightly"
