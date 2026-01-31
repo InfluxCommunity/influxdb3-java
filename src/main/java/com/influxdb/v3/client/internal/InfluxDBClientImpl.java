@@ -23,12 +23,14 @@ package com.influxdb.v3.client.internal;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
@@ -38,6 +40,7 @@ import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.net.ssl.SSLException;
 
 import io.grpc.Deadline;
 import io.netty.handler.codec.http.HttpMethod;
@@ -47,7 +50,7 @@ import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 
 import com.influxdb.v3.client.InfluxDBApiException;
-import com.influxdb.v3.client.InfluxDBApiHttpException;
+import com.influxdb.v3.client.InfluxDBApiNettyException;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.PointValues;
@@ -93,7 +96,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
      *
      * @param config the client config.
      */
-    public InfluxDBClientImpl(@Nonnull final ClientConfig config) {
+    public InfluxDBClientImpl(@Nonnull final ClientConfig config) throws URISyntaxException, SSLException {
         this(config, null, null);
     }
 
@@ -106,13 +109,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
      */
     InfluxDBClientImpl(@Nonnull final ClientConfig config,
                        @Nullable final RestClient restClient,
-                       @Nullable final FlightSqlClient flightSqlClient) {
+                       @Nullable final FlightSqlClient flightSqlClient) throws URISyntaxException, SSLException {
         Arguments.checkNotNull(config, "config");
 
         config.validate();
 
         this.config = config;
-        this.restClient = restClient != null ? restClient : new RestClient(config);
+        this.restClient = new RestClient(config);
         this.flightSqlClient = flightSqlClient != null ? flightSqlClient : new FlightSqlClient(config);
         this.emptyWriteOptions = new WriteOptions(null);
     }
@@ -279,7 +282,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
     }
 
     @Override
-    public String getServerVersion() {
+    public String getServerVersion() throws RuntimeException, ExecutionException, InterruptedException {
         return this.restClient.getServerVersion();
     }
 
@@ -364,14 +367,16 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         headers.putAll(options.headersSafe());
 
         try {
-            restClient.request(path, HttpMethod.POST, body, queryParams, headers);
-        } catch (InfluxDBApiHttpException e) {
+            restClient.request(HttpMethod.POST, path, headers, body, queryParams);
+        } catch (InfluxDBApiNettyException e) {
             if (noSync && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
                 // Server does not support the v3 write API, can't use the NoSync option.
-                throw new InfluxDBApiHttpException("Server doesn't support write with NoSync=true "
+                throw new InfluxDBApiNettyException("Server doesn't support write with NoSync=true "
                         + "(supported by InfluxDB 3 Core/Enterprise servers only).", e.headers(), e.statusCode());
             }
             throw e;
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -414,14 +419,14 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         });
 
         GrpcCallOptions.Builder builder = new GrpcCallOptions.Builder()
-            .fromGrpcCallOptions(options.grpcCallOptions());
+                .fromGrpcCallOptions(options.grpcCallOptions());
 
         if (config.getQueryTimeout() == null) {
             if (options.grpcCallOptions().getDeadline() != null
-                && options.grpcCallOptions().getDeadline().timeRemaining(TimeUnit.MILLISECONDS) <= 0) {
+                    && options.grpcCallOptions().getDeadline().timeRemaining(TimeUnit.MILLISECONDS) <= 0) {
                 LOG.warning("Query timeout "
-                    + options.grpcCallOptions().getDeadline()
-                    + " is 0 or negative and will be ignored.");
+                        + options.grpcCallOptions().getDeadline()
+                        + " is 0 or negative and will be ignored.");
                 builder.withoutDeadline();
             }
         } else {
@@ -429,10 +434,10 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                 builder.withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS));
             } else if (options.grpcCallOptions().getDeadline().timeRemaining(TimeUnit.MILLISECONDS) <= 0) {
                 LOG.warning("Query timeout "
-                    +  options.grpcCallOptions().getDeadline()
-                    + " is 0 or negative. Using config.queryTimeout "
-                    + config.getQueryTimeout()
-                    + " instead.");
+                        + options.grpcCallOptions().getDeadline()
+                        + " is 0 or negative. Using config.queryTimeout "
+                        + config.getQueryTimeout()
+                        + " instead.");
                 builder.withDeadline(Deadline.after(config.getQueryTimeout().toMillis(), TimeUnit.MILLISECONDS));
             }
         }

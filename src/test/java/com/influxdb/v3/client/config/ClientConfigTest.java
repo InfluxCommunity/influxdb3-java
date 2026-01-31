@@ -45,7 +45,6 @@ class ClientConfigTest {
             .writeTimeout(Duration.ofSeconds(35))
             .queryTimeout(Duration.ofSeconds(120))
             .allowHttpRedirects(true)
-            .disableServerCertificateValidation(true)
             .headers(Map.of("X-device", "ab-01"))
             .disableGRPCCompression(true);
 

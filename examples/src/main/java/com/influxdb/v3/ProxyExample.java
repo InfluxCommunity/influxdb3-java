@@ -21,13 +21,23 @@
  */
 package com.influxdb.v3;
 
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import io.grpc.HttpConnectProxiedSocketAddress;
+import io.grpc.ProxyDetector;
+import io.netty.handler.proxy.HttpProxyHandler;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.config.NettyHttpClientConfig;
 
 public final class ProxyExample {
 
@@ -35,38 +45,72 @@ public final class ProxyExample {
     }
 
     public static void main(final String[] args) throws Exception {
-        // Run docker-compose.yml file to start Envoy proxy
+        // Run the docker-compose.yml file to start Envoy proxy,
+        // or start envoy proxy directly with the command `envoy-c envoy.yaml`
 
         String proxyUrl = "http://localhost:10000";
-        String sslRootsFilePath = "src/test/java/com/influxdb/v3/client/testdata/influxdb-certificate.pem";
+        String targetUrl = "http://localhost:8086";
+        String username = "username";
+        String password = "password";
+
+        NettyHttpClientConfig nettyHttpClientConfig = new NettyHttpClientConfig();
+
+        // Set proxy for write api
+        Supplier<HttpProxyHandler> writeApiProxy = () ->
+                new HttpProxyHandler(new InetSocketAddress("localhost", 10000), username, password);
+        nettyHttpClientConfig.configureChannelProxy(writeApiProxy);
+
+        // Set proxy for query api
+        ProxyDetector proxyDetector = createProxyDetector(targetUrl, proxyUrl, username, password);
+        nettyHttpClientConfig.configureManagedChannelProxy(proxyDetector);
+
         ClientConfig clientConfig = new ClientConfig.Builder()
                 .host(System.getenv("INFLUXDB_URL"))
                 .token(System.getenv("INFLUXDB_TOKEN").toCharArray())
                 .database(System.getenv("INFLUXDB_DATABASE"))
-                .proxyUrl(proxyUrl)
-                .sslRootsFilePath(sslRootsFilePath)
+                .nettyHttpClientConfig(nettyHttpClientConfig)
                 .build();
 
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        String testId = UUID.randomUUID().toString();
-        Point point = Point.measurement("My_Home")
-                .setTag("room", "Kitchen")
-                .setField("temp", 12.7)
-                .setField("hum", 37)
-                .setField("testId", testId);
-        influxDBClient.writePoint(point);
+        try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+            String testId = UUID.randomUUID().toString();
+            Point point = Point.measurement("My_Home")
+                    .setTag("room", "Kitchen")
+                    .setField("temp", 12.7)
+                    .setField("hum", 37)
+                    .setField("testId", testId);
+            influxDBClient.writePoint(point);
 
-        String query = String.format("SELECT * FROM \"My_Home\" WHERE \"testId\" = '%s'", testId);
-        try (Stream<PointValues> stream = influxDBClient.queryPoints(query)) {
-            stream.findFirst().ifPresent(values -> {
-                assert values.getTimestamp() != null;
-                System.out.printf("room[%s]: %s, temp: %3.2f, hum: %d",
-                        new java.util.Date(values.getTimestamp().longValue() / 1000000),
-                        values.getTag("room"),
-                        (Double) values.getField("temp"),
-                        (Long) values.getField("hum"));
-            });
+            String query = String.format("SELECT * FROM \"My_Home\" WHERE \"testId\" = '%s'", testId);
+            try (Stream<PointValues> stream = influxDBClient.queryPoints(query)) {
+                stream.findFirst().ifPresent(values -> {
+                    assert values.getTimestamp() != null;
+                    System.out.printf("room[%s]: %s, temp: %3.2f, hum: %d",
+                            new java.util.Date(values.getTimestamp().longValue() / 1000000),
+                            values.getTag("room"),
+                            (Double) values.getField("temp"),
+                            (Long) values.getField("hum"));
+                });
+            }
         }
+    }
+
+    public static ProxyDetector createProxyDetector(@Nonnull final String targetUrl, @Nonnull final String proxyUrl,
+                                                    @Nullable final String username, @Nullable final String password) {
+        URI targetUri = URI.create(targetUrl);
+        URI proxyUri = URI.create(proxyUrl);
+        return (targetServerAddress) -> {
+            InetSocketAddress targetAddress = (InetSocketAddress) targetServerAddress;
+            if (targetUri.getHost().equals(targetAddress.getHostString())
+                    && targetUri.getPort() == targetAddress.getPort()) {
+                return HttpConnectProxiedSocketAddress.newBuilder()
+                        .setProxyAddress(new InetSocketAddress(proxyUri.getHost(), proxyUri.getPort()))
+                        .setTargetAddress(targetAddress)
+                        .setUsername(username)
+                        .setPassword(password)
+                        .build();
+            }
+            return null;
+        };
     }
 }
 

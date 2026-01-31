@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.durable;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+import javax.net.ssl.SSLException;
 
 import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBClient;
@@ -124,8 +126,13 @@ public final class DurableExample {
           }
 
           // borrow then return a client
-          InfluxDBClient client = clientPool.borrowClient();
-          try {
+            InfluxDBClient client = null;
+            try {
+                client = clientPool.borrowClient();
+            } catch (URISyntaxException | SSLException e) {
+                throw new RuntimeException(e);
+            }
+            try {
             logger.info(" [writeTaskPointsOK " + count + "] Writing " + points.size()
               + " points with client " + client.hashCode());
             client.writePoints(points);
@@ -159,8 +166,13 @@ public final class DurableExample {
             }
           }
           // borrow a client from the pool
-          InfluxDBClient client = clientPool.borrowClient();
-          try {
+            InfluxDBClient client = null;
+            try {
+                client = clientPool.borrowClient();
+            } catch (URISyntaxException | SSLException e) {
+                throw new RuntimeException(e);
+            }
+            try {
             logger.info("[writeErrorRecover " + count + "] Writing " + lps.size()
               + " lps with client " + client.hashCode());
             client.writeRecords(lps);
@@ -183,9 +195,14 @@ public final class DurableExample {
         int count = 0;
         while (!shutdownAll.get()) {
           // borrow a client from the pool
-          InfluxDBClient client = clientPool.borrowClient();
+            InfluxDBClient client = null;
+            try {
+                client = clientPool.borrowClient();
+            } catch (URISyntaxException | SSLException e) {
+                throw new RuntimeException(e);
+            }
 
-          // initiate the query and process the results
+            // initiate the query and process the results
           try (Stream<PointValues> pvs = client.queryPoints(query)) {
             logger.info("[queryOK " + count + "] with client " + client.hashCode()
               + ": query returned " + pvs.toArray().length + " records");
@@ -208,8 +225,13 @@ public final class DurableExample {
         int count = 0;
         while (!shutdownAll.get()) {
           // borrow a client from the pool
-          InfluxDBClient client = clientPool.borrowClient();
-          // every third query attempt results in an error
+            InfluxDBClient client = null;
+            try {
+                client = clientPool.borrowClient();
+            } catch (URISyntaxException | SSLException e) {
+                throw new RuntimeException(e);
+            }
+            // every third query attempt results in an error
           String effectiveQuery = count > 0 && count % 3 == 0 ? badQuery : query;
 
           // attempt to execute the query and process the results

@@ -27,27 +27,7 @@ import java.util.Properties;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.influxdb.v3.client.config.ClientConfig;
-
 public class InfluxDBClientTest {
-
-    @Test
-    void withProxyUrl() {
-        String proxyUrl = "http://localhost:10000";
-        ClientConfig.Builder builder = new ClientConfig.Builder();
-        builder.proxyUrl(proxyUrl);
-        ClientConfig clientConfig = builder.build();
-        Assertions.assertThat(clientConfig.getProxyUrl()).isEqualTo(proxyUrl);
-    }
-
-    @Test
-    void withSslRootsFilePath() {
-        String path = "/path/to/cert";
-        ClientConfig.Builder builder = new ClientConfig.Builder();
-        builder.sslRootsFilePath(path);
-        ClientConfig clientConfig = builder.build();
-        Assertions.assertThat(clientConfig.sslRootsFilePath()).isEqualTo(path);
-    }
 
     @Test
     void requiredHost() {
