@@ -41,6 +41,10 @@ import org.apache.arrow.flight.CallOptions;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.apache.arrow.flight.FlightServer;
+import org.apache.arrow.flight.NoOpFlightProducer;
+import org.apache.arrow.flight.Ticket;
+import org.apache.arrow.flight.FlightProducer.CallContext;
+import org.apache.arrow.flight.FlightProducer.ServerStreamListener;
 import org.apache.arrow.flight.impl.FlightServiceGrpc;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
@@ -48,6 +52,7 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.PointValues;
@@ -182,6 +187,53 @@ class QueryOptionsTest {
                     Assertions.assertThat(stream.count()).isEqualTo(rowCount);
                     stream.close();
                 });
+            }
+        }
+    }
+
+    @Test
+    @Timeout(5)
+    void queryTimeout() throws Exception {
+        int freePort = findFreePort();
+        URI uri = URI.create("http://127.0.0.1:" + freePort);
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(1, 1);
+             BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+             FlightServer flightServer = TestUtils.simpleFlightServer(uri, allocator, new NoOpFlightProducer() {
+                 @Override
+                 public void getStream(final CallContext context,
+                                       final Ticket ticket,
+                                       final ServerStreamListener listener) {
+                     listener.start(vectorSchemaRoot);
+                     try {
+                         Thread.sleep(1000);
+                     } catch (InterruptedException e) {
+                         Thread.currentThread().interrupt();
+                     }
+                     listener.completed();
+                 }
+             })
+        ) {
+            flightServer.start();
+
+            String host = String.format("http://%s:%d", uri.getHost(), uri.getPort());
+            ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(host)
+                .database("test")
+                .queryTimeout(Duration.ofMillis(200))
+                .build();
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+                Throwable thrown = Assertions.catchThrowable(() -> {
+                    try (Stream<PointValues> stream = influxDBClient.queryPoints(
+                        "Select * from \"nothing\""
+                    )) {
+                        stream.count();
+                    }
+                });
+
+                Assertions.assertThat(thrown).isInstanceOf(FlightRuntimeException.class);
+                FlightRuntimeException fre = (FlightRuntimeException) thrown;
+                Assertions.assertThat(fre.status().code()).isEqualTo(CallStatus.TIMED_OUT.code());
             }
         }
     }
