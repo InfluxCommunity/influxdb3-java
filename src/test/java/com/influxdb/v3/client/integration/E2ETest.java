@@ -110,15 +110,16 @@ public class E2ETest {
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
                 .sslRootsFilePath(influxDBcertificateFile)
                 .build();
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        assertGetDataSuccess(influxDBClient);
+        try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+            assertGetDataSuccess(influxDBClient);
+        }
     }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void disableServerCertificateValidation() {
+    void disableServerCertificateValidation() throws Exception {
         String wrongCertificateFile = "src/test/java/com/influxdb/v3/client/testdata/docker.com.pem";
 
         ClientConfig clientConfig = new ClientConfig.Builder()
@@ -130,8 +131,9 @@ public class E2ETest {
                 .build();
 
         // Test succeeded with wrong certificate file because disableServerCertificateValidation is true
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        assertGetDataSuccess(influxDBClient);
+        try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+            assertGetDataSuccess(influxDBClient);
+        }
     }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
@@ -196,8 +198,9 @@ public class E2ETest {
             String uuid = UUID.randomUUID().toString();
             String measurement = "host22";
             List<Map<String, Object>> testDatas = new ArrayList<>();
+            long baseTimestamp = System.currentTimeMillis();
             for (int i = 0; i <= 9; i++) {
-                long timestamp = System.currentTimeMillis();
+                long timestamp = baseTimestamp + i;
                 Map<String, Object> map = Map.of(
                         "measurement", measurement,
                         "tag", "tagValue",
@@ -229,6 +232,8 @@ public class E2ETest {
                 client.writeRecord(record, new WriteOptions(null, WritePrecision.MS, null));
                 testDatas.add(map);
             }
+
+            Thread.sleep(2_000);
 
             Map<String, Object> parameters = Map.of("testId", uuid);
             // Result set much be ordered by time
@@ -274,8 +279,9 @@ public class E2ETest {
             String uuid = UUID.randomUUID().toString();
             String measurement = "host21";
             List<Map<String, Object>> testDatas = new ArrayList<>();
+            long baseTimestamp = System.currentTimeMillis();
             for (int i = 0; i <= 9; i++) {
-                long timestamp = System.currentTimeMillis();
+                long timestamp = baseTimestamp + i;
                 Map<String, Object> map = Map.of(
                         "measurement", measurement,
                         "tag", "tagValue",
@@ -307,6 +313,8 @@ public class E2ETest {
                 client.writeRecord(record, new WriteOptions(null, WritePrecision.MS, null));
                 testDatas.add(map);
             }
+
+            Thread.sleep(2_000);
 
             // Result set much be ordered by time
             String sql = String.format("Select * from %s where \"testId\"='%s' order by time", measurement, uuid);
@@ -417,6 +425,12 @@ public class E2ETest {
                         .setTimestamp(now));
 
                 client.writePoints(points);
+                try {
+                    Thread.sleep(2_000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                }
                 String query = "SELECT * FROM " + measurement;
 
                 try (Stream<PointValues> stream = client.queryPoints(query)) {
@@ -469,6 +483,7 @@ public class E2ETest {
                     .setTimestamp(now));
 
             client.writePoints(points);
+            Thread.sleep(2_000);
             String query = "SELECT * FROM " + measurement;
 
             for (int i = 0; i < 20; i++) {
