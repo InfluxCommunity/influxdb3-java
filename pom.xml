@@ -90,7 +90,7 @@
 
         <junit-jupiter.version>5.14.2</junit-jupiter.version>
         <junit-platform.version>1.14.2</junit-platform.version>
-        <netty-handler.version>4.2.9.Final</netty-handler.version>
+        <netty-handler.version>4.2.10.Final</netty-handler.version>
 
         <plugin.surefire.version>3.5.4</plugin.surefire.version>
         <plugin.jacoco.version>0.8.14</plugin.jacoco.version>
