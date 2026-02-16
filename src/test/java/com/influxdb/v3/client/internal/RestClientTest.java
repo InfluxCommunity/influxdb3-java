@@ -443,6 +443,42 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
+    public void errorFromBodyNullMessageFallsBackToError() {
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        "{\"message\":null,\"error\":\"parsing failed\"}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: parsing failed");
+    }
+
+    @Test
+    public void errorFromBodyEmptyMessageFallsBackToError() {
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        "{\"message\":\"\",\"error\":\"parsing failed\"}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: parsing failed");
+    }
+
+    @Test
     public void errorFromBodyJsonArrayFallsBackToBody() {
       mockServer.enqueue(createResponse(400,
         "application/json",
@@ -458,6 +494,25 @@ public class RestClientTest extends AbstractMockServerTest {
         )
         .isInstanceOf(InfluxDBApiException.class)
         .hasMessage("HTTP status code: 400; Message: []");
+    }
+
+    @Test
+    public void errorFromBodyV3WithoutMessageAndEmptyContentType() {
+
+      mockServer.enqueue(createResponse(400,
+        "",
+        null,
+        "{\"error\":\"parsing failed\"}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+
+      Assertions.assertThatThrownBy(
+                    () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+              .isInstanceOf(InfluxDBApiException.class)
+              .hasMessage("HTTP status code: 400; Message: parsing failed");
     }
 
     @Test
@@ -569,6 +624,77 @@ public class RestClientTest extends AbstractMockServerTest {
             + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
             + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "non-object primitive item skipped",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[1,{\"error_message\":"
+            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "null error_message skipped",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":null},"
+            + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "empty original_line uses message-only detail",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"only error message\",\"line_number\":2,\"original_line\":\"\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
+        )
+      );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("errorFromBodyV3FallbackCases")
+    public void errorFromBodyV3FallbackCase(final String testName,
+                                            final String body,
+                                            final String expectedMessage) {
+
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        body));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage(expectedMessage);
+    }
+
+    private static Stream<Arguments> errorFromBodyV3FallbackCases() {
+      return Stream.of(
+        Arguments.of(
+          "missing error with data array falls back to body",
+          "{\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: "
+            + "{\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}"
+        ),
+        Arguments.of(
+          "empty error with data array falls back to body",
+          "{\"error\":\"\",\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":"
+            + "\"bad lp\"}]}",
+          "HTTP status code: 400; Message: "
+            + "{\"error\":\"\",\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":"
+            + "\"bad lp\"}]}"
+        ),
+        Arguments.of(
+          "data object without error_message falls back to error",
+          "{\"error\":\"parsing failed\",\"data\":{}}",
+          "HTTP status code: 400; Message: parsing failed"
+        ),
+        Arguments.of(
+          "data object with empty error_message falls back to error",
+          "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"\"}}",
+          "HTTP status code: 400; Message: parsing failed"
         )
       );
     }
