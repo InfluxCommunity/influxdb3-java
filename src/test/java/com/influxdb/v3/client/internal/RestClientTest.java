@@ -387,6 +387,7 @@ public class RestClientTest extends AbstractMockServerTest {
     public void errorFromBody() {
 
       mockServer.enqueue(createResponse(401,
+        "application/json",
         Map.of("X-Influx-Errpr", "not used"),
         "{\"message\":\"token does not have sufficient permissions\"}"));
 
@@ -419,9 +420,10 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void errorFromBodyV3WithoutMessage() { // Core/Enterprise error message
+    public void errorFromBodyV3WithoutMessageAndWithoutContentType() {
 
       mockServer.enqueue(createResponse(400,
+        null,
         null,
         "{\"error\":\"parsing failed\"}"));
 
@@ -440,7 +442,7 @@ public class RestClientTest extends AbstractMockServerTest {
     public void errorFromBodyV3WithDataObject() { // Core/Enterprise object format
 
       mockServer.enqueue(createResponse(400,
-        null,
+        Map.of("content-type", "application/json"),
         "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value\"}}"));
 
       restClient = new RestClient(new ClientConfig.Builder()
