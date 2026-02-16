@@ -34,6 +34,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import io.netty.handler.codec.http.HttpMethod;
 import mockwebserver3.MockResponse;
@@ -42,6 +43,9 @@ import okhttp3.Headers;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import com.influxdb.v3.client.AbstractMockServerTest;
 import com.influxdb.v3.client.InfluxDBApiException;
@@ -512,12 +516,15 @@ public class RestClientTest extends AbstractMockServerTest {
           + " got iox::column_type::field::float (testa6a3ad v=1 17702)");
     }
 
-    @Test
-    public void errorFromBodyV3WithDataArrayMessageOnly() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("errorFromBodyV3WithDataArrayCases")
+    public void errorFromBodyV3WithDataArrayCase(final String testName,
+                                                  final String body,
+                                                  final String expectedMessage) {
+
       mockServer.enqueue(createResponse(400,
         Map.of("content-type", "application/json"),
-        "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-          + "\"only error message\"}]}"));
+        body));
 
       restClient = new RestClient(new ClientConfig.Builder()
         .host(baseURL)
@@ -527,62 +534,37 @@ public class RestClientTest extends AbstractMockServerTest {
           () -> restClient.request("ping", HttpMethod.GET, null, null, null)
         )
         .isInstanceOf(InfluxDBApiException.class)
-        .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message");
+        .hasMessage(expectedMessage);
     }
 
-    @Test
-    public void errorFromBodyV3WithDataArrayNonObjectSkipped() {
-      mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "application/json"),
-        "{\"error\":\"partial write of line protocol occurred\",\"data\":[null,{\"error_message\":"
-          + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}"));
-
-      restClient = new RestClient(new ClientConfig.Builder()
-        .host(baseURL)
-        .build());
-
-      Assertions.assertThatThrownBy(
-          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+    private static Stream<Arguments> errorFromBodyV3WithDataArrayCases() {
+      return Stream.of(
+        Arguments.of(
+          "message-only detail",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"only error message\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
+        ),
+        Arguments.of(
+          "non-object item skipped",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[null,{\"error_message\":"
+            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "no detail fields",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"line_number\":2}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred"
+        ),
+        Arguments.of(
+          "empty error_message skipped",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":\"\"},"
+            + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
         )
-        .isInstanceOf(InfluxDBApiException.class)
-        .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-          + "\tline 2: bad line (bad lp)");
-    }
-
-    @Test
-    public void errorFromBodyV3WithDataArrayNoDetailFields() {
-      mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "application/json"),
-        "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"line_number\":2}]}"));
-
-      restClient = new RestClient(new ClientConfig.Builder()
-        .host(baseURL)
-        .build());
-
-      Assertions.assertThatThrownBy(
-          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
-        )
-        .isInstanceOf(InfluxDBApiException.class)
-        .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred");
-    }
-
-    @Test
-    public void errorFromBodyV3WithDataArrayEmptyErrorMessageSkipped() {
-      mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "application/json"),
-        "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":\"\"},"
-          + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}"));
-
-      restClient = new RestClient(new ClientConfig.Builder()
-        .host(baseURL)
-        .build());
-
-      Assertions.assertThatThrownBy(
-          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
-        )
-        .isInstanceOf(InfluxDBApiException.class)
-        .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-          + "\tline 2: bad line (bad lp)");
+      );
     }
 
     @Test
