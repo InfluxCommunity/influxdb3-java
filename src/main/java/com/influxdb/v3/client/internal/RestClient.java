@@ -217,22 +217,26 @@ final class RestClient implements AutoCloseable {
 
         int statusCode = response.statusCode();
         if (statusCode < 200 || statusCode >= 300) {
-            String reason = "";
+            String reason;
             String body = response.body();
             reason = formatErrorMessage(body, response.headers().firstValue("Content-Type").orElse(null));
 
-            if (reason == null || reason.isEmpty()) {
+            if (reason == null) {
+                reason = "";
+            }
+
+            if (reason.isEmpty()) {
                 reason = Stream.of("X-Platform-Error-Code", "X-Influx-Error", "X-InfluxDb-Error")
                         .map(name -> response.headers().firstValue(name).orElse(null))
                         .filter(message -> message != null && !message.isEmpty()).findFirst()
                         .orElse("");
             }
 
-            if (reason == null || reason.isEmpty()) {
+            if (reason.isEmpty()) {
                 reason = body;
             }
 
-            if (reason == null || reason.isEmpty()) {
+            if (reason.isEmpty()) {
                 reason = HttpResponseStatus.valueOf(statusCode).reasonPhrase();
             }
 
