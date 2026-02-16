@@ -219,34 +219,20 @@ final class RestClient implements AutoCloseable {
         if (statusCode < 200 || statusCode >= 300) {
             String reason = "";
             String body = response.body();
-            if (!body.isEmpty()) {
-                try {
-                    final JsonNode root = objectMapper.readTree(body);
-                    final List<String> possibilities = List.of("message", "error_message", "error");
-                    for (final String field : possibilities) {
-                        final JsonNode node = root.findValue(field);
-                        if (node != null) {
-                            reason = node.asText();
-                            break;
-                        }
-                    }
-                } catch (JsonProcessingException e) {
-                    LOG.debug("Can't parse msg from response {}", response);
-                }
-            }
+            reason = formatErrorMessage(body, response.headers().firstValue("Content-Type").orElse(null));
 
-            if (reason.isEmpty()) {
+            if (reason == null || reason.isEmpty()) {
                 reason = Stream.of("X-Platform-Error-Code", "X-Influx-Error", "X-InfluxDb-Error")
                         .map(name -> response.headers().firstValue(name).orElse(null))
                         .filter(message -> message != null && !message.isEmpty()).findFirst()
                         .orElse("");
             }
 
-            if (reason.isEmpty()) {
+            if (reason == null || reason.isEmpty()) {
                 reason = body;
             }
 
-            if (reason.isEmpty()) {
+            if (reason == null || reason.isEmpty()) {
                 reason = HttpResponseStatus.valueOf(statusCode).reasonPhrase();
             }
 
@@ -255,6 +241,85 @@ final class RestClient implements AutoCloseable {
         }
 
         return response;
+    }
+
+    @Nullable
+    private String formatErrorMessage(@Nonnull final String body, @Nullable final String contentType) {
+        if (body.isEmpty()) {
+            return null;
+        }
+
+        if (contentType != null
+                && !contentType.isEmpty()
+                && !contentType.regionMatches(true, 0, "application/json", 0, "application/json".length())) {
+            return null;
+        }
+
+        try {
+            final JsonNode root = objectMapper.readTree(body);
+            if (!root.isObject()) {
+                return null;
+            }
+
+            final JsonNode messageNode = root.get("message");
+            if (messageNode != null && !messageNode.isNull() && !messageNode.asText().isEmpty()) {
+                return messageNode.asText();
+            }
+
+            final JsonNode errorNode = root.get("error");
+            final String error = (errorNode != null && !errorNode.isNull() && !errorNode.asText().isEmpty())
+                    ? errorNode.asText() : null;
+            final JsonNode dataNode = root.get("data");
+
+            // InfluxDB 3 Core/Enterprise write error format:
+            // {"error":"...","data":[{"error_message":"...","line_number":2,"original_line":"..."}]}
+            if (error != null && dataNode != null && dataNode.isArray()) {
+                final StringBuilder message = new StringBuilder(error);
+                boolean hasDetails = false;
+                for (JsonNode item : dataNode) {
+                    if (item == null || !item.isObject()) {
+                        continue;
+                    }
+                    final JsonNode errorMessageNode = item.get("error_message");
+                    if (errorMessageNode == null || errorMessageNode.isNull() || errorMessageNode.asText().isEmpty()) {
+                        continue;
+                    }
+                    if (!hasDetails) {
+                        message.append(':');
+                        hasDetails = true;
+                    }
+                    if (item.hasNonNull("line_number")
+                            && item.hasNonNull("original_line")
+                            && !item.get("original_line").asText().isEmpty()) {
+                        final String lineNumber = item.get("line_number").asText();
+                        message.append("\n\tline ")
+                                .append(lineNumber)
+                                .append(": ")
+                                .append(errorMessageNode.asText())
+                                .append(" (")
+                                .append(item.get("original_line").asText())
+                                .append(')');
+                    } else {
+                        message.append("\n\t").append(errorMessageNode.asText());
+                    }
+                }
+                return message.toString();
+            }
+
+            // Core/Enterprise object format:
+            // {"error":"...","data":{"error_message":"..."}}
+            if (dataNode != null && dataNode.isObject() && dataNode.hasNonNull("error_message")) {
+                final String errorMessage = dataNode.get("error_message").asText();
+                if (!errorMessage.isEmpty()) {
+                    return errorMessage;
+                }
+            }
+
+            return error;
+        } catch (JsonProcessingException e) {
+            LOG.debug("Can't parse msg from response body {}", body, e);
+            return null;
+        }
     }
 
     private X509TrustManager getX509TrustManagerFromFile(@Nonnull final String filePath) {
