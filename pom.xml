@@ -93,6 +93,7 @@
         <arrow.version>18.3.0</arrow.version>
         <!-- grpc-bom 1.79.0 is very likely incompatible with Arrow 18.3.0 -->
         <grpc-bom.version>1.78.0</grpc-bom.version>
+        <!-- keep aligned with gRPC/Arrow -->
         <netty-bom.version>4.1.127.Final</netty-bom.version>
 
         <plugin.surefire.version>3.5.4</plugin.surefire.version>
@@ -242,7 +243,6 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
-            <version>2.0.75.Final</version>
         </dependency>
 
         <dependency>
