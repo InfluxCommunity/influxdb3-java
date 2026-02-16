@@ -90,7 +90,10 @@
 
         <junit-jupiter.version>5.14.3</junit-jupiter.version>
         <junit-platform.version>1.14.3</junit-platform.version>
-        <netty-handler.version>4.2.10.Final</netty-handler.version>
+        <arrow.version>18.3.0</arrow.version>
+        <!-- grpc-bom 1.79.0 is very likely incompatible with Arrow 18.3.0 -->
+        <grpc-bom.version>1.78.0</grpc-bom.version>
+        <netty-bom.version>4.1.127.Final</netty-bom.version>
 
         <plugin.surefire.version>3.5.4</plugin.surefire.version>
         <plugin.jacoco.version>0.8.14</plugin.jacoco.version>
@@ -98,12 +101,39 @@
         <plugin.javadoc.version>3.12.0</plugin.javadoc.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-bom</artifactId>
+                <version>${arrow.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
 
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>flight-core</artifactId>
-            <version>18.3.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -171,19 +201,16 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-handler</artifactId>
-            <version>${netty-handler.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-buffer</artifactId>
-            <version>${netty-handler.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec</artifactId>
-            <version>${netty-handler.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.netty</groupId>
@@ -195,7 +222,6 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-codec-http2</artifactId>
-            <version>${netty-handler.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.netty</groupId>
@@ -211,7 +237,6 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-transport-native-unix-common</artifactId>
-            <version>${netty-handler.version}</version>
         </dependency>
 
         <dependency>
