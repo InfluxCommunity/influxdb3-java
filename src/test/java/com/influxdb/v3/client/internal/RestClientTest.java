@@ -437,6 +437,23 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
+    public void errorFromBodyJsonArrayFallsBackToBody() {
+      mockServer.enqueue(createResponse(400,
+        Map.of("content-type", "application/json"),
+        "[]"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: []");
+    }
+
+    @Test
     public void errorFromBodyV3WithoutMessageAndWithoutContentType() {
 
       mockServer.enqueue(createResponse(400,
@@ -547,6 +564,25 @@ public class RestClientTest extends AbstractMockServerTest {
         )
         .isInstanceOf(InfluxDBApiException.class)
         .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred");
+    }
+
+    @Test
+    public void errorFromBodyV3WithDataArrayEmptyErrorMessageSkipped() {
+      mockServer.enqueue(createResponse(400,
+        Map.of("content-type", "application/json"),
+        "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":\"\"},"
+          + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+          + "\tline 2: bad line (bad lp)");
     }
 
     @Test
