@@ -59,7 +59,7 @@ public class E2ETest {
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void testQueryWithProxy() {
+    void testQueryWithProxy() throws Exception {
         String proxyUrl = "http://localhost:10000";
 
         try {
@@ -82,17 +82,18 @@ public class E2ETest {
                 .proxyUrl(proxyUrl)
                 .build();
 
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        influxDBClient.writePoint(
-                Point.measurement("test1")
-                        .setField("field", "field1")
-        );
+        try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+            influxDBClient.writePoint(
+                    Point.measurement("test1")
+                            .setField("field", "field1")
+            );
 
-        try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
-            stream.findFirst()
-                    .ifPresent(pointValues -> {
-                        Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
-                    });
+            try (Stream<PointValues> stream = influxDBClient.queryPoints("SELECT * FROM test1")) {
+                stream.findFirst()
+                        .ifPresent(pointValues -> {
+                            Assertions.assertThat(pointValues.getField("field")).isEqualTo("field1");
+                        });
+            }
         }
     }
 
@@ -110,15 +111,16 @@ public class E2ETest {
                 .database(System.getenv("TESTING_INFLUXDB_DATABASE"))
                 .sslRootsFilePath(influxDBcertificateFile)
                 .build();
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        assertGetDataSuccess(influxDBClient);
+        try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+            assertGetDataSuccess(influxDBClient);
+        }
     }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
     @Test
-    void disableServerCertificateValidation() {
+    void disableServerCertificateValidation() throws Exception {
         String wrongCertificateFile = "src/test/java/com/influxdb/v3/client/testdata/docker.com.pem";
 
         ClientConfig clientConfig = new ClientConfig.Builder()
@@ -130,8 +132,9 @@ public class E2ETest {
                 .build();
 
         // Test succeeded with wrong certificate file because disableServerCertificateValidation is true
-        InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig);
-        assertGetDataSuccess(influxDBClient);
+        try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+            assertGetDataSuccess(influxDBClient);
+        }
     }
 
     @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
