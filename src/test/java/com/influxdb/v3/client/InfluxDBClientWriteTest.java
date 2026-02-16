@@ -517,7 +517,8 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     @Test
     public void retryHandled429Test() {
         mockServer.enqueue(createResponse(429,
-          Map.of("retry-after", "42", "content-type", "application/json"),
+          "application/json",
+          Map.of("retry-after", "42"),
           "{ \"message\" : \"Too Many Requests\" }"));
 
         Point point = Point.measurement("mem")

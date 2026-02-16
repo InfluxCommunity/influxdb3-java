@@ -409,7 +409,8 @@ public class RestClientTest extends AbstractMockServerTest {
     @Test
     public void errorFromBodyIgnoredForNonJsonContentType() {
       mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "text/plain"),
+        "text/plain",
+        null,
         "{\"message\":\"token does not have sufficient permissions\"}"));
 
       restClient = new RestClient(new ClientConfig.Builder()
@@ -426,7 +427,8 @@ public class RestClientTest extends AbstractMockServerTest {
     @Test
     public void errorFromBodyInvalidJsonFallsBackToBody() {
       mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "application/json"),
+        "application/json",
+        null,
         "{\"message\":\"token does not have sufficient permissions\""));
 
       restClient = new RestClient(new ClientConfig.Builder()
@@ -443,7 +445,8 @@ public class RestClientTest extends AbstractMockServerTest {
     @Test
     public void errorFromBodyJsonArrayFallsBackToBody() {
       mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "application/json"),
+        "application/json",
+        null,
         "[]"));
 
       restClient = new RestClient(new ClientConfig.Builder()
@@ -480,7 +483,8 @@ public class RestClientTest extends AbstractMockServerTest {
     public void errorFromBodyV3WithDataObject() { // Core/Enterprise object format
 
       mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "application/json"),
+        "application/json",
+        null,
         "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value\"}}"));
 
       restClient = new RestClient(new ClientConfig.Builder()
@@ -497,7 +501,8 @@ public class RestClientTest extends AbstractMockServerTest {
     @Test
     public void errorFromBodyV3WithDataArray() {
       mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "application/json"),
+        "application/json",
+        null,
         "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
           + "\"invalid column type for column 'v', expected iox::column_type::field::integer,"
           + " got iox::column_type::field::float\",\"line_number\":2,"
@@ -523,7 +528,8 @@ public class RestClientTest extends AbstractMockServerTest {
                                                   final String expectedMessage) {
 
       mockServer.enqueue(createResponse(400,
-        Map.of("content-type", "application/json"),
+        "application/json",
+        null,
         body));
 
       restClient = new RestClient(new ClientConfig.Builder()
@@ -604,7 +610,8 @@ public class RestClientTest extends AbstractMockServerTest {
         String retryDate = Instant.now().plus(300, ChronoUnit.SECONDS).toString();
 
       mockServer.enqueue(createResponse(503,
-        Map.of("retry-after", retryDate, "content-type", "application/json"),
+        "application/json",
+        Map.of("retry-after", retryDate),
         "{\"message\":\"temporarily offline\"}"));
 
       restClient = new RestClient(new ClientConfig.Builder()
