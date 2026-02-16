@@ -420,6 +420,23 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
+    public void errorFromBodyInvalidJsonFallsBackToBody() {
+      mockServer.enqueue(createResponse(400,
+        Map.of("content-type", "application/json"),
+        "{\"message\":\"token does not have sufficient permissions\""));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: {\"message\":\"token does not have sufficient permissions\"");
+    }
+
+    @Test
     public void errorFromBodyV3WithoutMessageAndWithoutContentType() {
 
       mockServer.enqueue(createResponse(400,
