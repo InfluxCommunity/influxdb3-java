@@ -92,7 +92,7 @@
         <junit-platform.version>1.14.3</junit-platform.version>
         <arrow.version>18.3.0</arrow.version>
         <!-- grpc-bom 1.79.0 is very likely incompatible with Arrow 18.3.0 -->
-        <grpc-bom.version>1.78.0</grpc-bom.version>
+        <grpc-bom.version>1.79.0</grpc-bom.version>
         <!-- keep aligned with gRPC/Arrow -->
         <netty-bom.version>4.2.10.Final</netty-bom.version>
 
