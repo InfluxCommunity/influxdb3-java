@@ -1,5 +1,9 @@
 ## 1.8.0 [unreleased]
 
+### Features
+
+1. [#352](https://github.com/InfluxCommunity/influxdb3-java/pull/352): Update Apache Flight client dependencies.
+
 ### CI
 
 1. [#313](https://github.com/InfluxCommunity/influxdb3-java/pull/313): Clarify JDK 25+ requirements.
