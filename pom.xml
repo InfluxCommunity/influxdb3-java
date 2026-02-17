@@ -94,7 +94,7 @@
         <!-- grpc-bom 1.79.0 is very likely incompatible with Arrow 18.3.0 -->
         <grpc-bom.version>1.78.0</grpc-bom.version>
         <!-- keep aligned with gRPC/Arrow -->
-        <netty-bom.version>4.1.127.Final</netty-bom.version>
+        <netty-bom.version>4.2.10.Final</netty-bom.version>
 
         <plugin.surefire.version>3.5.4</plugin.surefire.version>
         <plugin.jacoco.version>0.8.14</plugin.jacoco.version>
