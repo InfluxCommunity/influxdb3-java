@@ -644,6 +644,14 @@ public class RestClientTest extends AbstractMockServerTest {
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
             + "\"only error message\",\"line_number\":2,\"original_line\":\"\"}]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
+        ),
+        Arguments.of(
+          "multiple valid details append without extra colon",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"},{\"error_message\":\"second issue\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)\n"
+            + "\tsecond issue"
         )
       );
     }
