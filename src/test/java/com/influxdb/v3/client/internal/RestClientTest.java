@@ -695,6 +695,16 @@ public class RestClientTest extends AbstractMockServerTest {
           "data object with empty error_message falls back to error",
           "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"\"}}",
           "HTTP status code: 400; Message: parsing failed"
+        ),
+        Arguments.of(
+          "data string falls back to error",
+          "{\"error\":\"parsing failed\",\"data\":\"not-an-object\"}",
+          "HTTP status code: 400; Message: parsing failed"
+        ),
+        Arguments.of(
+          "data number falls back to error",
+          "{\"error\":\"parsing failed\",\"data\":123}",
+          "HTTP status code: 400; Message: parsing failed"
         )
       );
     }
