@@ -325,7 +325,7 @@ final class RestClient implements AutoCloseable {
 
     @Nullable
     private String errFormatDataArrayDetail(@Nullable final JsonNode item) {
-        if (item == null || !item.isObject()) {
+        if (!item.isObject()) {
             return null;
         }
 
