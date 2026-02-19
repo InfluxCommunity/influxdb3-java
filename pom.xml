@@ -88,7 +88,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <junit-jupiter.version>5.14.3</junit-jupiter.version>
+        <junit-jupiter.version>6.0.3</junit-jupiter.version>
         <junit-platform.version>1.14.3</junit-platform.version>
         <arrow.version>18.3.0</arrow.version>
         <!-- grpc-bom 1.79.0 is very likely incompatible with Arrow 18.3.0 -->
