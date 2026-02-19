@@ -34,6 +34,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import io.netty.handler.codec.http.HttpMethod;
 import mockwebserver3.MockResponse;
@@ -42,6 +43,9 @@ import okhttp3.Headers;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import com.influxdb.v3.client.AbstractMockServerTest;
 import com.influxdb.v3.client.InfluxDBApiException;
@@ -387,6 +391,7 @@ public class RestClientTest extends AbstractMockServerTest {
     public void errorFromBody() {
 
       mockServer.enqueue(createResponse(401,
+        "application/json",
         Map.of("X-Influx-Errpr", "not used"),
         "{\"message\":\"token does not have sufficient permissions\"}"));
 
@@ -402,9 +407,100 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void errorFromBodyEdgeWithoutMessage() { // OSS/Edge error message
+    public void errorFromBodyIgnoredForNonJsonContentType() {
+      mockServer.enqueue(createResponse(400,
+        "text/plain",
+        null,
+        "{\"message\":\"token does not have sufficient permissions\"}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: {\"message\":\"token does not have sufficient permissions\"}");
+    }
+
+    @Test
+    public void errorFromBodyInvalidJsonFallsBackToBody() {
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        "{\"message\":\"token does not have sufficient permissions\""));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: {\"message\":\"token does not have sufficient permissions\"");
+    }
+
+    @Test
+    public void errorFromBodyNullMessageFallsBackToError() {
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        "{\"message\":null,\"error\":\"parsing failed\"}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: parsing failed");
+    }
+
+    @Test
+    public void errorFromBodyEmptyMessageFallsBackToError() {
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        "{\"message\":\"\",\"error\":\"parsing failed\"}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: parsing failed");
+    }
+
+    @Test
+    public void errorFromBodyJsonArrayFallsBackToBody() {
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        "[]"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: []");
+    }
+
+    @Test
+    public void errorFromBodyV3WithoutMessageAndEmptyContentType() {
 
       mockServer.enqueue(createResponse(400,
+        "",
         null,
         "{\"error\":\"parsing failed\"}"));
 
@@ -420,9 +516,29 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void errorFromBodyEdgeWithMessage() { // OSS/Edge specific error message
+    public void errorFromBodyV3WithoutMessageAndWithoutContentType() {
 
       mockServer.enqueue(createResponse(400,
+        null,
+        null,
+        "{\"error\":\"parsing failed\"}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+
+      Assertions.assertThatThrownBy(
+                    () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+              .isInstanceOf(InfluxDBApiException.class)
+              .hasMessage("HTTP status code: 400; Message: parsing failed");
+    }
+
+    @Test
+    public void errorFromBodyV3WithDataObject() { // Core/Enterprise object format
+
+      mockServer.enqueue(createResponse(400,
+        "application/json",
         null,
         "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value\"}}"));
 
@@ -435,6 +551,170 @@ public class RestClientTest extends AbstractMockServerTest {
         )
               .isInstanceOf(InfluxDBApiException.class)
               .hasMessage("HTTP status code: 400; Message: invalid field value");
+    }
+
+    @Test
+    public void errorFromBodyV3WithDataArray() {
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+          + "\"invalid column type for column 'v', expected iox::column_type::field::integer,"
+          + " got iox::column_type::field::float\",\"line_number\":2,"
+          + "\"original_line\":\"testa6a3ad v=1 17702\"}]}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+          + "\tline 2: invalid column type for column 'v', expected iox::column_type::field::integer,"
+          + " got iox::column_type::field::float (testa6a3ad v=1 17702)");
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("errorFromBodyV3WithDataArrayCases")
+    public void errorFromBodyV3WithDataArrayCase(final String testName,
+                                                  final String body,
+                                                  final String expectedMessage) {
+
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        body));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage(expectedMessage);
+    }
+
+    private static Stream<Arguments> errorFromBodyV3WithDataArrayCases() {
+      return Stream.of(
+        Arguments.of(
+          "message-only detail",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"only error message\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
+        ),
+        Arguments.of(
+          "non-object item skipped",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[null,{\"error_message\":"
+            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "no detail fields",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"line_number\":2}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred"
+        ),
+        Arguments.of(
+          "empty error_message skipped",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":\"\"},"
+            + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "non-object primitive item skipped",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[1,{\"error_message\":"
+            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "null error_message skipped",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":null},"
+            + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "empty original_line uses message-only detail",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"only error message\",\"line_number\":2,\"original_line\":\"\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
+        ),
+        Arguments.of(
+          "multiple valid details append without extra colon",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"},{\"error_message\":\"second issue\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)\n"
+            + "\tsecond issue"
+        )
+      );
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("errorFromBodyV3FallbackCases")
+    public void errorFromBodyV3FallbackCase(final String testName,
+                                            final String body,
+                                            final String expectedMessage) {
+
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        body));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Assertions.assertThatThrownBy(
+          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+        )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage(expectedMessage);
+    }
+
+    private static Stream<Arguments> errorFromBodyV3FallbackCases() {
+      return Stream.of(
+        Arguments.of(
+          "missing error with data array falls back to body",
+          "{\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: "
+            + "{\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}"
+        ),
+        Arguments.of(
+          "empty error with data array falls back to body",
+          "{\"error\":\"\",\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":"
+            + "\"bad lp\"}]}",
+          "HTTP status code: 400; Message: "
+            + "{\"error\":\"\",\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":"
+            + "\"bad lp\"}]}"
+        ),
+        Arguments.of(
+          "data object without error_message falls back to error",
+          "{\"error\":\"parsing failed\",\"data\":{}}",
+          "HTTP status code: 400; Message: parsing failed"
+        ),
+        Arguments.of(
+          "data object with empty error_message falls back to error",
+          "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"\"}}",
+          "HTTP status code: 400; Message: parsing failed"
+        ),
+        Arguments.of(
+          "data string falls back to error",
+          "{\"error\":\"parsing failed\",\"data\":\"not-an-object\"}",
+          "HTTP status code: 400; Message: parsing failed"
+        ),
+        Arguments.of(
+          "data number falls back to error",
+          "{\"error\":\"parsing failed\",\"data\":123}",
+          "HTTP status code: 400; Message: parsing failed"
+        )
+      );
     }
 
     @Test
@@ -474,7 +754,8 @@ public class RestClientTest extends AbstractMockServerTest {
         String retryDate = Instant.now().plus(300, ChronoUnit.SECONDS).toString();
 
       mockServer.enqueue(createResponse(503,
-        Map.of("retry-after", retryDate, "content-type", "application/json"),
+        "application/json",
+        Map.of("retry-after", retryDate),
         "{\"message\":\"temporarily offline\"}"));
 
       restClient = new RestClient(new ClientConfig.Builder()

@@ -217,22 +217,12 @@ final class RestClient implements AutoCloseable {
 
         int statusCode = response.statusCode();
         if (statusCode < 200 || statusCode >= 300) {
-            String reason = "";
+            String reason;
             String body = response.body();
-            if (!body.isEmpty()) {
-                try {
-                    final JsonNode root = objectMapper.readTree(body);
-                    final List<String> possibilities = List.of("message", "error_message", "error");
-                    for (final String field : possibilities) {
-                        final JsonNode node = root.findValue(field);
-                        if (node != null) {
-                            reason = node.asText();
-                            break;
-                        }
-                    }
-                } catch (JsonProcessingException e) {
-                    LOG.debug("Can't parse msg from response {}", response);
-                }
+            reason = formatErrorMessage(body, response.headers().firstValue("Content-Type").orElse(null));
+
+            if (reason == null) {
+                reason = "";
             }
 
             if (reason.isEmpty()) {
@@ -255,6 +245,103 @@ final class RestClient implements AutoCloseable {
         }
 
         return response;
+    }
+
+    @Nullable
+    private String formatErrorMessage(@Nonnull final String body, @Nullable final String contentType) {
+        if (body.isEmpty()) {
+            return null;
+        }
+
+        if (contentType != null
+                && !contentType.isEmpty()
+                && !contentType.regionMatches(true, 0, "application/json", 0, "application/json".length())) {
+            return null;
+        }
+
+        try {
+            final JsonNode root = objectMapper.readTree(body);
+            if (!root.isObject()) {
+                return null;
+            }
+
+            final String rootMessage = errNonEmptyField(root, "message");
+            if (rootMessage != null) {
+                return rootMessage;
+            }
+
+            final String error = errNonEmptyField(root, "error");
+            final JsonNode dataNode = root.get("data");
+
+            // InfluxDB 3 Core/Enterprise write error format:
+            // {"error":"...","data":[{"error_message":"...","line_number":2,"original_line":"..."}]}
+            if (error != null && dataNode != null && dataNode.isArray()) {
+                final StringBuilder message = new StringBuilder(error);
+                boolean hasDetails = false;
+                for (JsonNode item : dataNode) {
+                    final String detail = errFormatDataArrayDetail(item);
+                    if (detail == null) {
+                        continue;
+                    }
+                    if (!hasDetails) {
+                        message.append(':');
+                        hasDetails = true;
+                    }
+                    message.append("\n\t").append(detail);
+                }
+                return message.toString();
+            }
+
+            // Core/Enterprise object format:
+            // {"error":"...","data":{"error_message":"..."}}
+            final String errorMessage = errNonEmptyField(dataNode, "error_message");
+            if (errorMessage != null) {
+                return errorMessage;
+            }
+
+            return error;
+        } catch (JsonProcessingException e) {
+            LOG.debug("Can't parse msg from response body {}", body, e);
+            return null;
+        }
+    }
+
+    @Nullable
+    private String errNonEmptyText(@Nullable final JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+        final String value = node.asText();
+        return value.isEmpty() ? null : value;
+    }
+
+    @Nullable
+    private String errNonEmptyField(@Nullable final JsonNode object, @Nonnull final String fieldName) {
+        if (object == null || !object.isObject()) {
+            return null;
+        }
+        return errNonEmptyText(object.get(fieldName));
+    }
+
+    @Nullable
+    private String errFormatDataArrayDetail(@Nullable final JsonNode item) {
+        if (!item.isObject()) {
+            return null;
+        }
+
+        final String errorMessage = errNonEmptyField(item, "error_message");
+        if (errorMessage == null) {
+            return null;
+        }
+
+        if (item.hasNonNull("line_number")) {
+            final String originalLine = errNonEmptyField(item, "original_line");
+            if (originalLine != null) {
+                final String lineNumber = item.get("line_number").asText();
+                return "line " + lineNumber + ": " + errorMessage + " (" + originalLine + ")";
+            }
+        }
+        return errorMessage;
     }
 
     private X509TrustManager getX509TrustManagerFromFile(@Nonnull final String filePath) {

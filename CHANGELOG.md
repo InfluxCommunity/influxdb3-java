@@ -2,7 +2,11 @@
 
 ### Features
 
-1. [#352](https://github.com/InfluxCommunity/influxdb3-java/pull/352): Update Apache Flight client dependencies.
+1. [#352](https://github.com/InfluxCommunity/influxdb3-java/pull/352): Upgrade Arrow Flight client dependencies.
+
+### Bug Fixes
+
+1. [#351](https://github.com/InfluxCommunity/influxdb3-java/pull/351): Enterprise/Core structured errors handling.
 
 ### CI
 

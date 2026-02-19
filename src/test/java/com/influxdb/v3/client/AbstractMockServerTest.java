@@ -65,10 +65,23 @@ public abstract class AbstractMockServerTest {
                                           @Nullable final Map<String, String> headers,
                                           @Nullable final String body) {
 
+      return createResponse(responseCode, "text/csv; charset=utf-8", headers, body);
+    }
+
+    @Nonnull
+    protected MockResponse createResponse(final int responseCode,
+                                          @Nullable final String contentType,
+                                          @Nullable final Map<String, String> headers,
+                                          @Nullable final String body) {
+
       MockResponse.Builder mrb = new MockResponse.Builder();
       mrb.code(responseCode);
-      Map<String, String> effectiveHeaders = new HashMap<>(Map.of("Content-Type", "text/csv; charset=utf-8",
-        "Date", "Tue, 26 Jun 2018 13:15:01 GMT"));
+      Map<String, String> effectiveHeaders = new HashMap<>(Map.of(
+        "Date", "Tue, 26 Jun 2018 13:15:01 GMT"
+      ));
+      if (contentType != null) {
+        effectiveHeaders.put("Content-Type", contentType);
+      }
       if (headers != null) {
         effectiveHeaders.putAll(headers);
       }
@@ -85,9 +98,6 @@ public abstract class AbstractMockServerTest {
     @Nonnull
     protected MockResponse createResponse(final int responseCode) {
 
-        return createResponse(responseCode, Map.of(
-          "Content-Type", "text/csv; charset=utf-8",
-          "Date", "Tue, 26 Jun 2018 13:15:01 GMT"
-        ), null);
+        return createResponse(responseCode, "text/csv; charset=utf-8", null, null);
     }
 }
