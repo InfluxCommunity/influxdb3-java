@@ -96,7 +96,7 @@
         <!-- keep aligned with gRPC/Arrow -->
         <netty-bom.version>4.2.10.Final</netty-bom.version>
 
-        <plugin.surefire.version>3.5.4</plugin.surefire.version>
+        <plugin.surefire.version>3.5.5</plugin.surefire.version>
         <plugin.jacoco.version>0.8.14</plugin.jacoco.version>
         <plugin.checkstyle.version>3.6.0</plugin.checkstyle.version>
         <plugin.javadoc.version>3.12.0</plugin.javadoc.version>
