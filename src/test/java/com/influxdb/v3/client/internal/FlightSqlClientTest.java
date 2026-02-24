@@ -121,14 +121,21 @@ public class FlightSqlClientTest {
     public void setHeaderInInterceptor() throws Exception {
         ClientInterceptor interceptor = new ClientInterceptor() {
             @Override
-            public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
+            public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
+                    final MethodDescriptor<ReqT, RespT> method,
+                    final CallOptions callOptions,
+                    final Channel next
+            ) {
                 ClientCall<ReqT, RespT> call = next.newCall(method, callOptions);
                 return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(call) {
                     @Override
                     public void start(Listener<RespT> responseListener, Metadata headers) {
-                        Metadata.Key<String> key = Metadata.Key.of("some-header", Metadata.ASCII_STRING_MARSHALLER);
+                        Metadata.Key<String> key = Metadata.Key.of(
+                                "some-header",
+                                Metadata.ASCII_STRING_MARSHALLER);
                         headers.put(key, "This is from interceptor");
-                        super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>(responseListener) {
+                        super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>
+                                (responseListener) {
                         }, headers);
                     }
                 };
