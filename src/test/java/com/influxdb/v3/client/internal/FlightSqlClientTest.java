@@ -127,14 +127,15 @@ public class FlightSqlClientTest {
                     final Channel next
             ) {
                 ClientCall<ReqT, RespT> call = next.newCall(method, callOptions);
-                return new ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(call) {
+                return new ForwardingClientCall.SimpleForwardingClientCall<>(call) {
                     @Override
-                    public void start(Listener<RespT> responseListener, Metadata headers) {
+                    public void start(final Listener<RespT> responseListener, final Metadata headers) {
                         Metadata.Key<String> key = Metadata.Key.of(
                                 "some-header",
-                                Metadata.ASCII_STRING_MARSHALLER);
+                                Metadata.ASCII_STRING_MARSHALLER
+                        );
                         headers.put(key, "This is from interceptor");
-                        super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<RespT>
+                        super.start(new ForwardingClientCallListener.SimpleForwardingClientCallListener<>
                                 (responseListener) {
                         }, headers);
                     }
