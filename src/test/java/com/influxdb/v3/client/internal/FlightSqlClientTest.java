@@ -34,7 +34,6 @@ import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.ClientInterceptor;
 import io.grpc.ForwardingClientCall;
-import io.grpc.ForwardingClientCallListener;
 import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
