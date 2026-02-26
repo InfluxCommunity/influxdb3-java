@@ -176,6 +176,10 @@ final class FlightSqlClient implements AutoCloseable {
                 .with(Codec.Identity.NONE, false));
         }
 
+        if (config.getInterceptors() != null) {
+            nettyChannelBuilder.intercept(config.getInterceptors());
+        }
+
         return FlightGrpcUtils.createFlightClient(new RootAllocator(Long.MAX_VALUE), nettyChannelBuilder.build());
     }
 

@@ -28,6 +28,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -35,6 +36,8 @@ import java.util.StringJoiner;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import io.grpc.ClientInterceptor;
 
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
@@ -68,6 +71,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>headers</code> - headers to be added to requests</li>
  *     <li><code>sslRootsFilePath</code> - path to the stored certificates file in PEM format</li>
  *     <li><code>disableGRPCCompression</code> - disables the default gRPC compression header</li>
+ *     <li><code>interceptors</code> - list of client interceptors to be used in the query API</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
@@ -115,6 +119,7 @@ public final class ClientConfig {
     private final Map<String, String> headers;
     private final String sslRootsFilePath;
     private final boolean disableGRPCCompression;
+    private final List<ClientInterceptor> interceptors;
 
     /**
      * Deprecated use {@link #proxyUrl}.
@@ -330,6 +335,16 @@ public final class ClientConfig {
     }
 
     /**
+     * Gets a list of client interceptors.
+     *
+     * @return a list of client interceptors.
+     */
+    @Nullable
+    public List<ClientInterceptor> getInterceptors() {
+        return interceptors;
+    }
+
+    /**
      * Validates the configuration properties.
      */
     public void validate() {
@@ -366,7 +381,8 @@ public final class ClientConfig {
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
                 && Objects.equals(sslRootsFilePath, that.sslRootsFilePath)
-                && disableGRPCCompression == that.disableGRPCCompression;
+                && disableGRPCCompression == that.disableGRPCCompression
+                && Objects.equals(interceptors, that.interceptors);
     }
 
     @Override
@@ -375,7 +391,7 @@ public final class ClientConfig {
                 database, writePrecision, gzipThreshold, writeNoSync,
                 timeout, writeTimeout, queryTimeout, allowHttpRedirects, disableServerCertificateValidation,
                 proxy, proxyUrl, authenticator, headers,
-                defaultTags, sslRootsFilePath, disableGRPCCompression);
+                defaultTags, sslRootsFilePath, disableGRPCCompression, interceptors);
     }
 
     @Override
@@ -429,6 +445,7 @@ public final class ClientConfig {
         private Map<String, String> headers;
         private String sslRootsFilePath;
         private boolean disableGRPCCompression;
+        private List<ClientInterceptor> interceptors;
 
         /**
          * Sets the URL of the InfluxDB server.
@@ -724,6 +741,18 @@ public final class ClientConfig {
         }
 
         /**
+         *  Sets a list of interceptors to be used for the query API.
+         *
+         * @param interceptors a list of ClientInterceptor
+         * @return this
+         */
+        @Nonnull
+        public Builder interceptors(@Nullable final List<ClientInterceptor> interceptors) {
+            this.interceptors = interceptors;
+            return this;
+        }
+
+        /**
          * Build an instance of {@code ClientConfig}.
          *
          * @return the configuration for an {@code InfluxDBClient}.
@@ -897,5 +926,6 @@ public final class ClientConfig {
         headers = builder.headers;
         sslRootsFilePath = builder.sslRootsFilePath;
         disableGRPCCompression = builder.disableGRPCCompression;
+        interceptors = builder.interceptors;
     }
 }

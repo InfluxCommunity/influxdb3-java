@@ -1,5 +1,9 @@
 ## 1.9.0 [unreleased]
 
+### Features
+
+1. [#360](https://github.com/InfluxCommunity/influxdb3-java/pull/360): Support passing interceptors to the Flight client.
+
 ## 1.8.0 [2026-02-19]
 
 ### Features

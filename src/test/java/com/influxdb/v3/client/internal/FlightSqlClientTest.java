@@ -24,11 +24,19 @@ package com.influxdb.v3.client.internal;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import io.grpc.CallOptions;
+import io.grpc.Channel;
+import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
+import io.grpc.ForwardingClientCall;
 import io.grpc.HttpConnectProxiedSocketAddress;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.ProxyDetector;
 import io.grpc.internal.GrpcUtil;
 import org.apache.arrow.flight.CallHeaders;
@@ -105,6 +113,44 @@ public class FlightSqlClientTest {
             );
             Assertions.assertThat(receivedHeaders.get("authorization")).isEqualTo("Bearer my-token");
             Assertions.assertThat(receivedHeaders.get("user-agent")).startsWith(Identity.getUserAgent());
+        }
+    }
+
+    @Test
+    public void setHeaderInInterceptor() throws Exception {
+        ClientInterceptor interceptor = new ClientInterceptor() {
+            @Override
+            public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
+                    final MethodDescriptor<ReqT, RespT> method,
+                    final CallOptions callOptions,
+                    final Channel next
+            ) {
+                ClientCall<ReqT, RespT> call = next.newCall(method, callOptions);
+                return new ForwardingClientCall.SimpleForwardingClientCall<>(call) {
+                    @Override
+                    public void start(final Listener<RespT> responseListener, final Metadata headers) {
+                        Metadata.Key<String> key = Metadata.Key.of(
+                                "some-header",
+                                Metadata.ASCII_STRING_MARSHALLER
+                        );
+                        headers.put(key, "This is from interceptor");
+                        super.start(responseListener, headers);
+                    }
+                };
+            }
+        };
+
+        ClientConfig clientConfig = new ClientConfig.Builder()
+                .host(server.getLocation().getUri().toString())
+                .token("my-token".toCharArray())
+                .interceptors(List.of(interceptor))
+                .build();
+
+        try (FlightSqlClient flightSqlClient = new FlightSqlClient(clientConfig);
+             var data = executeQuery(flightSqlClient, Map.of(), Map.of())) {
+            Assertions.assertThat(data.count()).isEqualTo(rowCount);
+            final Map<String, String> receivedHeaders = headerFactory.getLastInstance().getHeaders();
+            Assertions.assertThat(receivedHeaders.get("some-header")).isEqualTo("This is from interceptor");
         }
     }
 
