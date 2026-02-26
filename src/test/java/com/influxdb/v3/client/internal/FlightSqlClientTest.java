@@ -135,11 +135,7 @@ public class FlightSqlClientTest {
                                 Metadata.ASCII_STRING_MARSHALLER
                         );
                         headers.put(key, "This is from interceptor");
-                        var respListener = new ForwardingClientCallListener.SimpleForwardingClientCallListener<>(
-                                responseListener
-                        ) {
-                        };
-                        super.start(respListener, headers);
+                        super.start(responseListener, headers);
                     }
                 };
             }

@@ -71,7 +71,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>headers</code> - headers to be added to requests</li>
  *     <li><code>sslRootsFilePath</code> - path to the stored certificates file in PEM format</li>
  *     <li><code>disableGRPCCompression</code> - disables the default gRPC compression header</li>
- *     <li><code>interceptors</code> - list of client interceptors will be used in query api</li>
+ *     <li><code>interceptors</code> - list of client interceptors to be used in the query API</li>
  * </ul>
  * <p>
  * If you want to create a client with custom configuration, you can use following code:
@@ -339,6 +339,7 @@ public final class ClientConfig {
      *
      * @return a list of client interceptors.
      */
+    @Nullable
     public List<ClientInterceptor> getInterceptors() {
         return interceptors;
     }
@@ -740,13 +741,13 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets a list of interceptors will be used for query api.
+         *  Sets a list of interceptors to be used for the query API.
          *
          * @param interceptors a list of ClientInterceptor
          * @return this
          */
         @Nonnull
-        public Builder interceptors(final List<ClientInterceptor> interceptors) {
+        public Builder interceptors(@Nullable final List<ClientInterceptor> interceptors) {
             this.interceptors = interceptors;
             return this;
         }
