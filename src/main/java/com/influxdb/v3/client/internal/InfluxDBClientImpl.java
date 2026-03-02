@@ -336,7 +336,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                     if (item == null) {
                         return null;
                     } else if (item instanceof Point) {
-                        return ((Point) item).toLineProtocol(null, defaultTags, tagOrder);
+                        return ((Point) item).toLineProtocol(precision, defaultTags, tagOrder);
                     } else {
                         return item.toString();
                     }
