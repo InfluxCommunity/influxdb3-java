@@ -589,7 +589,7 @@ public final class Point {
                           @Nullable final List<String> tagOrder) {
     Set<String> remaining = new TreeSet<>();
     for (String pointTag : values.getTagNames()) {
-      if (pointTag != null && !pointTag.isEmpty()) {
+      if (!pointTag.isEmpty()) {
         remaining.add(pointTag);
       }
     }

@@ -111,11 +111,15 @@ class WriteOptionsTest {
                 .gzipThreshold(512)
                 .build();
 
-        WriteOptions options = new WriteOptions.Builder().build();
+        WriteOptions options = WriteOptions.defaultWriteOptions();
 
         Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
         Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
         Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(512);
+        Assertions.assertThat(options.tagOrderSafe()).isEmpty();
+
+        WriteOptions builderOptions = new WriteOptions.Builder().build();
+        Assertions.assertThat(builderOptions).isEqualTo(options);
     }
 
     @Test
