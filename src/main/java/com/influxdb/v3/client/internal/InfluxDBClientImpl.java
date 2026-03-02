@@ -330,15 +330,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         }
 
         Map<String, String> defaultTags = options.defaultTagsSafe(config);
+        List<String> tagOrder = options.tagOrderSafe();
 
         String lineProtocol = data.stream().map(item -> {
                     if (item == null) {
                         return null;
                     } else if (item instanceof Point) {
-                        for (String key : defaultTags.keySet()) {
-                            ((Point) item).setTag(key, defaultTags.get(key));
-                        }
-                        return ((Point) item).toLineProtocol();
+                        return ((Point) item).toLineProtocol(null, defaultTags, tagOrder);
                     } else {
                         return item.toString();
                     }

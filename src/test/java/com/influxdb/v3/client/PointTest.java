@@ -24,6 +24,7 @@ package com.influxdb.v3.client;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.assertj.core.api.Assertions;
@@ -195,6 +196,23 @@ public class PointTest {
 
         String lineProtocol = point.toLineProtocol(WritePrecision.NS);
         Assertions.assertThat("measurement,tag1=value1 field1=42i").isEqualTo(lineProtocol);
+    }
+
+    @Test
+    void toLineProtocolWithTagOrder() {
+        Point point = Point.measurement("measurement")
+                .setTag("host", "h1")
+                .setTag("region", "point-region")
+                .setField("field1", 42);
+
+        String lineProtocol = point.toLineProtocol(
+                WritePrecision.NS,
+                Map.of("region", "default-region", "rack", "r1"),
+                List.of("region", "host")
+        );
+
+        Assertions.assertThat("measurement,region=default-region,host=h1,rack=r1 field1=42i")
+                .isEqualTo(lineProtocol);
     }
 
     @Test

@@ -23,6 +23,7 @@ package com.influxdb.v3.client.write;
 
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.assertj.core.api.Assertions;
@@ -90,6 +91,15 @@ class WriteOptionsTest {
           .build();
 
         Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
+    }
+
+    @Test
+    void optionsWithTagOrder() {
+        List<String> tagOrder = List.of("region", "host");
+
+        WriteOptions options = new WriteOptions.Builder().tagOrder(tagOrder).build();
+
+        Assertions.assertThat(options.tagOrderSafe()).containsExactly("region", "host");
     }
 
     @Test
@@ -256,5 +266,7 @@ class WriteOptionsTest {
           .isNotEqualTo(builder.database("my-database").build().hashCode());
         Assertions.assertThat(baseOptions.hashCode())
           .isNotEqualTo(builder.defaultTags(defaultTags).build().hashCode());
+        Assertions.assertThat(baseOptions.hashCode())
+          .isNotEqualTo(builder.tagOrder(List.of("region", "host")).build().hashCode());
     }
 }
