@@ -206,6 +206,14 @@ public class PointTest {
                 .setTag("region", "point-region")
                 .setField("field1", 42);
 
+        String lineProtocolFastPathWithEmptyDefaults = point.toLineProtocol(
+                WritePrecision.NS,
+                Map.of(),
+                List.of()
+        );
+        Assertions.assertThat("measurement,host=h1,region=point-region field1=42i")
+                .isEqualTo(lineProtocolFastPathWithEmptyDefaults);
+
         String lineProtocol = point.toLineProtocol(
                 WritePrecision.NS,
                 Map.of("region", "default-region", "rack", "r1"),
@@ -214,6 +222,22 @@ public class PointTest {
 
         Assertions.assertThat("measurement,region=default-region,host=h1,rack=r1 field1=42i")
                 .isEqualTo(lineProtocol);
+
+        String lineProtocolWithTagOrderOnly = point.toLineProtocol(
+                WritePrecision.NS,
+                null,
+                List.of("region")
+        );
+        Assertions.assertThat("measurement,region=point-region,host=h1 field1=42i")
+                .isEqualTo(lineProtocolWithTagOrderOnly);
+
+        String lineProtocolWithDefaultTagsOnly = point.toLineProtocol(
+                WritePrecision.NS,
+                Map.of("rack", "r1"),
+                List.of()
+        );
+        Assertions.assertThat("measurement,host=h1,rack=r1,region=point-region field1=42i")
+                .isEqualTo(lineProtocolWithDefaultTagsOnly);
 
         Point pointWithIgnoredTags = Point.measurement("measurement")
                 .setTag("", "ignored")
@@ -235,6 +259,28 @@ public class PointTest {
 
         Assertions.assertThat("measurement,region=point-region,host=h1,rack=r1,zone=z1 field1=42i")
                 .isEqualTo(lineProtocolWithIgnoredTagOrderEntries);
+
+        Point pointWithEmptyTagValue = Point.measurement("measurement")
+                .setTag("host", "")
+                .setField("field1", 42);
+        String lineProtocolWithEmptyTagValue = pointWithEmptyTagValue.toLineProtocol(
+                WritePrecision.NS,
+                Map.of("rack", "r1"),
+                List.of("host")
+        );
+        Assertions.assertThat("measurement,rack=r1 field1=42i")
+                .isEqualTo(lineProtocolWithEmptyTagValue);
+
+        Point pointWithEmptyTagNameFastPath = Point.measurement("measurement")
+                .setTag("", "ignored")
+                .setField("field1", 42);
+        String lineProtocolWithEmptyTagNameFastPath = pointWithEmptyTagNameFastPath.toLineProtocol(
+                WritePrecision.NS,
+                Map.of(),
+                List.of()
+        );
+        Assertions.assertThat("measurement field1=42i")
+                .isEqualTo(lineProtocolWithEmptyTagNameFastPath);
     }
 
     @Test
