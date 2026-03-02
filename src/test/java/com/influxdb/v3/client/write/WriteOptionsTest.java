@@ -62,7 +62,7 @@ class WriteOptionsTest {
 
         Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
 
-        // Exercise each equals() comparison field (lines 331-335) with a mismatch.
+        // Exercise each field used by WriteOptions.equals() with a mismatch.
         WriteOptions gzipMismatch = new WriteOptions.Builder()
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(1024).noSync(true).build();
         WriteOptions noSyncMismatch = new WriteOptions.Builder()
