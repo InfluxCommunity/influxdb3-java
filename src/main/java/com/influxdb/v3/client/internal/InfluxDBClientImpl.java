@@ -360,7 +360,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
         Map<String, String> headers = new HashMap<>(Map.of("Content-Type", "text/plain; charset=utf-8"));
         byte[] body = lineProtocol.getBytes(StandardCharsets.UTF_8);
-        if (lineProtocol.length() >= options.gzipThresholdSafe(config)) {
+        if (body.length >= options.gzipThresholdSafe(config)) {
             try {
                 body = gzipData(body);
                 headers.put("Content-Encoding", "gzip");
