@@ -23,6 +23,7 @@ package com.influxdb.v3.client;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -213,6 +214,27 @@ public class PointTest {
 
         Assertions.assertThat("measurement,region=default-region,host=h1,rack=r1 field1=42i")
                 .isEqualTo(lineProtocol);
+
+        Point pointWithIgnoredTags = Point.measurement("measurement")
+                .setTag("", "ignored")
+                .setTag("host", "h1")
+                .setTag("region", "point-region")
+                .setField("field1", 42);
+
+        Map<String, String> defaultTags = new HashMap<>();
+        defaultTags.put("", "ignored");
+        defaultTags.put(null, "ignored");
+        defaultTags.put("rack", "r1");
+        defaultTags.put("zone", "z1");
+
+        String lineProtocolWithIgnoredTagOrderEntries = pointWithIgnoredTags.toLineProtocol(
+                WritePrecision.NS,
+                defaultTags,
+                Arrays.asList("region", "", null, "region", "missing", "host")
+        );
+
+        Assertions.assertThat("measurement,region=point-region,host=h1,rack=r1,zone=z1 field1=42i")
+                .isEqualTo(lineProtocolWithIgnoredTagOrderEntries);
     }
 
     @Test
