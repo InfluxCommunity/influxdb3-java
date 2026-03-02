@@ -354,6 +354,7 @@ public final class WriteOptions {
         return tagOrder.stream()
                 .filter(Objects::nonNull)
                 .filter(tag -> !tag.isEmpty())
+                .distinct()
                 .collect(Collectors.toUnmodifiableList());
     }
 

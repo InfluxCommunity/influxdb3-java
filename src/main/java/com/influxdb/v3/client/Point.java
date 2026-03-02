@@ -26,7 +26,6 @@ import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -609,9 +608,8 @@ public final class Point {
 
     List<String> orderedTagNames = new ArrayList<>();
     if (tagOrder != null && !tagOrder.isEmpty()) {
-      Set<String> seen = new HashSet<>();
       for (String preferredTag : tagOrder) {
-        if (preferredTag == null || preferredTag.isEmpty() || !seen.add(preferredTag)) {
+        if (preferredTag == null || preferredTag.isEmpty()) {
           continue;
         }
         if (remaining.remove(preferredTag)) {
