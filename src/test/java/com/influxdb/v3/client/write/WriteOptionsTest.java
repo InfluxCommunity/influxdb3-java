@@ -61,6 +61,27 @@ class WriteOptionsTest {
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true).build();
 
         Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
+
+        // Exercise each equals() comparison field (lines 331-335) with a mismatch.
+        WriteOptions gzipMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(1024).noSync(true).build();
+        WriteOptions noSyncMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(false).build();
+        WriteOptions defaultTagsMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
+                .defaultTags(Map.of("region", "west")).build();
+        WriteOptions tagOrderMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
+                .tagOrder(List.of("host", "region")).build();
+        WriteOptions headersMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
+                .headers(Map.of("X-Trace-Id", "123")).build();
+
+        Assertions.assertThat(options).isNotEqualTo(gzipMismatch);
+        Assertions.assertThat(options).isNotEqualTo(noSyncMismatch);
+        Assertions.assertThat(options).isNotEqualTo(defaultTagsMismatch);
+        Assertions.assertThat(options).isNotEqualTo(tagOrderMismatch);
+        Assertions.assertThat(options).isNotEqualTo(headersMismatch);
     }
 
     @Test
