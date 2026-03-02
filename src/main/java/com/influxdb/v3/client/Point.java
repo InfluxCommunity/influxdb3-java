@@ -588,19 +588,17 @@ public final class Point {
                           @Nullable final Map<String, String> defaultTags,
                           @Nullable final List<String> tagOrder) {
     if ((defaultTags == null || defaultTags.isEmpty()) && (tagOrder == null || tagOrder.isEmpty())) {
-      for (String name : values.getTagNames()) {
-        appendTag(sb, name, values.getTag(name));
-      }
+      values.forEachTag((name, value) -> appendTag(sb, name, value));
       sb.append(' ');
       return;
     }
 
     Set<String> remaining = new TreeSet<>();
-    for (String pointTag : values.getTagNames()) {
+    values.forEachTagName(pointTag -> {
       if (!pointTag.isEmpty()) {
         remaining.add(pointTag);
       }
-    }
+    });
     if (defaultTags != null) {
       for (String defaultTag : defaultTags.keySet()) {
         if (defaultTag != null && !defaultTag.isEmpty()) {
