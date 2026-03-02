@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -227,6 +228,7 @@ public final class WriteOptions {
      *                      The headers specified here are preferred over the headers
      *                      specified in the client configuration.
      * @param tagOrder      Preferred order of tags in line protocol serialization.
+     *                      Null or empty tag names are ignored.
      */
     public WriteOptions(@Nullable final String database,
                         @Nullable final WritePrecision precision,
@@ -240,7 +242,7 @@ public final class WriteOptions {
         this.gzipThreshold = gzipThreshold;
         this.noSync = noSync;
         this.defaultTags = defaultTags == null ? Map.of() : defaultTags;
-        this.tagOrder = tagOrder == null ? List.of() : List.copyOf(tagOrder);
+        this.tagOrder = sanitizeTagOrder(tagOrder);
         this.headers = headers == null ? Map.of() : headers;
     }
 
@@ -344,6 +346,17 @@ public final class WriteOptions {
         return option == null || option.isEmpty();
     }
 
+    @Nonnull
+    private static List<String> sanitizeTagOrder(@Nullable final List<String> tagOrder) {
+        if (tagOrder == null || tagOrder.isEmpty()) {
+            return List.of();
+        }
+        return tagOrder.stream()
+                .filter(Objects::nonNull)
+                .filter(tag -> !tag.isEmpty())
+                .collect(Collectors.toUnmodifiableList());
+    }
+
     /**
      * A builder for {@code WriteOptions}.
      * <p>
@@ -425,12 +438,12 @@ public final class WriteOptions {
         /**
          * Sets preferred tag order for line protocol serialization.
          *
-         * @param tagOrder tag order preference
+         * @param tagOrder tag order preference. Null or empty tag names are ignored.
          * @return this
          */
         @Nonnull
         public Builder tagOrder(@Nonnull final List<String> tagOrder) {
-            this.tagOrder = List.copyOf(tagOrder);
+            this.tagOrder = sanitizeTagOrder(tagOrder);
             return this;
         }
 

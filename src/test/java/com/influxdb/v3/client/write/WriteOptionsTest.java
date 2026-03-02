@@ -22,6 +22,7 @@
 package com.influxdb.v3.client.write;
 
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +63,6 @@ class WriteOptionsTest {
 
         Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
 
-        // Exercise each field used by WriteOptions.equals() with a mismatch.
         WriteOptions gzipMismatch = new WriteOptions.Builder()
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(1024).noSync(true).build();
         WriteOptions noSyncMismatch = new WriteOptions.Builder()
@@ -121,6 +121,16 @@ class WriteOptionsTest {
         WriteOptions options = new WriteOptions.Builder().tagOrder(tagOrder).build();
 
         Assertions.assertThat(options.tagOrderSafe()).containsExactly("region", "host");
+
+        WriteOptions optionsWithIgnoredEntries = new WriteOptions.Builder()
+                .tagOrder(Arrays.asList("region", null, "", "host"))
+                .build();
+        Assertions.assertThat(optionsWithIgnoredEntries.tagOrderSafe()).containsExactly("region", "host");
+
+        WriteOptions ctorOptionsWithIgnoredEntries = new WriteOptions(
+                "my-database", WritePrecision.NS, 512, false, Map.of(), Map.of(),
+                Arrays.asList("region", null, "", "host"));
+        Assertions.assertThat(ctorOptionsWithIgnoredEntries.tagOrderSafe()).containsExactly("region", "host");
     }
 
     @Test

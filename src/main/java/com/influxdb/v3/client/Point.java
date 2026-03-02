@@ -587,6 +587,14 @@ public final class Point {
   private void appendTags(@Nonnull final StringBuilder sb,
                           @Nullable final Map<String, String> defaultTags,
                           @Nullable final List<String> tagOrder) {
+    if ((defaultTags == null || defaultTags.isEmpty()) && (tagOrder == null || tagOrder.isEmpty())) {
+      for (String name : values.getTagNames()) {
+        appendTag(sb, name, values.getTag(name));
+      }
+      sb.append(' ');
+      return;
+    }
+
     Set<String> remaining = new TreeSet<>();
     for (String pointTag : values.getTagNames()) {
       if (!pointTag.isEmpty()) {
@@ -620,15 +628,19 @@ public final class Point {
       if (defaultTags != null && defaultTags.containsKey(name)) {
         value = defaultTags.get(name);
       }
-      if (value == null || value.isEmpty()) {
-        continue;
-      }
-      sb.append(',');
-      escapeKey(sb, name);
-      sb.append('=');
-      escapeKey(sb, value);
+      appendTag(sb, name, value);
     }
     sb.append(' ');
+  }
+
+  private void appendTag(@Nonnull final StringBuilder sb, @Nullable final String name, @Nullable final String value) {
+    if (name == null || name.isEmpty() || value == null || value.isEmpty()) {
+      return;
+    }
+    sb.append(',');
+    escapeKey(sb, name);
+    sb.append('=');
+    escapeKey(sb, value);
   }
 
   private boolean appendFields(@Nonnull final StringBuilder sb) {
