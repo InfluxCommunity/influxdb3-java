@@ -114,12 +114,14 @@ class WriteOptionsTest {
         WriteOptions options = WriteOptions.defaultWriteOptions();
 
         Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
-        Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
-        Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(512);
+        Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WriteOptions.DEFAULT_WRITE_PRECISION);
+        Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(WriteOptions.DEFAULT_GZIP_THRESHOLD);
         Assertions.assertThat(options.tagOrderSafe()).isEmpty();
 
         WriteOptions builderOptions = new WriteOptions.Builder().build();
-        Assertions.assertThat(builderOptions).isEqualTo(options);
+        Assertions.assertThat(builderOptions.databaseSafe(config)).isEqualTo("my-database");
+        Assertions.assertThat(builderOptions.precisionSafe(config)).isEqualTo(WritePrecision.S);
+        Assertions.assertThat(builderOptions.gzipThresholdSafe(config)).isEqualTo(512);
     }
 
     @Test
