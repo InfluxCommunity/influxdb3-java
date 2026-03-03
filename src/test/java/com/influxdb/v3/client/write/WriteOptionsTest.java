@@ -22,7 +22,9 @@
 package com.influxdb.v3.client.write;
 
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.assertj.core.api.Assertions;
@@ -60,6 +62,26 @@ class WriteOptionsTest {
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true).build();
 
         Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
+
+        WriteOptions gzipMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(1024).noSync(true).build();
+        WriteOptions noSyncMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(false).build();
+        WriteOptions defaultTagsMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
+                .defaultTags(Map.of("region", "west")).build();
+        WriteOptions tagOrderMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
+                .tagOrder(List.of("host", "region")).build();
+        WriteOptions headersMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
+                .headers(Map.of("X-Trace-Id", "123")).build();
+
+        Assertions.assertThat(options).isNotEqualTo(gzipMismatch);
+        Assertions.assertThat(options).isNotEqualTo(noSyncMismatch);
+        Assertions.assertThat(options).isNotEqualTo(defaultTagsMismatch);
+        Assertions.assertThat(options).isNotEqualTo(tagOrderMismatch);
+        Assertions.assertThat(options).isNotEqualTo(headersMismatch);
     }
 
     @Test
@@ -93,6 +115,25 @@ class WriteOptionsTest {
     }
 
     @Test
+    void optionsWithTagOrder() {
+        List<String> tagOrder = List.of("region", "host");
+
+        WriteOptions options = new WriteOptions.Builder().tagOrder(tagOrder).build();
+
+        Assertions.assertThat(options.tagOrderSafe()).containsExactly("region", "host");
+
+        WriteOptions optionsWithIgnoredEntries = new WriteOptions.Builder()
+                .tagOrder(Arrays.asList("region", null, "", "host"))
+                .build();
+        Assertions.assertThat(optionsWithIgnoredEntries.tagOrderSafe()).containsExactly("region", "host");
+
+        WriteOptions ctorOptionsWithIgnoredEntries = new WriteOptions(
+                "my-database", WritePrecision.NS, 512, false, Map.of(), Map.of(),
+                Arrays.asList("region", null, "", "host"));
+        Assertions.assertThat(ctorOptionsWithIgnoredEntries.tagOrderSafe()).containsExactly("region", "host");
+    }
+
+    @Test
     void optionsEmpty() {
         ClientConfig config = configBuilder
                 .database("my-database")
@@ -101,11 +142,17 @@ class WriteOptionsTest {
                 .gzipThreshold(512)
                 .build();
 
-        WriteOptions options = new WriteOptions.Builder().build();
+        WriteOptions options = WriteOptions.defaultWriteOptions();
 
         Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
-        Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WritePrecision.S);
-        Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(512);
+        Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WriteOptions.DEFAULT_WRITE_PRECISION);
+        Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(WriteOptions.DEFAULT_GZIP_THRESHOLD);
+        Assertions.assertThat(options.tagOrderSafe()).isEmpty();
+
+        WriteOptions builderOptions = new WriteOptions.Builder().build();
+        Assertions.assertThat(builderOptions.databaseSafe(config)).isEqualTo("my-database");
+        Assertions.assertThat(builderOptions.precisionSafe(config)).isEqualTo(WritePrecision.S);
+        Assertions.assertThat(builderOptions.gzipThresholdSafe(config)).isEqualTo(512);
     }
 
     @Test
@@ -256,5 +303,7 @@ class WriteOptionsTest {
           .isNotEqualTo(builder.database("my-database").build().hashCode());
         Assertions.assertThat(baseOptions.hashCode())
           .isNotEqualTo(builder.defaultTags(defaultTags).build().hashCode());
+        Assertions.assertThat(baseOptions.hashCode())
+          .isNotEqualTo(builder.tagOrder(List.of("region", "host")).build().hashCode());
     }
 }

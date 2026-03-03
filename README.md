@@ -69,11 +69,13 @@ To start with the client, import the `com.influxdb.v3.client` package and create
 package com.influxdb.v3;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.Point;
+import com.influxdb.v3.client.write.WriteOptions;
 
 public class IOxExample {
     public static void main(String[] args) throws Exception {
@@ -99,6 +101,17 @@ Point point = Point.measurement("temperature")
         .setField("value", 55.15)
         .setTimestamp(Instant.now().minusSeconds(-10));
 client.writePoint(point);
+
+WriteOptions orderedTagWrite = new WriteOptions.Builder()
+        .tagOrder(List.of("region", "host"))
+        .build();
+client.writePoint(
+        Point.measurement("temperature")
+                .setTag("host", "server-1")
+                .setTag("region", "eu-west")
+                .setField("value", 60.25),
+        orderedTagWrite
+);
 
 //
 // Write by LineProtocol

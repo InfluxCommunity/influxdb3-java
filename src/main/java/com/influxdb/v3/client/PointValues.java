@@ -25,6 +25,8 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -224,6 +226,16 @@ public final class PointValues {
   @Nonnull
     public String[] getTagNames() {
     return tags.keySet().toArray(new String[0]);
+  }
+
+  void forEachTag(@Nonnull final BiConsumer<String, String> consumer) {
+    Arguments.checkNotNull(consumer, "consumer");
+    tags.forEach(consumer);
+  }
+
+  void forEachTagName(@Nonnull final Consumer<String> consumer) {
+    Arguments.checkNotNull(consumer, "consumer");
+    tags.keySet().forEach(consumer);
   }
 
   /**

@@ -512,6 +512,25 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         // assertThat(request.getBody().readUtf8()).isEqualTo("mem,model=M5,tag=one,unit=U2 value=1.0");
         assertThat(request.getBody().utf8()).isEqualTo("mem,model=M5,tag=one,unit=U2 value=1.0");
 
+        mockServer.enqueue(createResponse(200));
+
+        Point orderedPoint = Point.measurement("mem")
+                .setTag("host", "h1")
+                .setTag("unit", "point-unit")
+                .setField("value", 1.0);
+
+        WriteOptions optionsWithTagOrder = new WriteOptions.Builder()
+                .defaultTags(defaultTags)
+                .tagOrder(List.of("unit", "host"))
+                .build();
+
+        client.writePoint(orderedPoint, optionsWithTagOrder);
+
+        assertThat(mockServer.getRequestCount()).isEqualTo(2);
+        RecordedRequest orderedRequest = mockServer.takeRequest();
+        assertThat(orderedRequest).isNotNull();
+        assertThat(orderedRequest.getBody().utf8()).isEqualTo("mem,unit=U2,host=h1,model=M5 value=1.0");
+
     }
 
     @Test

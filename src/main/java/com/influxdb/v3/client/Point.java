@@ -25,8 +25,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -530,7 +534,7 @@ public final class Point {
    */
   @Nonnull
   public String toLineProtocol() {
-    return toLineProtocol(null);
+    return toLineProtocol(null, null, null);
   }
 
   /**
@@ -541,11 +545,26 @@ public final class Point {
    */
   @Nonnull
   public String toLineProtocol(@Nullable final WritePrecision precision) {
+    return toLineProtocol(precision, null, null);
+  }
+
+  /**
+   * Transform to Line Protocol.
+   *
+   * @param precision required precision
+   * @param defaultTags default tags to include in point serialization
+   * @param tagOrder preferred order of tags in point serialization
+   * @return Line Protocol
+   */
+  @Nonnull
+  public String toLineProtocol(@Nullable final WritePrecision precision,
+                               @Nullable final Map<String, String> defaultTags,
+                               @Nullable final List<String> tagOrder) {
 
     StringBuilder sb = new StringBuilder();
 
     escapeKey(sb, getMeasurement(), false);
-    appendTags(sb);
+    appendTags(sb, defaultTags, tagOrder);
     boolean appendedFields = appendFields(sb);
     if (!appendedFields) {
       return "";
@@ -564,22 +583,60 @@ public final class Point {
     return this;
   }
 
-  private void appendTags(@Nonnull final StringBuilder sb) {
+  private void appendTags(@Nonnull final StringBuilder sb,
+                          @Nullable final Map<String, String> defaultTags,
+                          @Nullable final List<String> tagOrder) {
+    if ((defaultTags == null || defaultTags.isEmpty()) && (tagOrder == null || tagOrder.isEmpty())) {
+      values.forEachTag((name, value) -> appendTag(sb, name, value));
+      sb.append(' ');
+      return;
+    }
 
-    for (String name : values.getTagNames()) {
-
-      String value = values.getTag(name);
-
-      if (name.isEmpty() || value == null || value.isEmpty()) {
-        continue;
+    Set<String> remaining = new TreeSet<>();
+    values.forEachTagName(pointTag -> {
+      if (!pointTag.isEmpty()) {
+        remaining.add(pointTag);
       }
+    });
+    if (defaultTags != null) {
+      for (String defaultTag : defaultTags.keySet()) {
+        if (defaultTag != null && !defaultTag.isEmpty()) {
+          remaining.add(defaultTag);
+        }
+      }
+    }
 
-      sb.append(',');
-      escapeKey(sb, name);
-      sb.append('=');
-      escapeKey(sb, value);
+    List<String> orderedTagNames = new ArrayList<>();
+    if (tagOrder != null && !tagOrder.isEmpty()) {
+      for (String preferredTag : tagOrder) {
+        if (preferredTag == null || preferredTag.isEmpty()) {
+          continue;
+        }
+        if (remaining.remove(preferredTag)) {
+          orderedTagNames.add(preferredTag);
+        }
+      }
+    }
+    orderedTagNames.addAll(remaining);
+
+    for (String name : orderedTagNames) {
+      String value = values.getTag(name);
+      if (defaultTags != null && defaultTags.containsKey(name)) {
+        value = defaultTags.get(name);
+      }
+      appendTag(sb, name, value);
     }
     sb.append(' ');
+  }
+
+  private void appendTag(@Nonnull final StringBuilder sb, @Nullable final String name, @Nullable final String value) {
+    if (name == null || name.isEmpty() || value == null || value.isEmpty()) {
+      return;
+    }
+    sb.append(',');
+    escapeKey(sb, name);
+    sb.append('=');
+    escapeKey(sb, value);
   }
 
   private boolean appendFields(@Nonnull final StringBuilder sb) {

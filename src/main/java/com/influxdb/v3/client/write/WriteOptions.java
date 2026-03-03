@@ -22,8 +22,10 @@
 package com.influxdb.v3.client.write;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
@@ -40,6 +42,7 @@ import com.influxdb.v3.client.internal.Arguments;
  *     <li><code>organization</code> - specifies the organization to be used for InfluxDB operations</li>
  *     <li><code>precision</code> - specifies the precision to use for the timestamp of points</li>
  *     <li><code>defaultTags</code> - specifies tags to be added by default to all write operations using points.</li>
+ *     <li><code>tagOrder</code> - specifies preferred tag order for point serialization.</li>
  *     <li><code>headers</code> - specifies the headers to be added to write request</li>
  * </ul>
  * <p>
@@ -78,13 +81,14 @@ public final class WriteOptions {
 
     @Deprecated(forRemoval = true)
     public static final WriteOptions DEFAULTS = new WriteOptions(
-            null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null);
+            null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null, null);
 
     private final String database;
     private final WritePrecision precision;
     private final Integer gzipThreshold;
     private final Boolean noSync;
     private final Map<String, String> defaultTags;
+    private final List<String> tagOrder;
     private final Map<String, String> headers;
 
     /**
@@ -94,7 +98,8 @@ public final class WriteOptions {
      *         compression threshold, and no specified database.
      */
     public static WriteOptions defaultWriteOptions() {
-        return new WriteOptions(null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null);
+        return new WriteOptions(null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC,
+                null, null, null);
     }
 
     /**
@@ -204,11 +209,40 @@ public final class WriteOptions {
                         @Nullable final Boolean noSync,
                         @Nullable final Map<String, String> defaultTags,
                         @Nullable final Map<String, String> headers) {
+        this(database, precision, gzipThreshold, noSync, defaultTags, headers, null);
+    }
+
+    /**
+     * Construct WriteAPI options.
+     *
+     * @param database      The database to be used for InfluxDB operations.
+     *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param precision     The precision to use for the timestamp of points.
+     *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     * @param gzipThreshold The threshold for compressing request body.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
+     * @param noSync        Skip waiting for WAL persistence on write.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_NO_SYNC}.
+     * @param defaultTags   Default tags to be added when writing points.
+     * @param headers       The headers to be added to write request.
+     *                      The headers specified here are preferred over the headers
+     *                      specified in the client configuration.
+     * @param tagOrder      Preferred order of tags in line protocol serialization.
+     *                      Null or empty tag names are ignored.
+     */
+    public WriteOptions(@Nullable final String database,
+                        @Nullable final WritePrecision precision,
+                        @Nullable final Integer gzipThreshold,
+                        @Nullable final Boolean noSync,
+                        @Nullable final Map<String, String> defaultTags,
+                        @Nullable final Map<String, String> headers,
+                        @Nullable final List<String> tagOrder) {
         this.database = database;
         this.precision = precision;
         this.gzipThreshold = gzipThreshold;
         this.noSync = noSync;
         this.defaultTags = defaultTags == null ? Map.of() : defaultTags;
+        this.tagOrder = sanitizeTagOrder(tagOrder);
         this.headers = headers == null ? Map.of() : headers;
     }
 
@@ -277,6 +311,14 @@ public final class WriteOptions {
         return headers;
     }
 
+    /**
+     * @return preferred order of tags in line protocol serialization.
+     */
+    @Nonnull
+    public List<String> tagOrderSafe() {
+        return tagOrder;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -291,16 +333,29 @@ public final class WriteOptions {
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
                 && Objects.equals(noSync, that.noSync)
                 && defaultTags.equals(that.defaultTags)
+                && tagOrder.equals(that.tagOrder)
                 && headers.equals(that.headers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(database, precision, gzipThreshold, noSync, defaultTags, headers);
+        return Objects.hash(database, precision, gzipThreshold, noSync, defaultTags, tagOrder, headers);
     }
 
     private boolean isNotDefined(final String option) {
         return option == null || option.isEmpty();
+    }
+
+    @Nonnull
+    private static List<String> sanitizeTagOrder(@Nullable final List<String> tagOrder) {
+        if (tagOrder == null || tagOrder.isEmpty()) {
+            return List.of();
+        }
+        return tagOrder.stream()
+                .filter(Objects::nonNull)
+                .filter(tag -> !tag.isEmpty())
+                .distinct()
+                .collect(Collectors.toUnmodifiableList());
     }
 
     /**
@@ -314,6 +369,7 @@ public final class WriteOptions {
         private Integer gzipThreshold;
         private Boolean noSync;
         private Map<String, String> defaultTags = new HashMap<>();
+        private List<String> tagOrder = List.of();
         private Map<String, String> headers = new HashMap<>();
 
         /**
@@ -381,6 +437,18 @@ public final class WriteOptions {
         }
 
         /**
+         * Sets preferred tag order for line protocol serialization.
+         *
+         * @param tagOrder tag order preference. Null or empty tag names are ignored.
+         * @return this
+         */
+        @Nonnull
+        public Builder tagOrder(@Nonnull final List<String> tagOrder) {
+            this.tagOrder = sanitizeTagOrder(tagOrder);
+            return this;
+        }
+
+        /**
          * Sets the headers.
          *
          * @param headers headers
@@ -406,6 +474,6 @@ public final class WriteOptions {
 
     private WriteOptions(@Nonnull final Builder builder) {
         this(builder.database, builder.precision, builder.gzipThreshold, builder.noSync, builder.defaultTags,
-                builder.headers);
+                builder.headers, builder.tagOrder);
     }
 }

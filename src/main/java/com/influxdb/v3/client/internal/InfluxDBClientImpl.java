@@ -32,7 +32,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
@@ -330,21 +329,29 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         }
 
         Map<String, String> defaultTags = options.defaultTagsSafe(config);
+        List<String> tagOrder = options.tagOrderSafe();
 
-        String lineProtocol = data.stream().map(item -> {
-                    if (item == null) {
-                        return null;
-                    } else if (item instanceof Point) {
-                        for (String key : defaultTags.keySet()) {
-                            ((Point) item).setTag(key, defaultTags.get(key));
-                        }
-                        return ((Point) item).toLineProtocol();
-                    } else {
-                        return item.toString();
-                    }
-                })
-                .filter(it -> it != null && !it.isEmpty())
-                .collect(Collectors.joining("\n"));
+        StringBuilder lineProtocolBuilder = new StringBuilder();
+        for (T item : data) {
+            String line;
+            if (item == null) {
+                line = null;
+            } else if (item instanceof Point) {
+                line = ((Point) item).toLineProtocol(null, defaultTags, tagOrder);
+            } else {
+                line = item.toString();
+            }
+
+            if (line == null || line.isEmpty()) {
+                continue;
+            }
+
+            if (lineProtocolBuilder.length() > 0) {
+                lineProtocolBuilder.append('\n');
+            }
+            lineProtocolBuilder.append(line);
+        }
+        String lineProtocol = lineProtocolBuilder.toString();
 
         if (lineProtocol.isEmpty()) {
             LOG.warning("No data to write, please check your input data.");
@@ -353,9 +360,9 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
 
         Map<String, String> headers = new HashMap<>(Map.of("Content-Type", "text/plain; charset=utf-8"));
         byte[] body = lineProtocol.getBytes(StandardCharsets.UTF_8);
-        if (lineProtocol.length() >= options.gzipThresholdSafe(config)) {
+        if (body.length >= options.gzipThresholdSafe(config)) {
             try {
-                body = gzipData(lineProtocol.getBytes(StandardCharsets.UTF_8));
+                body = gzipData(body);
                 headers.put("Content-Encoding", "gzip");
             } catch (IOException e) {
                 throw new InfluxDBApiException(e);
