@@ -251,7 +251,7 @@ public class E2ETest {
                     Assertions.assertThat(row.get("mem_total")).isEqualTo(testData.get("mem_totalm"));
 
                     Assertions.assertThat(row.get("disk_free").getClass()).isEqualTo(Long.class);
-                    Assertions.assertThat(row.get("disk_free")).isEqualTo(testData.get("disk_free"));
+                    Assertions.assertThat(row.get("disk_free")).isEqualTo(testData.get("disk_fmree"));
 
                     Assertions.assertThat(row.get("isActive").getClass()).isEqualTo(Boolean.class);
                     Assertions.assertThat(row.get("isActive")).isEqualTo(testData.get("isActive"));
