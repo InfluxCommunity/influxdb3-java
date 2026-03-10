@@ -348,10 +348,7 @@ public final class WriteOptions {
      */
     public boolean acceptPartialSafe(@Nonnull final ClientConfig config) {
         Arguments.checkNotNull(config, "config");
-        return acceptPartial != null ? acceptPartial
-                : (config.getWriteAcceptPartial() != null
-                ? config.getWriteAcceptPartial()
-                : DEFAULT_ACCEPT_PARTIAL);
+        return acceptPartial != null ? acceptPartial : config.getWriteAcceptPartial();
     }
 
     /**

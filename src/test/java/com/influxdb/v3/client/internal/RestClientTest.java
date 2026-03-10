@@ -669,6 +669,33 @@ public class RestClientTest extends AbstractMockServerTest {
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
             + "\tline 2: bad line (bad lp)\n"
             + "\tsecond issue"
+        ),
+        Arguments.of(
+          "textual numeric line_number",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"bad line\",\"line_number\":\"2\",\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "textual non-numeric line_number",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"bad line\",\"line_number\":\"x\",\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline x: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "empty textual line_number with empty original_line",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"only error message\",\"line_number\":\"\",\"original_line\":\"\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
+        ),
+        Arguments.of(
+          "non-textual line_number",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"bad line\",\"line_number\":true,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline true: bad line (bad lp)"
         )
       );
     }
