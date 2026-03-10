@@ -338,8 +338,7 @@ public final class WriteOptions {
      */
     public boolean noSyncSafe(@Nonnull final ClientConfig config) {
         Arguments.checkNotNull(config, "config");
-        return noSync != null ? noSync
-                : (config.getWriteNoSync() != null ? config.getWriteNoSync() : DEFAULT_NO_SYNC);
+        return noSync != null ? noSync : config.getWriteNoSync();
     }
 
     /**
