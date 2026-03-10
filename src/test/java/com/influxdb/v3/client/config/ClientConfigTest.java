@@ -56,6 +56,21 @@ class ClientConfigTest {
         Assertions.assertThat(config).isEqualTo(config);
         Assertions.assertThat(config).isEqualTo(configBuilder.build());
         Assertions.assertThat(config).isNotEqualTo(configBuilder);
+        Assertions.assertThat(config).isNotEqualTo(new ClientConfig.Builder()
+                .host("http://localhost:9999")
+                .token("my-token".toCharArray())
+                .organization("my-org")
+                .database("my-db")
+                .writePrecision(WritePrecision.NS)
+                .writeAcceptPartial(true)
+                .timeout(Duration.ofSeconds(30))
+                .writeTimeout(Duration.ofSeconds(35))
+                .queryTimeout(Duration.ofSeconds(120))
+                .allowHttpRedirects(true)
+                .disableServerCertificateValidation(true)
+                .headers(Map.of("X-device", "ab-01"))
+                .disableGRPCCompression(true)
+                .build());
         Assertions.assertThat(config).isNotEqualTo(configBuilder.database("database").build());
     }
 
