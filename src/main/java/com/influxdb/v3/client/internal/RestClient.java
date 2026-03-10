@@ -401,8 +401,8 @@ final class RestClient implements AutoCloseable {
     }
 
     @Nullable
-    private InfluxDBPartialWriteException.LineError errParseDataArrayLineError(@Nullable final JsonNode item) {
-        if (item == null || !item.isObject()) {
+    private InfluxDBPartialWriteException.LineError errParseDataArrayLineError(@Nonnull final JsonNode item) {
+        if (!item.isObject()) {
             return null;
         }
 
