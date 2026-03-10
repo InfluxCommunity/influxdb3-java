@@ -46,6 +46,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -243,7 +244,8 @@ final class RestClient implements AutoCloseable {
             }
 
             String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
-            List<InfluxDBPartialWriteException.LineError> lineErrors = parsePartialWriteLineErrors(body, contentType);
+            List<InfluxDBPartialWriteException.LineError> lineErrors =
+                    parsePartialWriteLineErrors(path, body, contentType);
             if (!lineErrors.isEmpty()) {
                 throw new InfluxDBPartialWriteException(message, response.headers(), response.statusCode(), lineErrors);
             }
@@ -284,11 +286,7 @@ final class RestClient implements AutoCloseable {
             if (error != null && dataNode != null && dataNode.isArray()) {
                 final StringBuilder message = new StringBuilder(error);
                 boolean hasDetails = false;
-                for (JsonNode item : dataNode) {
-                    final String detail = errFormatDataArrayDetail(item);
-                    if (detail == null) {
-                        continue;
-                    }
+                for (String detail : errFormatDataArrayDetails(dataNode)) {
                     if (!hasDetails) {
                         message.append(':');
                         hasDetails = true;
@@ -314,8 +312,12 @@ final class RestClient implements AutoCloseable {
 
     @Nonnull
     private List<InfluxDBPartialWriteException.LineError> parsePartialWriteLineErrors(
+            @Nonnull final String path,
             @Nonnull final String body,
             @Nullable final String contentType) {
+        if (!isWriteEndpoint(path)) {
+            return List.of();
+        }
 
         if (body.isEmpty()) {
             return List.of();
@@ -340,9 +342,14 @@ final class RestClient implements AutoCloseable {
             }
 
             if (dataNode.isArray()) {
+                final ErrDataArrayItem[] parsed = errReadDataArray(dataNode);
+                if (parsed == null) {
+                    return List.of();
+                }
+
                 final List<InfluxDBPartialWriteException.LineError> lineErrors = new ArrayList<>();
-                for (JsonNode item : dataNode) {
-                    InfluxDBPartialWriteException.LineError lineError = errParseDataArrayLineError(item);
+                for (ErrDataArrayItem item : parsed) {
+                    final InfluxDBPartialWriteException.LineError lineError = errToLineError(item);
                     if (lineError != null) {
                         lineErrors.add(lineError);
                     }
@@ -351,8 +358,13 @@ final class RestClient implements AutoCloseable {
             }
 
             if (dataNode.isObject()) {
-                InfluxDBPartialWriteException.LineError lineError = errParseDataArrayLineError(dataNode);
-                return lineError == null ? List.of() : List.of(lineError);
+                try {
+                    final ErrDataArrayItem item = objectMapper.treeToValue(dataNode, ErrDataArrayItem.class);
+                    final InfluxDBPartialWriteException.LineError lineError = errToLineError(item);
+                    return lineError == null ? List.of() : List.of(lineError);
+                } catch (JsonProcessingException e) {
+                    return List.of();
+                }
             }
 
             return List.of();
@@ -362,12 +374,25 @@ final class RestClient implements AutoCloseable {
         }
     }
 
+    private boolean isWriteEndpoint(@Nonnull final String path) {
+        return "api/v2/write".equals(path) || "api/v3/write_lp".equals(path);
+    }
+
     @Nullable
     private String errNonEmptyText(@Nullable final JsonNode node) {
         if (node == null || node.isNull()) {
             return null;
         }
-        final String value = node.asText();
+
+        final String value;
+        if (node.isTextual()) {
+            value = node.asText();
+        } else if (node.isNumber() || node.isBoolean()) {
+            value = node.asText();
+        } else {
+            value = node.toString();
+        }
+
         return value.isEmpty() ? null : value;
     }
 
@@ -380,65 +405,66 @@ final class RestClient implements AutoCloseable {
     }
 
     @Nullable
-    private String errFormatDataArrayDetail(@Nullable final JsonNode item) {
-        if (!item.isObject()) {
-            return null;
+    private List<String> errFormatDataArrayDetails(@Nonnull final JsonNode dataNode) {
+        final ErrDataArrayItem[] parsed = errReadDataArray(dataNode);
+        if (parsed != null) {
+            final List<String> details = new ArrayList<>();
+            for (ErrDataArrayItem item : parsed) {
+                final InfluxDBPartialWriteException.LineError lineError = errToLineError(item);
+                if (lineError == null) {
+                    continue;
+                }
+
+                if (lineError.lineNumber() != null
+                        && lineError.originalLine() != null
+                        && !lineError.originalLine().isEmpty()) {
+                    details.add("line " + lineError.lineNumber() + ": "
+                            + lineError.errorMessage() + " (" + lineError.originalLine() + ")");
+                } else {
+                    details.add(lineError.errorMessage());
+                }
+            }
+            return details;
         }
 
-        final String errorMessage = errNonEmptyField(item, "error_message");
-        if (errorMessage == null) {
-            return null;
-        }
-
-        if (item.hasNonNull("line_number")) {
-            final String originalLine = errNonEmptyField(item, "original_line");
-            if (originalLine != null) {
-                final String lineNumber = item.get("line_number").asText();
-                return "line " + lineNumber + ": " + errorMessage + " (" + originalLine + ")";
+        final List<String> details = new ArrayList<>();
+        for (JsonNode item : dataNode) {
+            final String raw = errNonEmptyText(item);
+            if (raw != null) {
+                details.add(raw);
             }
         }
-        return errorMessage;
+        return details;
     }
 
     @Nullable
-    private InfluxDBPartialWriteException.LineError errParseDataArrayLineError(@Nonnull final JsonNode item) {
-        if (!item.isObject()) {
+    private ErrDataArrayItem[] errReadDataArray(@Nonnull final JsonNode dataNode) {
+        try {
+            return objectMapper.treeToValue(dataNode, ErrDataArrayItem[].class);
+        } catch (JsonProcessingException e) {
             return null;
         }
-
-        final String errorMessage = errNonEmptyField(item, "error_message");
-        if (errorMessage == null) {
-            return null;
-        }
-
-        final Integer lineNumber = errParseLineNumber(item);
-        final String originalLine = errNonEmptyField(item, "original_line");
-
-        return new InfluxDBPartialWriteException.LineError(lineNumber, errorMessage, originalLine);
     }
 
     @Nullable
-    private Integer errParseLineNumber(@Nonnull final JsonNode item) {
-        if (!item.hasNonNull("line_number")) {
+    private InfluxDBPartialWriteException.LineError errToLineError(@Nullable final ErrDataArrayItem item) {
+        if (item == null || item.errorMessage == null || item.errorMessage.isEmpty()) {
             return null;
         }
 
-        final JsonNode lineNumber = item.get("line_number");
-        if (lineNumber.isIntegralNumber()) {
-            return lineNumber.intValue();
-        }
-        if (lineNumber.isTextual()) {
-            final String value = lineNumber.asText();
-            if (value.isEmpty()) {
-                return null;
-            }
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
+        final String originalLine = (item.originalLine == null || item.originalLine.isEmpty()) ? null : item.originalLine;
+        return new InfluxDBPartialWriteException.LineError(item.lineNumber, item.errorMessage, originalLine);
+    }
+
+    private static final class ErrDataArrayItem {
+        @JsonProperty("error_message")
+        private String errorMessage;
+
+        @JsonProperty("line_number")
+        private Integer lineNumber;
+
+        @JsonProperty("original_line")
+        private String originalLine;
     }
 
     private X509TrustManager getX509TrustManagerFromFile(@Nonnull final String filePath) {

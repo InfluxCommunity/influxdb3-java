@@ -547,7 +547,7 @@ public class RestClientTest extends AbstractMockServerTest {
               .host(baseURL)
               .build());
 
-      Throwable thrown = catchThrowable(() -> restClient.request("ping", HttpMethod.GET, null, null, null));
+      Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST, null, null, null));
       Assertions.assertThat(thrown)
               .isInstanceOf(InfluxDBPartialWriteException.class)
               .isInstanceOf(InfluxDBApiHttpException.class)
@@ -576,7 +576,7 @@ public class RestClientTest extends AbstractMockServerTest {
         .host(baseURL)
         .build());
 
-      Throwable thrown = catchThrowable(() -> restClient.request("ping", HttpMethod.GET, null, null, null));
+      Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST, null, null, null));
       Assertions.assertThat(thrown)
               .isInstanceOf(InfluxDBPartialWriteException.class)
               .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
@@ -591,6 +591,28 @@ public class RestClientTest extends AbstractMockServerTest {
               .isEqualTo("invalid column type for column 'v', expected iox::column_type::field::integer,"
                       + " got iox::column_type::field::float");
       Assertions.assertThat(lineError.originalLine()).isEqualTo("testa6a3ad v=1 17702");
+    }
+
+    @Test
+    public void errorFromBodyV3WithDataArrayAnyInvalidItemFallsBackToHttpException() {
+      mockServer.enqueue(createResponse(400,
+        "application/json",
+        null,
+        "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+          + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"},"
+          + "{\"error_message\":\"bad line 2\",\"line_number\":\"x\",\"original_line\":\"bad lp 2\"}]}"));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+        .host(baseURL)
+        .build());
+
+      Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST, null, null, null));
+      Assertions.assertThat(thrown)
+        .isInstanceOf(InfluxDBApiHttpException.class)
+        .isNotInstanceOf(InfluxDBPartialWriteException.class)
+        .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+          + "\t{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}\n"
+          + "\t{\"error_message\":\"bad line 2\",\"line_number\":\"x\",\"original_line\":\"bad lp 2\"}");
     }
 
     @ParameterizedTest(name = "{0}")
@@ -647,7 +669,8 @@ public class RestClientTest extends AbstractMockServerTest {
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[1,{\"error_message\":"
             + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline 2: bad line (bad lp)"
+            + "\t1\n"
+            + "\t{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}"
         ),
         Arguments.of(
           "null error_message skipped",
@@ -671,6 +694,13 @@ public class RestClientTest extends AbstractMockServerTest {
             + "\tsecond issue"
         ),
         Arguments.of(
+          "array of strings fallback",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[\"bad line 1\",\"bad line 2\"]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tbad line 1\n"
+            + "\tbad line 2"
+        ),
+        Arguments.of(
           "textual numeric line_number",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
             + "\"bad line\",\"line_number\":\"2\",\"original_line\":\"bad lp\"}]}",
@@ -682,7 +712,7 @@ public class RestClientTest extends AbstractMockServerTest {
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
             + "\"bad line\",\"line_number\":\"x\",\"original_line\":\"bad lp\"}]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline x: bad line (bad lp)"
+            + "\t{\"error_message\":\"bad line\",\"line_number\":\"x\",\"original_line\":\"bad lp\"}"
         ),
         Arguments.of(
           "empty textual line_number with empty original_line",
@@ -695,7 +725,14 @@ public class RestClientTest extends AbstractMockServerTest {
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
             + "\"bad line\",\"line_number\":true,\"original_line\":\"bad lp\"}]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline true: bad line (bad lp)"
+            + "\t{\"error_message\":\"bad line\",\"line_number\":true,\"original_line\":\"bad lp\"}"
+        ),
+        Arguments.of(
+          "object line_number preserved as text",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"bad line\",\"line_number\":{\"index\":2},\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\t{\"error_message\":\"bad line\",\"line_number\":{\"index\":2},\"original_line\":\"bad lp\"}"
         )
       );
     }
