@@ -740,12 +740,14 @@ public class RestClientTest extends AbstractMockServerTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("errorFromBodyV3FallbackCases")
     public void errorFromBodyV3FallbackCase(final String testName,
+                                            final String requestPath,
+                                            final String contentType,
                                             final String body,
                                             final Class<? extends InfluxDBApiException> expectedClass,
                                             final String expectedMessage) {
 
       mockServer.enqueue(createResponse(400,
-        "application/json",
+        contentType,
         null,
         body));
 
@@ -753,7 +755,7 @@ public class RestClientTest extends AbstractMockServerTest {
         .host(baseURL)
         .build());
 
-      Throwable thrown = catchThrowable(() -> restClient.request("ping", HttpMethod.GET, null, null, null));
+      Throwable thrown = catchThrowable(() -> restClient.request(requestPath, HttpMethod.GET, null, null, null));
       Assertions.assertThat(thrown)
               .isInstanceOf(expectedClass)
               .hasMessage(expectedMessage);
@@ -763,6 +765,8 @@ public class RestClientTest extends AbstractMockServerTest {
       return Stream.of(
         Arguments.of(
           "missing error with data array falls back to body",
+          "ping",
+          "application/json",
           "{\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
           InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: "
@@ -770,6 +774,8 @@ public class RestClientTest extends AbstractMockServerTest {
         ),
         Arguments.of(
           "empty error with data array falls back to body",
+          "ping",
+          "application/json",
           "{\"error\":\"\",\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":"
             + "\"bad lp\"}]}",
           InfluxDBApiHttpException.class,
@@ -779,39 +785,95 @@ public class RestClientTest extends AbstractMockServerTest {
         ),
         Arguments.of(
           "data object without error_message falls back to error",
+          "ping",
+          "application/json",
           "{\"error\":\"parsing failed\",\"data\":{}}",
           InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: parsing failed"
         ),
         Arguments.of(
           "data object with empty error_message falls back to error",
+          "ping",
+          "application/json",
           "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"\"}}",
           InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: parsing failed"
         ),
         Arguments.of(
           "data string falls back to error",
+          "ping",
+          "application/json",
           "{\"error\":\"parsing failed\",\"data\":\"not-an-object\"}",
           InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: parsing failed"
         ),
         Arguments.of(
           "data number falls back to error",
+          "ping",
+          "application/json",
           "{\"error\":\"parsing failed\",\"data\":123}",
           InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: parsing failed"
         ),
         Arguments.of(
           "partial-write with invalid data string falls back to error",
+          "ping",
+          "application/json",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":\"invalid\"}",
           InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: partial write of line protocol occurred"
         ),
         Arguments.of(
           "partial-write with empty data object falls back to error",
+          "ping",
+          "application/json",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":{}}",
           InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: partial write of line protocol occurred"
+        ),
+        Arguments.of(
+          "write endpoint ignores line-error parsing for non-json content type",
+          "api/v3/write_lp",
+          "text/plain",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":\"bad line\","
+            + "\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          InfluxDBApiHttpException.class,
+          "HTTP status code: 400; Message: "
+            + "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":\"bad line\","
+            + "\"line_number\":2,\"original_line\":\"bad lp\"}]}"
+        ),
+        Arguments.of(
+          "write endpoint with non-object root falls back to body",
+          "api/v3/write_lp",
+          "application/json",
+          "[]",
+          InfluxDBApiHttpException.class,
+          "HTTP status code: 400; Message: []"
+        ),
+        Arguments.of(
+          "write endpoint with invalid line-error object type falls back to http exception",
+          "api/v3/write_lp",
+          "application/json",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":{\"error_message\":\"bad line\","
+            + "\"line_number\":{\"x\":2},\"original_line\":\"bad lp\"}}",
+          InfluxDBApiHttpException.class,
+          "HTTP status code: 400; Message: bad line"
+        ),
+        Arguments.of(
+          "write endpoint with scalar data falls back to error",
+          "api/v3/write_lp",
+          "application/json",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":123}",
+          InfluxDBApiHttpException.class,
+          "HTTP status code: 400; Message: partial write of line protocol occurred"
+        ),
+        Arguments.of(
+          "write endpoint invalid json body falls back to raw body",
+          "api/v3/write_lp",
+          "application/json",
+          "{\"error\":\"partial write of line protocol occurred\"",
+          InfluxDBApiHttpException.class,
+          "HTTP status code: 400; Message: {\"error\":\"partial write of line protocol occurred\""
         )
       );
     }
