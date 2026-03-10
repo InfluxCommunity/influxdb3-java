@@ -57,9 +57,10 @@ class WriteOptionsTest {
 
     @Test
     void optionsEqualAll() {
-        WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512, true);
+        WriteOptions options = new WriteOptions("my-database", WritePrecision.S, 512, true, true, null, null, null);
         WriteOptions optionsViaBuilder = new WriteOptions.Builder()
-                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true).build();
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512)
+                .noSync(true).acceptPartial(true).build();
 
         Assertions.assertThat(options).isEqualTo(optionsViaBuilder);
 
@@ -67,6 +68,9 @@ class WriteOptionsTest {
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(1024).noSync(true).build();
         WriteOptions noSyncMismatch = new WriteOptions.Builder()
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(false).build();
+        WriteOptions acceptPartialMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
+                .acceptPartial(false).build();
         WriteOptions defaultTagsMismatch = new WriteOptions.Builder()
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
                 .defaultTags(Map.of("region", "west")).build();
@@ -79,6 +83,7 @@ class WriteOptionsTest {
 
         Assertions.assertThat(options).isNotEqualTo(gzipMismatch);
         Assertions.assertThat(options).isNotEqualTo(noSyncMismatch);
+        Assertions.assertThat(options).isNotEqualTo(acceptPartialMismatch);
         Assertions.assertThat(options).isNotEqualTo(defaultTagsMismatch);
         Assertions.assertThat(options).isNotEqualTo(tagOrderMismatch);
         Assertions.assertThat(options).isNotEqualTo(headersMismatch);
@@ -147,12 +152,14 @@ class WriteOptionsTest {
         Assertions.assertThat(options.databaseSafe(config)).isEqualTo("my-database");
         Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WriteOptions.DEFAULT_WRITE_PRECISION);
         Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(WriteOptions.DEFAULT_GZIP_THRESHOLD);
+        Assertions.assertThat(options.acceptPartialSafe(config)).isEqualTo(WriteOptions.DEFAULT_ACCEPT_PARTIAL);
         Assertions.assertThat(options.tagOrderSafe()).isEmpty();
 
         WriteOptions builderOptions = new WriteOptions.Builder().build();
         Assertions.assertThat(builderOptions.databaseSafe(config)).isEqualTo("my-database");
         Assertions.assertThat(builderOptions.precisionSafe(config)).isEqualTo(WritePrecision.S);
         Assertions.assertThat(builderOptions.gzipThresholdSafe(config)).isEqualTo(512);
+        Assertions.assertThat(builderOptions.acceptPartialSafe(config)).isEqualTo(WriteOptions.DEFAULT_ACCEPT_PARTIAL);
     }
 
     @Test
@@ -235,6 +242,19 @@ class WriteOptionsTest {
     }
 
     @Test
+    void optionsOverrideWriteAcceptPartial() {
+        ClientConfig config = configBuilder
+                .database("my-database")
+                .organization("my-org")
+                .writeAcceptPartial(true)
+                .build();
+
+        WriteOptions options = new WriteOptions.Builder().acceptPartial(false).build();
+
+        Assertions.assertThat(options.acceptPartialSafe(config)).isEqualTo(false);
+    }
+
+    @Test
     void optionsOverridesDefaultTags() {
         Map<String, String> defaultTagsBase = new HashMap<>() {{
             put("model", "train");
@@ -303,6 +323,8 @@ class WriteOptionsTest {
           .isNotEqualTo(builder.database("my-database").build().hashCode());
         Assertions.assertThat(baseOptions.hashCode())
           .isNotEqualTo(builder.defaultTags(defaultTags).build().hashCode());
+        Assertions.assertThat(baseOptions.hashCode())
+          .isNotEqualTo(builder.acceptPartial(true).build().hashCode());
         Assertions.assertThat(baseOptions.hashCode())
           .isNotEqualTo(builder.tagOrder(List.of("region", "host")).build().hashCode());
     }

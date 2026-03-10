@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.InfluxDBPartialWriteException;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.write.WriteOptions;
@@ -112,6 +113,23 @@ client.writePoint(
                 .setField("value", 60.25),
         orderedTagWrite
 );
+
+//
+// Write with partial acceptance
+//
+WriteOptions partialWrite = new WriteOptions.Builder()
+        .acceptPartial(true)
+        .build();
+try {
+    client.writeRecords(List.of(
+            "temperature,region=west value=20.0",
+            "temperature,region=west value=\"bad\""
+    ), partialWrite);
+} catch (InfluxDBPartialWriteException e) {
+    // Inspect failed line details.
+    e.lineErrors().forEach(line ->
+            System.out.printf("line=%s msg=%s lp=%s%n", line.lineNumber(), line.errorMessage(), line.originalLine()));
+}
 
 //
 // Write by LineProtocol

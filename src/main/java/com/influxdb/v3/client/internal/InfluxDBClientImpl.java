@@ -309,15 +309,22 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         String path;
         Map<String, String> queryParams;
         boolean noSync = options.noSyncSafe(config);
-        if (noSync) {
-            // Setting no_sync=true is supported only in the v3 API.
+        boolean acceptPartial = options.acceptPartialSafe(config);
+        boolean useV3Write = noSync || acceptPartial;
+        if (useV3Write) {
+            // no_sync=true and accept_partial=true are supported only in the v3 API.
             path = "api/v3/write_lp";
             queryParams = new HashMap<>() {{
                 put("org", config.getOrganization());
                 put("db", database);
                 put("precision", WritePrecisionConverter.toV3ApiString(precision));
-                put("no_sync", "true");
             }};
+            if (noSync) {
+                queryParams.put("no_sync", "true");
+            }
+            if (acceptPartial) {
+                queryParams.put("accept_partial", "true");
+            }
         } else {
             // By default, use the v2 API.
             path = "api/v2/write";
@@ -373,10 +380,12 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         try {
             restClient.request(path, HttpMethod.POST, body, queryParams, headers);
         } catch (InfluxDBApiHttpException e) {
-            if (noSync && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
-                // Server does not support the v3 write API, can't use the NoSync option.
+            if (useV3Write && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
+                // Server does not support the v3 write API, can't use v3-only write options.
                 throw new InfluxDBApiHttpException("Server doesn't support write with NoSync=true "
-                        + "(supported by InfluxDB 3 Core/Enterprise servers only).", e.headers(), e.statusCode());
+                        + "or AcceptPartial=true (supported by InfluxDB 3 Core/Enterprise servers only).",
+                        e.headers(),
+                        e.statusCode());
             }
             throw e;
         }

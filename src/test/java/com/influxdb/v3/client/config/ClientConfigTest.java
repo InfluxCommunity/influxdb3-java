@@ -79,6 +79,7 @@ class ClientConfigTest {
         Assertions.assertThat(configString.contains("database='my-db'")).isEqualTo(true);
         Assertions.assertThat(configString.contains("gzipThreshold=1000")).isEqualTo(true);
         Assertions.assertThat(configString).contains("writeNoSync=false");
+        Assertions.assertThat(configString).contains("writeAcceptPartial=false");
         Assertions.assertThat(configString).contains("timeout=PT30S");
         Assertions.assertThat(configString).contains("writeTimeout=PT35S");
         Assertions.assertThat(configString).contains("queryTimeout=PT2M");
@@ -90,7 +91,8 @@ class ClientConfigTest {
     void fromConnectionString() throws MalformedURLException {
         ClientConfig cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
-                        + "?token=my-token&org=my-org&database=my-db&gzipThreshold=128&writeNoSync=true");
+                        + "?token=my-token&org=my-org&database=my-db&gzipThreshold=128"
+                        + "&writeNoSync=true&writeAcceptPartial=true");
         Assertions.assertThat(cfg.getHost()).isEqualTo("http://localhost:9999/");
         Assertions.assertThat(cfg.getToken()).isEqualTo("my-token".toCharArray());
         Assertions.assertThat(cfg.getOrganization()).isEqualTo("my-org");
@@ -98,6 +100,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS); // default
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(128);
         Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(true);
+        Assertions.assertThat(cfg.getWriteAcceptPartial()).isEqualTo(true);
 
         cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
@@ -109,6 +112,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.US);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000); // default
         Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(WriteOptions.DEFAULT_NO_SYNC);
+        Assertions.assertThat(cfg.getWriteAcceptPartial()).isEqualTo(WriteOptions.DEFAULT_ACCEPT_PARTIAL);
 
         cfg = new ClientConfig.Builder()
                 .build("http://localhost:9999/"
@@ -208,6 +212,7 @@ class ClientConfigTest {
                 "INFLUX_PRECISION", "ms",
                 "INFLUX_GZIP_THRESHOLD", "64",
                 "INFLUX_WRITE_NO_SYNC", "true",
+                "INFLUX_WRITE_ACCEPT_PARTIAL", "true",
                 "INFLUX_DISABLE_GRPC_COMPRESSION", "true"
 
         );
@@ -220,6 +225,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(64);
         Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(true);
+        Assertions.assertThat(cfg.getWriteAcceptPartial()).isEqualTo(true);
         Assertions.assertThat(cfg.getDisableGRPCCompression()).isTrue();
     }
 
@@ -287,6 +293,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.NS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(1000);
         Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(WriteOptions.DEFAULT_NO_SYNC);
+        Assertions.assertThat(cfg.getWriteAcceptPartial()).isEqualTo(WriteOptions.DEFAULT_ACCEPT_PARTIAL);
 
         // basic
         properties = new Properties();
@@ -324,6 +331,7 @@ class ClientConfigTest {
         properties.put("influx.precision", "ms");
         properties.put("influx.gzipThreshold", "64");
         properties.put("influx.writeNoSync", "true");
+        properties.put("influx.writeAcceptPartial", "true");
         properties.put("influx.disableGRPCCompression", "true");
         cfg = new ClientConfig.Builder()
                 .build(new HashMap<>(), properties);
@@ -334,6 +342,7 @@ class ClientConfigTest {
         Assertions.assertThat(cfg.getWritePrecision()).isEqualTo(WritePrecision.MS);
         Assertions.assertThat(cfg.getGzipThreshold()).isEqualTo(64);
         Assertions.assertThat(cfg.getWriteNoSync()).isEqualTo(true);
+        Assertions.assertThat(cfg.getWriteAcceptPartial()).isEqualTo(true);
         Assertions.assertThat(cfg.getDisableGRPCCompression()).isTrue();
     }
 

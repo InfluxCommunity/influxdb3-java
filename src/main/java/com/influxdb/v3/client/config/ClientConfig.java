@@ -57,6 +57,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>defaultTags</code> - defaultTags added when writing points to InfluxDB</li>
  *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
  *     <li><code>writeNoSync</code> - skip waiting for WAL persistence on write</li>
+ *     <li><code>writeAcceptPartial</code> - accept partial writes</li>
  *     <li><code>timeout</code> - <i>deprecated in 1.4.0</i> timeout when connecting to InfluxDB,
  *     please use more informative properties <code>writeTimeout</code> and <code>queryTimeout</code></li>
  *     <li><code>writeTimeout</code> - timeout when writing data to InfluxDB</li>
@@ -107,6 +108,7 @@ public final class ClientConfig {
     private final WritePrecision writePrecision;
     private final Integer gzipThreshold;
     private final Boolean writeNoSync;
+    private final Boolean writeAcceptPartial;
     private final Map<String, String> defaultTags;
     @Deprecated
     private final Duration timeout;
@@ -206,6 +208,16 @@ public final class ClientConfig {
     @Nonnull
     public Boolean getWriteNoSync() {
         return writeNoSync;
+    }
+
+    /**
+     * Accept partial writes?
+     *
+     * @return accept partial writes
+     */
+    @Nonnull
+    public Boolean getWriteAcceptPartial() {
+        return writeAcceptPartial;
     }
 
     /**
@@ -370,6 +382,7 @@ public final class ClientConfig {
                 && writePrecision == that.writePrecision
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
                 && Objects.equals(writeNoSync, that.writeNoSync)
+                && Objects.equals(writeAcceptPartial, that.writeAcceptPartial)
                 && Objects.equals(defaultTags, that.defaultTags)
                 && Objects.equals(timeout, that.timeout)
                 && Objects.equals(writeTimeout, that.writeTimeout)
@@ -388,7 +401,7 @@ public final class ClientConfig {
     @Override
     public int hashCode() {
         return Objects.hash(host, Arrays.hashCode(token), authScheme, organization,
-                database, writePrecision, gzipThreshold, writeNoSync,
+                database, writePrecision, gzipThreshold, writeNoSync, writeAcceptPartial,
                 timeout, writeTimeout, queryTimeout, allowHttpRedirects, disableServerCertificateValidation,
                 proxy, proxyUrl, authenticator, headers,
                 defaultTags, sslRootsFilePath, disableGRPCCompression, interceptors);
@@ -403,6 +416,7 @@ public final class ClientConfig {
                 .add("writePrecision=" + writePrecision)
                 .add("gzipThreshold=" + gzipThreshold)
                 .add("writeNoSync=" + writeNoSync)
+                .add("writeAcceptPartial=" + writeAcceptPartial)
                 .add("timeout=" + timeout)
                 .add("writeTimeout=" + writeTimeout)
                 .add("queryTimeout=" + queryTimeout)
@@ -432,6 +446,7 @@ public final class ClientConfig {
         private WritePrecision writePrecision;
         private Integer gzipThreshold;
         private Boolean writeNoSync;
+        private Boolean writeAcceptPartial;
         private Map<String, String> defaultTags;
         @Deprecated
         private Duration timeout;
@@ -551,6 +566,19 @@ public final class ClientConfig {
         public Builder writeNoSync(@Nullable final Boolean writeNoSync) {
 
             this.writeNoSync = writeNoSync;
+            return this;
+        }
+
+        /**
+         * Sets whether to accept partial writes.
+         *
+         * @param writeAcceptPartial accept partial writes
+         * @return this
+         */
+        @Nonnull
+        public Builder writeAcceptPartial(@Nullable final Boolean writeAcceptPartial) {
+
+            this.writeAcceptPartial = writeAcceptPartial;
             return this;
         }
 
@@ -800,6 +828,9 @@ public final class ClientConfig {
             if (parameters.containsKey("writeNoSync")) {
                 this.writeNoSync(Boolean.parseBoolean(parameters.get("writeNoSync")));
             }
+            if (parameters.containsKey("writeAcceptPartial")) {
+                this.writeAcceptPartial(Boolean.parseBoolean(parameters.get("writeAcceptPartial")));
+            }
             if (parameters.containsKey("disableGRPCCompression")) {
                 this.disableGRPCCompression(Boolean.parseBoolean(parameters.get("disableGRPCCompression")));
             }
@@ -854,6 +885,10 @@ public final class ClientConfig {
             final String writeNoSync = get.apply("INFLUX_WRITE_NO_SYNC", "influx.writeNoSync");
             if (writeNoSync != null) {
                 this.writeNoSync(Boolean.parseBoolean(writeNoSync));
+            }
+            final String writeAcceptPartial = get.apply("INFLUX_WRITE_ACCEPT_PARTIAL", "influx.writeAcceptPartial");
+            if (writeAcceptPartial != null) {
+                this.writeAcceptPartial(Boolean.parseBoolean(writeAcceptPartial));
             }
             final String writeTimeout = get.apply("INFLUX_WRITE_TIMEOUT", "influx.writeTimeout");
             if (writeTimeout != null) {
@@ -911,6 +946,9 @@ public final class ClientConfig {
         writePrecision = builder.writePrecision != null ? builder.writePrecision : WriteOptions.DEFAULT_WRITE_PRECISION;
         gzipThreshold = builder.gzipThreshold != null ? builder.gzipThreshold : WriteOptions.DEFAULT_GZIP_THRESHOLD;
         writeNoSync = builder.writeNoSync != null ? builder.writeNoSync : WriteOptions.DEFAULT_NO_SYNC;
+        writeAcceptPartial = builder.writeAcceptPartial != null
+                ? builder.writeAcceptPartial
+                : WriteOptions.DEFAULT_ACCEPT_PARTIAL;
         defaultTags = builder.defaultTags;
         timeout = builder.timeout != null ? builder.timeout : Duration.ofSeconds(WriteOptions.DEFAULT_WRITE_TIMEOUT);
         writeTimeout = builder.writeTimeout != null
