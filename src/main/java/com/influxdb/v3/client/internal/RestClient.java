@@ -452,7 +452,8 @@ final class RestClient implements AutoCloseable {
             return null;
         }
 
-        final String originalLine = (item.originalLine == null || item.originalLine.isEmpty()) ? null : item.originalLine;
+        final String originalLine =
+                (item.originalLine == null || item.originalLine.isEmpty()) ? null : item.originalLine;
         return new InfluxDBPartialWriteException.LineError(item.lineNumber, item.errorMessage, originalLine);
     }
 
