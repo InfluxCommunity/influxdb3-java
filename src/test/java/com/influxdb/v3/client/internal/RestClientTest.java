@@ -51,6 +51,7 @@ import com.influxdb.v3.client.AbstractMockServerTest;
 import com.influxdb.v3.client.InfluxDBApiException;
 import com.influxdb.v3.client.InfluxDBApiHttpException;
 import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.InfluxDBPartialWriteException;
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.write.WriteOptions;
 
@@ -567,13 +568,21 @@ public class RestClientTest extends AbstractMockServerTest {
         .host(baseURL)
         .build());
 
-      Assertions.assertThatThrownBy(
-          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
-        )
-        .isInstanceOf(InfluxDBApiException.class)
-        .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-          + "\tline 2: invalid column type for column 'v', expected iox::column_type::field::integer,"
-          + " got iox::column_type::field::float (testa6a3ad v=1 17702)");
+      Throwable thrown = catchThrowable(() -> restClient.request("ping", HttpMethod.GET, null, null, null));
+      Assertions.assertThat(thrown)
+              .isInstanceOf(InfluxDBPartialWriteException.class)
+              .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+                      + "\tline 2: invalid column type for column 'v', expected iox::column_type::field::integer,"
+                      + " got iox::column_type::field::float (testa6a3ad v=1 17702)");
+
+      InfluxDBPartialWriteException partialWriteException = (InfluxDBPartialWriteException) thrown;
+      Assertions.assertThat(partialWriteException.lineErrors()).hasSize(1);
+      InfluxDBPartialWriteException.LineError lineError = partialWriteException.lineErrors().get(0);
+      Assertions.assertThat(lineError.lineNumber()).isEqualTo(2);
+      Assertions.assertThat(lineError.errorMessage())
+              .isEqualTo("invalid column type for column 'v', expected iox::column_type::field::integer,"
+                      + " got iox::column_type::field::float");
+      Assertions.assertThat(lineError.originalLine()).isEqualTo("testa6a3ad v=1 17702");
     }
 
     @ParameterizedTest(name = "{0}")

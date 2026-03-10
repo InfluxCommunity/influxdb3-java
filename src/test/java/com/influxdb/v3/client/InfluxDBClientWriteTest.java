@@ -225,6 +225,23 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     }
 
     @Test
+    void writeAcceptPartialTrueUsesV3API() throws InterruptedException {
+        mockServer.enqueue(createResponse(200));
+
+        client.writeRecord("mem,tag=one value=1.0",
+                new WriteOptions.Builder().precision(WritePrecision.NS).acceptPartial(true).build());
+
+        assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+        assertThat(request).isNotNull();
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().encodedPath()).isEqualTo("/api/v3/write_lp");
+        assertThat(request.getUrl().queryParameter("no_sync")).isNull();
+        assertThat(request.getUrl().queryParameter("accept_partial")).isEqualTo("true");
+        assertThat(request.getUrl().queryParameter("precision")).isEqualTo("nanosecond");
+    }
+
+    @Test
     void writeNoSyncTrueOnV2ServerThrowsException() throws InterruptedException {
         mockServer.enqueue(createEmptyResponse(HttpResponseStatus.METHOD_NOT_ALLOWED.code()));
 
@@ -242,7 +259,29 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(request.getUrl().queryParameter("precision")).isEqualTo("millisecond");
 
         assertThat(ae.statusCode()).isEqualTo(HttpResponseStatus.METHOD_NOT_ALLOWED.code());
-        assertThat(ae.getMessage()).contains("Server doesn't support write with NoSync=true"
+        assertThat(ae.getMessage()).contains("Server doesn't support write with NoSync=true or AcceptPartial=true"
+                + " (supported by InfluxDB 3 Core/Enterprise servers only).");
+    }
+
+    @Test
+    void writeAcceptPartialTrueOnV2ServerThrowsException() throws InterruptedException {
+        mockServer.enqueue(createEmptyResponse(HttpResponseStatus.METHOD_NOT_ALLOWED.code()));
+
+        InfluxDBApiHttpException ae = org.junit.jupiter.api.Assertions.assertThrows(InfluxDBApiHttpException.class,
+                () -> client.writeRecord("mem,tag=one value=1.0",
+                        new WriteOptions.Builder().precision(WritePrecision.MS).acceptPartial(true).build())
+        );
+
+        assertThat(mockServer.getRequestCount()).isEqualTo(1);
+        RecordedRequest request = mockServer.takeRequest();
+        assertThat(request).isNotNull();
+        assertThat(request.getUrl()).isNotNull();
+        assertThat(request.getUrl().encodedPath()).isEqualTo("/api/v3/write_lp");
+        assertThat(request.getUrl().queryParameter("accept_partial")).isEqualTo("true");
+        assertThat(request.getUrl().queryParameter("precision")).isEqualTo("millisecond");
+
+        assertThat(ae.statusCode()).isEqualTo(HttpResponseStatus.METHOD_NOT_ALLOWED.code());
+        assertThat(ae.getMessage()).contains("Server doesn't support write with NoSync=true or AcceptPartial=true"
                 + " (supported by InfluxDB 3 Core/Enterprise servers only).");
     }
 
@@ -256,7 +295,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writeRecord("mem,tag=one value=1.0");
         }
 
-        checkWriteCalled("/api/v2/write", "DB", "ns", false, false);
+        checkWriteCalled("/api/v2/write", "DB", "ns", false, false, false);
     }
 
     @Test
@@ -272,7 +311,21 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writeRecord("mem,tag=one value=1.0");
         }
 
-        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
+        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, false, true);
+    }
+
+    @Test
+    void writeRecordWithDefaultWriteOptionsAcceptPartialConfig() throws Exception {
+        mockServer.enqueue(createResponse(200));
+
+        ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
+                .writeAcceptPartial(true)
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            client.writeRecord("mem,tag=one value=1.0");
+        }
+
+        checkWriteCalled("/api/v3/write_lp", "DB", "nanosecond", false, true, false);
     }
 
     @Test
@@ -285,7 +338,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writeRecords(List.of("mem,tag=one value=1.0"));
         }
 
-        checkWriteCalled("/api/v2/write", "DB", "ns", false, false);
+        checkWriteCalled("/api/v2/write", "DB", "ns", false, false, false);
     }
 
     @Test
@@ -301,7 +354,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writeRecords(List.of("mem,tag=one value=1.0"));
         }
 
-        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
+        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, false, true);
     }
 
     @Test
@@ -317,7 +370,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writePoint(point);
         }
 
-        checkWriteCalled("/api/v2/write", "DB", "ns", false, false);
+        checkWriteCalled("/api/v2/write", "DB", "ns", false, false, false);
     }
 
     @Test
@@ -336,7 +389,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writePoint(point);
         }
 
-        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
+        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, false, true);
     }
 
     @Test
@@ -352,7 +405,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writePoints(List.of(point));
         }
 
-        checkWriteCalled("/api/v2/write", "DB", "ns", false, false);
+        checkWriteCalled("/api/v2/write", "DB", "ns", false, false, false);
     }
 
     @Test
@@ -371,17 +424,19 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writePoints(List.of(point));
         }
 
-        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, true);
+        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, false, true);
     }
 
     private void checkWriteCalled(final String expectedPath, final String expectedDB,
                                   final String expectedPrecision, final boolean expectedNoSync,
+                                  final boolean expectedAcceptPartial,
                                   final boolean expectedGzip) throws InterruptedException {
         RecordedRequest request = assertThatServerRequested();
         HttpUrl requestUrl = request.getUrl();
         assertThat(requestUrl).isNotNull();
         assertThat(requestUrl.encodedPath()).isEqualTo(expectedPath);
-        if (expectedNoSync) {
+        boolean expectedV3 = expectedNoSync || expectedAcceptPartial;
+        if (expectedV3) {
             assertThat(requestUrl.queryParameter("db")).isEqualTo(expectedDB);
         } else {
             assertThat(requestUrl.queryParameter("bucket")).isEqualTo(expectedDB);
@@ -391,6 +446,11 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             assertThat(requestUrl.queryParameter("no_sync")).isEqualTo("true");
         } else {
             assertThat(requestUrl.queryParameter("no_sync")).isNull();
+        }
+        if (expectedAcceptPartial) {
+            assertThat(requestUrl.queryParameter("accept_partial")).isEqualTo("true");
+        } else {
+            assertThat(requestUrl.queryParameter("accept_partial")).isNull();
         }
         if (expectedGzip) {
             assertThat(request.getHeaders().get("Content-Encoding")).isEqualTo("gzip");
