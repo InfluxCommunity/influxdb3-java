@@ -335,18 +335,27 @@ final class RestClient implements AutoCloseable {
 
             final String error = errNonEmptyField(root, "error");
             final JsonNode dataNode = root.get("data");
-            if (error == null || dataNode == null || !dataNode.isArray()) {
+            if (error == null || dataNode == null) {
                 return List.of();
             }
 
-            final List<InfluxDBPartialWriteException.LineError> lineErrors = new ArrayList<>();
-            for (JsonNode item : dataNode) {
-                InfluxDBPartialWriteException.LineError lineError = errParseDataArrayLineError(item);
-                if (lineError != null) {
-                    lineErrors.add(lineError);
+            if (dataNode.isArray()) {
+                final List<InfluxDBPartialWriteException.LineError> lineErrors = new ArrayList<>();
+                for (JsonNode item : dataNode) {
+                    InfluxDBPartialWriteException.LineError lineError = errParseDataArrayLineError(item);
+                    if (lineError != null) {
+                        lineErrors.add(lineError);
+                    }
                 }
+                return lineErrors;
             }
-            return lineErrors;
+
+            if (dataNode.isObject()) {
+                InfluxDBPartialWriteException.LineError lineError = errParseDataArrayLineError(dataNode);
+                return lineError == null ? List.of() : List.of(lineError);
+            }
+
+            return List.of();
         } catch (JsonProcessingException e) {
             LOG.debug("Can't parse line errors from response body {}", body, e);
             return List.of();

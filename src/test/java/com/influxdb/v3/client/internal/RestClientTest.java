@@ -547,11 +547,19 @@ public class RestClientTest extends AbstractMockServerTest {
               .host(baseURL)
               .build());
 
-      Assertions.assertThatThrownBy(
-            () -> restClient.request("ping", HttpMethod.GET, null, null, null)
-        )
-              .isInstanceOf(InfluxDBApiException.class)
+      Throwable thrown = catchThrowable(() -> restClient.request("ping", HttpMethod.GET, null, null, null));
+      Assertions.assertThat(thrown)
+              .isInstanceOf(InfluxDBPartialWriteException.class)
+              .isInstanceOf(InfluxDBApiHttpException.class)
               .hasMessage("HTTP status code: 400; Message: invalid field value");
+
+      InfluxDBPartialWriteException partialWriteException = (InfluxDBPartialWriteException) thrown;
+      Assertions.assertThat(partialWriteException.statusCode()).isEqualTo(400);
+      Assertions.assertThat(partialWriteException.lineErrors()).hasSize(1);
+      InfluxDBPartialWriteException.LineError lineError = partialWriteException.lineErrors().get(0);
+      Assertions.assertThat(lineError.lineNumber()).isNull();
+      Assertions.assertThat(lineError.errorMessage()).isEqualTo("invalid field value");
+      Assertions.assertThat(lineError.originalLine()).isNull();
     }
 
     @Test
@@ -669,6 +677,7 @@ public class RestClientTest extends AbstractMockServerTest {
     @MethodSource("errorFromBodyV3FallbackCases")
     public void errorFromBodyV3FallbackCase(final String testName,
                                             final String body,
+                                            final Class<? extends InfluxDBApiException> expectedClass,
                                             final String expectedMessage) {
 
       mockServer.enqueue(createResponse(400,
@@ -680,11 +689,10 @@ public class RestClientTest extends AbstractMockServerTest {
         .host(baseURL)
         .build());
 
-      Assertions.assertThatThrownBy(
-          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
-        )
-        .isInstanceOf(InfluxDBApiException.class)
-        .hasMessage(expectedMessage);
+      Throwable thrown = catchThrowable(() -> restClient.request("ping", HttpMethod.GET, null, null, null));
+      Assertions.assertThat(thrown)
+              .isInstanceOf(expectedClass)
+              .hasMessage(expectedMessage);
     }
 
     private static Stream<Arguments> errorFromBodyV3FallbackCases() {
@@ -692,6 +700,7 @@ public class RestClientTest extends AbstractMockServerTest {
         Arguments.of(
           "missing error with data array falls back to body",
           "{\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
+          InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: "
             + "{\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}"
         ),
@@ -699,6 +708,7 @@ public class RestClientTest extends AbstractMockServerTest {
           "empty error with data array falls back to body",
           "{\"error\":\"\",\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":"
             + "\"bad lp\"}]}",
+          InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: "
             + "{\"error\":\"\",\"data\":[{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":"
             + "\"bad lp\"}]}"
@@ -706,22 +716,38 @@ public class RestClientTest extends AbstractMockServerTest {
         Arguments.of(
           "data object without error_message falls back to error",
           "{\"error\":\"parsing failed\",\"data\":{}}",
+          InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: parsing failed"
         ),
         Arguments.of(
           "data object with empty error_message falls back to error",
           "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"\"}}",
+          InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: parsing failed"
         ),
         Arguments.of(
           "data string falls back to error",
           "{\"error\":\"parsing failed\",\"data\":\"not-an-object\"}",
+          InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: parsing failed"
         ),
         Arguments.of(
           "data number falls back to error",
           "{\"error\":\"parsing failed\",\"data\":123}",
+          InfluxDBApiHttpException.class,
           "HTTP status code: 400; Message: parsing failed"
+        ),
+        Arguments.of(
+          "partial-write with invalid data string falls back to error",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":\"invalid\"}",
+          InfluxDBApiHttpException.class,
+          "HTTP status code: 400; Message: partial write of line protocol occurred"
+        ),
+        Arguments.of(
+          "partial-write with empty data object falls back to error",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":{}}",
+          InfluxDBApiHttpException.class,
+          "HTTP status code: 400; Message: partial write of line protocol occurred"
         )
       );
     }
