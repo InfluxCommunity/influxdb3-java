@@ -404,7 +404,7 @@ final class RestClient implements AutoCloseable {
         return errNonEmptyText(object.get(fieldName));
     }
 
-    @Nullable
+    @Nonnull
     private List<String> errFormatDataArrayDetails(@Nonnull final JsonNode dataNode) {
         final ErrDataArrayItem[] parsed = errReadDataArray(dataNode);
         if (parsed != null) {
