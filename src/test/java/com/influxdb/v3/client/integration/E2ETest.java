@@ -41,7 +41,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import com.influxdb.v3.client.InfluxDBApiHttpException;
 import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.InfluxDBPartialWriteException;
 import com.influxdb.v3.client.Point;
 import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.config.ClientConfig;
@@ -183,6 +185,78 @@ public class E2ETest {
                             Assertions.assertThat(objects[7]).isEqualTo(BigInteger.valueOf(timestamp * 1_000_000_000));
                         });
             }
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testAcceptPartialWriteError() throws Exception {
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+                System.getenv("TESTING_INFLUXDB_URL"),
+                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+                System.getenv("TESTING_INFLUXDB_DATABASE"),
+                null)) {
+
+            String points = "temperature,room=room1 value=18.94647\n"
+                    + "temperatureroom=room2value=20.268019\n"
+                    + "temperature,room=room3 value=24.064857\n"
+                    + "temperature,room=room4 value=43i";
+
+            WriteOptions options = new WriteOptions.Builder()
+                    .acceptPartial(true)
+                    .build();
+
+            Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points, options));
+            Assertions.assertThat(thrown).isInstanceOf(InfluxDBPartialWriteException.class);
+
+            String expectedMessage = "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+                    + "\tline 2: Expected at least one space character, got end of input (temperatureroom=room)\n"
+                    + "\tline 4: invalid column type for column 'value', expected iox::column_type::field::float, "
+                    + "got iox::column_type::field::integer (temperature,room=roo)";
+            Assertions.assertThat(thrown.getMessage()).isEqualTo(expectedMessage);
+
+            InfluxDBPartialWriteException partialError = (InfluxDBPartialWriteException) thrown;
+            Assertions.assertThat(partialError.lineErrors()).hasSize(2);
+            Assertions.assertThat(partialError.lineErrors().get(0).lineNumber()).isEqualTo(2);
+            Assertions.assertThat(partialError.lineErrors().get(0).errorMessage())
+                    .isEqualTo("Expected at least one space character, got end of input");
+            Assertions.assertThat(partialError.lineErrors().get(0).originalLine())
+                    .isEqualTo("temperatureroom=room");
+
+            Assertions.assertThat(partialError.lineErrors().get(1).lineNumber()).isEqualTo(4);
+            Assertions.assertThat(partialError.lineErrors().get(1).errorMessage())
+                    .isEqualTo("invalid column type for column 'value', expected iox::column_type::field::float, "
+                            + "got iox::column_type::field::integer");
+            Assertions.assertThat(partialError.lineErrors().get(1).originalLine())
+                    .isEqualTo("temperature,room=roo");
+
+            Assertions.assertThat(partialError).isInstanceOf(InfluxDBApiHttpException.class);
+            Assertions.assertThat(partialError.statusCode()).isEqualTo(400);
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testWriteErrorWithoutAcceptPartial() throws Exception {
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+                System.getenv("TESTING_INFLUXDB_URL"),
+                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+                System.getenv("TESTING_INFLUXDB_DATABASE"),
+                null)) {
+
+            String points = "temperature,room=room1 value=18.94647\n"
+                    + "temperatureroom=room2value=20.268019\n"
+                    + "temperature,room=room3 value=24.064857\n"
+                    + "temperature,room=room4 value=43i";
+
+            Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points));
+            Assertions.assertThat(thrown.getMessage())
+                    .isEqualTo("HTTP status code: 400; Message: write buffer error: "
+                            + "line protocol parse failed: Expected at least one space character, got end of input");
         }
     }
 
