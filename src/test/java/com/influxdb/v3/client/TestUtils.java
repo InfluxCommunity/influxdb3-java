@@ -100,7 +100,10 @@ public final class TestUtils {
         FieldType stringType = new FieldType(true, new ArrowType.Utf8(), null, metadata);
         Field normalField = new Field("normalField", stringType, null);
         Field nullField = new Field("nullField", FieldType.nullable(new ArrowType.Utf8()), null);
-        Field nullField1 = new Field("nullField1", FieldType.nullable(new ArrowType.Int(64, true)), null);
+        Field nullField1 = new Field(
+                "nullField1",
+                FieldType.nullable(new ArrowType.Int(64, true)), null
+        );
 
         Schema schema = new Schema(List.of(normalField, nullField, nullField1));
         VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema, new RootAllocator(Long.MAX_VALUE));
