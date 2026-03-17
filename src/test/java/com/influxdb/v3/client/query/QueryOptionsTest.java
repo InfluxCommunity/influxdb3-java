@@ -22,7 +22,6 @@
 package com.influxdb.v3.client.query;
 
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
@@ -40,8 +39,6 @@ import io.grpc.ManagedChannelBuilder;
 import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.CallOptions;
 import org.apache.arrow.flight.CallStatus;
-import org.apache.arrow.flight.FlightProducer.CallContext;
-import org.apache.arrow.flight.FlightProducer.ServerStreamListener;
 import org.apache.arrow.flight.FlightRuntimeException;
 import org.apache.arrow.flight.FlightServer;
 import org.apache.arrow.flight.NoOpFlightProducer;
@@ -64,13 +61,6 @@ import com.influxdb.v3.client.internal.GrpcCallOptions;
 class QueryOptionsTest {
 
     private ClientConfig.Builder configBuilder;
-
-    private static int findFreePort() throws IOException {
-        ServerSocket s = new ServerSocket(0);
-        int port = s.getLocalPort();
-        s.close();
-        return port;
-    }
 
     @BeforeEach
     void before() {
@@ -117,7 +107,7 @@ class QueryOptionsTest {
 
     @Test
     void setInboundMessageSizeSmall() throws Exception {
-        int freePort = findFreePort();
+        int freePort = TestUtils.findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 100;
         try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
@@ -157,7 +147,7 @@ class QueryOptionsTest {
 
     @Test
     void setInboundMessageSizeLarge() throws Exception {
-        int freePort = findFreePort();
+        int freePort = TestUtils.findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 100;
         try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
@@ -195,7 +185,7 @@ class QueryOptionsTest {
     @Test
     @Timeout(5)
     void queryTimeout() throws Exception {
-        int freePort = findFreePort();
+        int freePort = TestUtils.findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
         CountDownLatch serverStreamFinished = new CountDownLatch(1);
         try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(1, 1);
@@ -325,7 +315,7 @@ class QueryOptionsTest {
 
     @Test
     public void queryOptionsUnchangedByCall() throws IOException {
-        int freePort = findFreePort();
+        int freePort = TestUtils.findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 10;
         try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
@@ -369,7 +359,7 @@ class QueryOptionsTest {
 
     @Test
     public void impracticalGRPCDeadlineReplacedByQueryTimeout() throws IOException {
-        int freePort = findFreePort();
+        int freePort = TestUtils.findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 10;
         try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);
@@ -414,7 +404,7 @@ class QueryOptionsTest {
 
     @Test
     public void impracticalGRPCTimeoutIgnored() throws IOException {
-        int freePort = findFreePort();
+        int freePort = TestUtils.findFreePort();
         URI uri = URI.create("http://127.0.0.1:" + freePort);
         int rowCount = 10;
         try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRoot(10, rowCount);

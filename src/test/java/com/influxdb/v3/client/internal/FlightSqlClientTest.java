@@ -22,6 +22,7 @@
 package com.influxdb.v3.client.internal;
 
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
@@ -56,10 +57,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.PointValues;
 import com.influxdb.v3.client.TestUtils;
 import com.influxdb.v3.client.config.ClientConfig;
 import com.influxdb.v3.client.query.QueryOptions;
 import com.influxdb.v3.client.query.QueryType;
+
 
 public class FlightSqlClientTest {
 
@@ -413,6 +416,66 @@ public class FlightSqlClientTest {
             )).isNull();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    void queryPointWithNullField() throws Exception {
+        URI uri = URI.create("http://127.0.0.1:" + TestUtils.findFreePort());
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRootWithNull();
+             FlightServer flightServer = TestUtils.simpleFlightServer(
+                     uri,
+                     new RootAllocator(Long.MAX_VALUE),
+                     TestUtils.simpleProducer(vectorSchemaRoot))
+        ) {
+            flightServer.start();
+            ClientConfig clientConfig = new ClientConfig.Builder()
+                    .host(String.format("http://%s:%d", uri.getHost(), uri.getPort()))
+                    .database("test")
+                    .build();
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+                Assertions.assertThatNoException().isThrownBy(() -> {
+                    Stream<PointValues> stream = influxDBClient.queryPoints(
+                            "Select normalField, nullField, nullField1 from \"nothing\"");
+                    stream.forEach(pointValues -> {
+                        Assertions.assertThat(pointValues.getField("normalField")).isEqualTo("Value");
+                        Assertions.assertThat(pointValues.getField("nullField")).isNull();
+                        Assertions.assertThat(pointValues.getField("nullField1")).isNull();
+                    });
+                    stream.close();
+                });
+            }
+        }
+    }
+
+    @Test
+    void queryObjectWithNullField() throws Exception {
+        URI uri = URI.create("http://127.0.0.1:" + TestUtils.findFreePort());
+        try (VectorSchemaRoot vectorSchemaRoot = TestUtils.generateVectorSchemaRootWithNull();
+             FlightServer flightServer = TestUtils.simpleFlightServer(
+                     uri,
+                     new RootAllocator(Long.MAX_VALUE),
+                     TestUtils.simpleProducer(vectorSchemaRoot))
+        ) {
+            flightServer.start();
+            ClientConfig clientConfig = new ClientConfig.Builder()
+                    .host(String.format("http://%s:%d", uri.getHost(), uri.getPort()))
+                    .database("test")
+                    .build();
+
+            try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
+                Assertions.assertThatNoException().isThrownBy(() -> {
+                    Stream<Object[]> stream = influxDBClient.query(
+                            "Select * from \"nothing\"");
+                    stream.forEach(objects -> {
+                        Assertions.assertThat(objects[0]).isEqualTo("Value");
+                        Assertions.assertThat(objects[1]).isNull();
+                        Assertions.assertThat(objects[2]).isNull();
+                    });
+                    stream.close();
+                });
+            }
         }
     }
 
