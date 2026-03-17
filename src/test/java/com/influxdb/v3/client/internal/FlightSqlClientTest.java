@@ -437,8 +437,12 @@ public class FlightSqlClientTest {
             try (InfluxDBClient influxDBClient = InfluxDBClient.getInstance(clientConfig)) {
                 Assertions.assertThatNoException().isThrownBy(() -> {
                     Stream<PointValues> stream = influxDBClient.queryPoints(
-                            "Select * from \"nothing\"");
-                    stream.forEach(System.out::println);
+                            "Select normalField, nullField, nullField1 from \"nothing\"");
+                    stream.forEach(pointValues ->{
+                        Assertions.assertThat(pointValues.getField("normalField")).isEqualTo("Value");
+                        Assertions.assertThat(pointValues.getField("nullField")).isNull();
+                        Assertions.assertThat(pointValues.getField("nullField1")).isNull();
+                    });
                     stream.close();
                 });
             }
@@ -464,7 +468,11 @@ public class FlightSqlClientTest {
                 Assertions.assertThatNoException().isThrownBy(() -> {
                     Stream<Object[]> stream = influxDBClient.query(
                             "Select * from \"nothing\"");
-                    stream.forEach(System.out::println);
+                    stream.forEach(objects -> {
+                        Assertions.assertThat(objects[0]).isEqualTo("Value");
+                        Assertions.assertThat(objects[1]).isNull();
+                        Assertions.assertThat(objects[2]).isNull();
+                    });
                     stream.close();
                 });
             }

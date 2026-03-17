@@ -26,7 +26,9 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nonnull;
 
 import org.apache.arrow.flight.FlightServer;
@@ -93,7 +95,10 @@ public final class TestUtils {
     }
 
     public static VectorSchemaRoot generateVectorSchemaRootWithNull() {
-        Field normalField = new Field("normalField", FieldType.nullable(new ArrowType.Utf8()), null);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("iox::column::type", "iox::column_type::field::string");
+        FieldType stringType = new FieldType(true, new ArrowType.Utf8(), null, metadata);
+        Field normalField = new Field("normalField", stringType, null);
         Field nullField = new Field("nullField", FieldType.nullable(new ArrowType.Utf8()), null);
         Field nullField1 = new Field("nullField1", FieldType.nullable(new ArrowType.Int(64, true)), null);
 
