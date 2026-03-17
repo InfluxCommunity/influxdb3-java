@@ -21,6 +21,8 @@
  */
 package com.influxdb.v3.client;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import org.apache.arrow.flight.NoOpFlightProducer;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.types.pojo.ArrowType;
@@ -87,6 +90,37 @@ public final class TestUtils {
         vectorSchemaRoot.setRowCount(rowCount);
 
         return vectorSchemaRoot;
+    }
+
+    public static VectorSchemaRoot generateVectorSchemaRootWithNull() {
+        Field normalField = new Field("normalField", FieldType.nullable(new ArrowType.Utf8()), null);
+        Field nullField = new Field("nullField", FieldType.nullable(new ArrowType.Utf8()), null);
+        Field nullField1 = new Field("nullField1", FieldType.nullable(new ArrowType.Int(64, true)), null);
+
+        Schema schema = new Schema(List.of(normalField, nullField, nullField1));
+        VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema, new RootAllocator(Long.MAX_VALUE));
+
+        VarCharVector vector = (VarCharVector) vectorSchemaRoot.getVector(normalField);
+        vector.allocateNew(1);
+        vector.set(0, "Value".getBytes(StandardCharsets.UTF_8));
+
+        vector = (VarCharVector) vectorSchemaRoot.getVector(nullField);
+        vector.allocateNew(1);
+        vector.setNull(0);
+
+        BigIntVector intVector = (BigIntVector) vectorSchemaRoot.getVector(nullField1);
+        intVector.allocateNew(1);
+        intVector.setNull(0);
+
+        vectorSchemaRoot.setRowCount(1);
+        return vectorSchemaRoot;
+    }
+
+    public static int findFreePort() throws IOException {
+        ServerSocket s = new ServerSocket(0);
+        int port = s.getLocalPort();
+        s.close();
+        return port;
     }
 }
 
