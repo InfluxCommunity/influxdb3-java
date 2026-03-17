@@ -438,7 +438,7 @@ public class FlightSqlClientTest {
                 Assertions.assertThatNoException().isThrownBy(() -> {
                     Stream<PointValues> stream = influxDBClient.queryPoints(
                             "Select normalField, nullField, nullField1 from \"nothing\"");
-                    stream.forEach(pointValues ->{
+                    stream.forEach(pointValues -> {
                         Assertions.assertThat(pointValues.getField("normalField")).isEqualTo("Value");
                         Assertions.assertThat(pointValues.getField("nullField")).isNull();
                         Assertions.assertThat(pointValues.getField("nullField1")).isNull();
