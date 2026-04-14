@@ -81,8 +81,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * by NanosecondConverter helper class. <br>
      * Warning: If you try to write ONLY ONE Point to Influxdb, but that Point has fields with null values,
      * then these fields will NOT be written to Influxdb.
-     * In the following queries If you explicitly query these null fields like this: "Select normalField, nullField from my_table"
-     * error will be thrown.
+     * In the following queries If you explicitly query these null fields like this:
+     * "Select normalField, nullField from my_table" error will be thrown.
      */
     void writePoint(@Nullable final Point point);
 
@@ -98,8 +98,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * by NanosecondConverter helper class. <br>
      * Warning: If you try to write ONLY ONE Point to Influxdb, but that Point has fields with null values,
      * then these fields will NOT be written to Influxdb.
-     * In the following queries If you explicitly query these null fields like this: "Select normalField, nullField from my_table"
-     * error will be thrown.
+     * In the following queries If you explicitly query these null fields like this:
+     * "Select normalField, nullField from my_table" error will be thrown.
      */
     void writePoint(@Nullable final Point point, @Nonnull final WriteOptions options);
 
@@ -114,8 +114,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * by NanosecondConverter helper class. <br>
      * Warning: If you try to write ONLY ONE Point to Influxdb, but that Point has fields with null values,
      * then these fields will NOT be written to Influxdb.
-     * In the following queries If you explicitly query these null fields like this: "Select normalField, nullField from my_table"
-     * error will be thrown.
+     * In the following queries If you explicitly query these null fields like this:
+     * "Select normalField, nullField from my_table" error will be thrown.
      */
     void writePoints(@Nonnull final List<Point> points);
 
@@ -131,8 +131,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * by NanosecondConverter helper class. <br>
      * Warning: If you try to write ONLY ONE Point to Influxdb, but that Point has fields with null values,
      * then these fields will NOT be written to Influxdb.
-     * In the following queries If you explicitly query these null fields like this: "Select normalField, nullField from my_table"
-     * error will be thrown.
+     * In the following queries If you explicitly query these null fields like this:
+     * "Select normalField, nullField from my_table" error will be thrown.
      */
     void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteOptions options);
 
