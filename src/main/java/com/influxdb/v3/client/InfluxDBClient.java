@@ -79,10 +79,11 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
      * by NanosecondConverter helper class. <br>
-     * Warning: If you try to write ONLY ONE Point to Influxdb, but that Point has fields with null values,
-     * then these fields will NOT be written to Influxdb.
-     * In the following queries If you explicitly query these null fields like this:
-     * "Select normalField, nullField from my_table" error will be thrown.
+     * Warning: Fields with {@code null} values in a {@link Point} are not written to InfluxDB.
+     *
+     * If such fields are later queried explicitly, for example:
+     * {@code SELECT normalField, nullField FROM my_table}
+     * an error will be thrown.
      */
     void writePoint(@Nullable final Point point);
 
@@ -93,13 +94,12 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param options the options for writing data to InfluxDB
      * <p>
      * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
-     * by NanosecondConverter helper class <br>
-     * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
      * by NanosecondConverter helper class. <br>
-     * Warning: If you try to write ONLY ONE Point to Influxdb, but that Point has fields with null values,
-     * then these fields will NOT be written to Influxdb.
-     * In the following queries If you explicitly query these null fields like this:
-     * "Select normalField, nullField from my_table" error will be thrown.
+     * Warning: Fields with {@code null} values in a {@link Point} are not written to InfluxDB.
+     *
+     * If such fields are later queried explicitly, for example:
+     * {@code SELECT normalField, nullField FROM my_table}
+     * an error will be thrown.
      */
     void writePoint(@Nullable final Point point, @Nonnull final WriteOptions options);
 
@@ -109,13 +109,11 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param points the list of {@link Point} to write, cannot be null
      * <p>
      * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
-     * by NanosecondConverter helper class <br>
-     * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
      * by NanosecondConverter helper class. <br>
-     * Warning: If you try to write ONLY ONE Point to Influxdb, but that Point has fields with null values,
-     * then these fields will NOT be written to Influxdb.
-     * In the following queries If you explicitly query these null fields like this:
-     * "Select normalField, nullField from my_table" error will be thrown.
+     * Warning: If the provided list contains only one {@link Point}, and that {@code Point}
+     * contains fields with {@code null} values, those fields are not written to InfluxDB.
+     * If such fields are later queried explicitly, for example:
+     * {@code SELECT normalField, nullField FROM my_table} an error will be thrown.
      */
     void writePoints(@Nonnull final List<Point> points);
 
@@ -126,13 +124,14 @@ public interface InfluxDBClient extends AutoCloseable {
      * @param options the options for writing data to InfluxDB
      * <p>
      * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
-     * by NanosecondConverter helper class
-     * Note: the timestamp passed will be converted to nanoseconds since the Unix epoch
      * by NanosecondConverter helper class. <br>
-     * Warning: If you try to write ONLY ONE Point to Influxdb, but that Point has fields with null values,
-     * then these fields will NOT be written to Influxdb.
-     * In the following queries If you explicitly query these null fields like this:
-     * "Select normalField, nullField from my_table" error will be thrown.
+     *
+     * Warning: If the provided list contains only one {@link Point}, and that {@code Point}
+     * contains fields with {@code null} values, those fields are not written to InfluxDB.
+     *
+     * If such fields are later queried explicitly, for example:
+     * {@code SELECT normalField, nullField FROM my_table}
+     * an error will be thrown.
      */
     void writePoints(@Nonnull final List<Point> points, @Nonnull final WriteOptions options);
 
