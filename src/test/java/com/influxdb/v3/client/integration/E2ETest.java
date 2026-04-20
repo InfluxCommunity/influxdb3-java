@@ -199,10 +199,9 @@ public class E2ETest {
                 System.getenv("TESTING_INFLUXDB_DATABASE"),
                 null)) {
 
-            String points = "temperature,room=room1 value=18.94647\n"
-                    + "temperatureroom=room2value=20.268019\n"
-                    + "temperature,room=room3 value=24.064857\n"
-                    + "temperature,room=room4 value=43i";
+            String points = "home,room=Sunroom temp=96 1735545600\n"
+                    + "home,room=Sunroom temp=\"hi\" 1735545610\n"
+                    + "home,room=Sunroom temp=88i 1735545620";
 
             WriteOptions options = new WriteOptions.Builder()
                     .acceptPartial(true)
@@ -212,25 +211,27 @@ public class E2ETest {
             Assertions.assertThat(thrown).isInstanceOf(InfluxDBPartialWriteException.class);
 
             String expectedMessage = "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-                    + "\tline 2: Expected at least one space character, got end of input (temperatureroom=room)\n"
-                    + "\tline 4: invalid column type for column 'value', expected iox::column_type::field::float, "
-                    + "got iox::column_type::field::integer (temperature,room=roo)";
+                    + "\tline 2: invalid column type for column 'temp', expected iox::column_type::field::float, "
+                    + "got iox::column_type::field::string (home,room=Sunroom te)\n"
+                    + "\tline 3: invalid column type for column 'temp', expected iox::column_type::field::float, "
+                    + "got iox::column_type::field::integer (home,room=Sunroom te)";
             Assertions.assertThat(thrown.getMessage()).isEqualTo(expectedMessage);
 
             InfluxDBPartialWriteException partialError = (InfluxDBPartialWriteException) thrown;
             Assertions.assertThat(partialError.lineErrors()).hasSize(2);
             Assertions.assertThat(partialError.lineErrors().get(0).lineNumber()).isEqualTo(2);
             Assertions.assertThat(partialError.lineErrors().get(0).errorMessage())
-                    .isEqualTo("Expected at least one space character, got end of input");
+                    .isEqualTo("invalid column type for column 'temp', expected iox::column_type::field::float, "
+                            + "got iox::column_type::field::string");
             Assertions.assertThat(partialError.lineErrors().get(0).originalLine())
-                    .isEqualTo("temperatureroom=room");
+                    .isEqualTo("home,room=Sunroom te");
 
-            Assertions.assertThat(partialError.lineErrors().get(1).lineNumber()).isEqualTo(4);
+            Assertions.assertThat(partialError.lineErrors().get(1).lineNumber()).isEqualTo(3);
             Assertions.assertThat(partialError.lineErrors().get(1).errorMessage())
-                    .isEqualTo("invalid column type for column 'value', expected iox::column_type::field::float, "
+                    .isEqualTo("invalid column type for column 'temp', expected iox::column_type::field::float, "
                             + "got iox::column_type::field::integer");
             Assertions.assertThat(partialError.lineErrors().get(1).originalLine())
-                    .isEqualTo("temperature,room=roo");
+                    .isEqualTo("home,room=Sunroom te");
 
             Assertions.assertThat(partialError).isInstanceOf(InfluxDBApiHttpException.class);
             Assertions.assertThat(partialError.statusCode()).isEqualTo(400);
@@ -248,10 +249,9 @@ public class E2ETest {
                 System.getenv("TESTING_INFLUXDB_DATABASE"),
                 null)) {
 
-            String points = "temperature,room=room1 value=18.94647\n"
-                    + "temperatureroom=room2value=20.268019\n"
-                    + "temperature,room=room3 value=24.064857\n"
-                    + "temperature,room=room4 value=43i";
+            String points = "home,room=Sunroom temp=96 1735545600\n"
+                    + "home,room=Sunroom temp=\"hi\" 1735545610\n"
+                    + "home,room=Sunroom temp=88i 1735545620";
 
             WriteOptions options = new WriteOptions.Builder()
                     .acceptPartial(false)
@@ -259,7 +259,16 @@ public class E2ETest {
             Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points, options));
             Assertions.assertThat(thrown).isInstanceOf(InfluxDBPartialWriteException.class);
             Assertions.assertThat(thrown.getMessage())
-                    .startsWith("HTTP status code: 400; Message: parsing failed for write_lp endpoint");
+                    .contains("parsing failed for write_lp endpoint");
+
+            InfluxDBPartialWriteException partialError = (InfluxDBPartialWriteException) thrown;
+            Assertions.assertThat(partialError.lineErrors()).hasSize(1);
+            Assertions.assertThat(partialError.lineErrors().get(0).lineNumber()).isEqualTo(2);
+            Assertions.assertThat(partialError.lineErrors().get(0).errorMessage())
+                    .isEqualTo("invalid column type for column 'temp', expected iox::column_type::field::float, "
+                            + "got iox::column_type::field::string");
+            Assertions.assertThat(partialError.lineErrors().get(0).originalLine())
+                    .isEqualTo("home,room=Sunroom te");
         }
     }
 
@@ -274,10 +283,9 @@ public class E2ETest {
                 System.getenv("TESTING_INFLUXDB_DATABASE"),
                 null)) {
 
-            String points = "temperature,room=room1 value=18.94647\n"
-                    + "temperatureroom=room2value=20.268019\n"
-                    + "temperature,room=room3 value=24.064857\n"
-                    + "temperature,room=room4 value=43i";
+            String points = "home,room=Sunroom temp=96 1735545600\n"
+                    + "home,room=Sunroom temp=\"hi\" 1735545610\n"
+                    + "home,room=Sunroom temp=88i 1735545620";
 
             WriteOptions options = new WriteOptions.Builder()
                     .useV2Api(true)
