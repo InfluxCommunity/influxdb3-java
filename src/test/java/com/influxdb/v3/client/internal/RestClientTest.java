@@ -551,7 +551,8 @@ public class RestClientTest extends AbstractMockServerTest {
       Assertions.assertThat(thrown)
               .isInstanceOf(InfluxDBPartialWriteException.class)
               .isInstanceOf(InfluxDBApiHttpException.class)
-              .hasMessage("HTTP status code: 400; Message: invalid field value");
+              .hasMessage("HTTP status code: 400; Message: parsing failed for write_lp endpoint:\n"
+                      + "\tinvalid field value");
 
       InfluxDBPartialWriteException partialWriteException = (InfluxDBPartialWriteException) thrown;
       Assertions.assertThat(partialWriteException.statusCode()).isEqualTo(400);

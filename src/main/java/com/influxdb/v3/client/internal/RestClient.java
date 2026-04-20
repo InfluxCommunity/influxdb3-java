@@ -299,9 +299,13 @@ final class RestClient implements AutoCloseable {
 
             // Core/Enterprise object format:
             // {"error":"...","data":{"error_message":"..."}}
-            final String errorMessage = errNonEmptyField(dataNode, "error_message");
-            if (errorMessage != null) {
-                return errorMessage;
+            if (isV3PartialWriteError(error) && dataNode != null && dataNode.isObject()) {
+                final StringBuilder message = new StringBuilder(error);
+                final String errorMessage = errNonEmptyField(dataNode, "error_message");
+                if (errorMessage != null) {
+                    message.append(":\n\t").append(errorMessage);
+                }
+                return message.toString();
             }
 
             return error;
