@@ -858,7 +858,7 @@ public class RestClientTest extends AbstractMockServerTest {
           "{\"error\":\"partial write of line protocol occurred\",\"data\":{\"error_message\":\"bad line\","
             + "\"line_number\":{\"x\":2},\"original_line\":\"bad lp\"}}",
           InfluxDBApiHttpException.class,
-          "HTTP status code: 400; Message: bad line"
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tbad line"
         ),
         Arguments.of(
           "write endpoint with scalar data falls back to error",
