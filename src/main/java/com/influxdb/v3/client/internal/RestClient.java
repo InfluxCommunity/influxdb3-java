@@ -262,9 +262,7 @@ final class RestClient implements AutoCloseable {
             return null;
         }
 
-        if (contentType != null
-                && !contentType.isEmpty()
-                && !contentType.regionMatches(true, 0, "application/json", 0, "application/json".length())) {
+        if (!errIsJsonLikeContentType(contentType)) {
             return null;
         }
 
@@ -300,12 +298,10 @@ final class RestClient implements AutoCloseable {
             // Core/Enterprise object format:
             // {"error":"...","data":{"error_message":"..."}}
             if (isV3PartialWriteError(error) && dataNode != null && dataNode.isObject()) {
-                final StringBuilder message = new StringBuilder(error);
                 final String errorMessage = errNonEmptyField(dataNode, "error_message");
-                if (errorMessage != null) {
-                    message.append(":\n\t").append(errorMessage);
-                }
-                return message.toString();
+                return errorMessage == null
+                        ? error
+                        : error + ":\n\t" + errorMessage;
             }
 
             return error;
@@ -323,9 +319,7 @@ final class RestClient implements AutoCloseable {
             return List.of();
         }
 
-        if (contentType != null
-                && !contentType.isEmpty()
-                && !contentType.regionMatches(true, 0, "application/json", 0, "application/json".length())) {
+        if (!errIsJsonLikeContentType(contentType)) {
             return List.of();
         }
 
@@ -381,6 +375,12 @@ final class RestClient implements AutoCloseable {
         String normalized = errorMessage.toLowerCase(Locale.ROOT);
         return normalized.contains("partial write of line protocol occurred")
                 || normalized.contains("parsing failed for write_lp endpoint");
+    }
+
+    private boolean errIsJsonLikeContentType(@Nullable final String contentType) {
+        return contentType == null
+                || contentType.isEmpty()
+                || contentType.regionMatches(true, 0, "application/json", 0, "application/json".length());
     }
 
     @Nullable
