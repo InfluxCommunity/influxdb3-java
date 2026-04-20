@@ -274,7 +274,12 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     private static Stream<Arguments> writeV3MethodNotAllowedCases() {
         return Stream.of(
                 Arguments.of("noSync=true", (Consumer<WriteOptions.Builder>) b -> b.noSync(true), "true", null),
-                Arguments.of("acceptPartial=true", (Consumer<WriteOptions.Builder>) b -> b.acceptPartial(true), null, null)
+                Arguments.of(
+                        "acceptPartial=true",
+                        (Consumer<WriteOptions.Builder>) b -> b.acceptPartial(true),
+                        null,
+                        null
+                )
         );
     }
 
