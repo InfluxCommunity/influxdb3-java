@@ -71,6 +71,9 @@ class WriteOptionsTest {
         WriteOptions acceptPartialMismatch = new WriteOptions.Builder()
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
                 .acceptPartial(false).build();
+        WriteOptions useV2ApiMismatch = new WriteOptions.Builder()
+                .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
+                .useV2Api(true).build();
         WriteOptions defaultTagsMismatch = new WriteOptions.Builder()
                 .database("my-database").precision(WritePrecision.S).gzipThreshold(512).noSync(true)
                 .defaultTags(Map.of("region", "west")).build();
@@ -84,6 +87,7 @@ class WriteOptionsTest {
         Assertions.assertThat(options).isNotEqualTo(gzipMismatch);
         Assertions.assertThat(options).isNotEqualTo(noSyncMismatch);
         Assertions.assertThat(options).isNotEqualTo(acceptPartialMismatch);
+        Assertions.assertThat(options).isNotEqualTo(useV2ApiMismatch);
         Assertions.assertThat(options).isNotEqualTo(defaultTagsMismatch);
         Assertions.assertThat(options).isNotEqualTo(tagOrderMismatch);
         Assertions.assertThat(options).isNotEqualTo(headersMismatch);
@@ -153,6 +157,7 @@ class WriteOptionsTest {
         Assertions.assertThat(options.precisionSafe(config)).isEqualTo(WriteOptions.DEFAULT_WRITE_PRECISION);
         Assertions.assertThat(options.gzipThresholdSafe(config)).isEqualTo(WriteOptions.DEFAULT_GZIP_THRESHOLD);
         Assertions.assertThat(options.acceptPartialSafe(config)).isEqualTo(WriteOptions.DEFAULT_ACCEPT_PARTIAL);
+        Assertions.assertThat(options.useV2ApiSafe(config)).isEqualTo(WriteOptions.DEFAULT_USE_V2_API);
         Assertions.assertThat(options.tagOrderSafe()).isEmpty();
 
         WriteOptions builderOptions = new WriteOptions.Builder().build();
@@ -160,6 +165,7 @@ class WriteOptionsTest {
         Assertions.assertThat(builderOptions.precisionSafe(config)).isEqualTo(WritePrecision.S);
         Assertions.assertThat(builderOptions.gzipThresholdSafe(config)).isEqualTo(512);
         Assertions.assertThat(builderOptions.acceptPartialSafe(config)).isEqualTo(WriteOptions.DEFAULT_ACCEPT_PARTIAL);
+        Assertions.assertThat(builderOptions.useV2ApiSafe(config)).isEqualTo(WriteOptions.DEFAULT_USE_V2_API);
     }
 
     @Test
@@ -246,12 +252,39 @@ class WriteOptionsTest {
         ClientConfig config = configBuilder
                 .database("my-database")
                 .organization("my-org")
-                .writeAcceptPartial(true)
+                .writeAcceptPartial(false)
                 .build();
 
-        WriteOptions options = new WriteOptions.Builder().acceptPartial(false).build();
+        WriteOptions options = new WriteOptions.Builder().acceptPartial(true).build();
 
-        Assertions.assertThat(options.acceptPartialSafe(config)).isEqualTo(false);
+        Assertions.assertThat(options.acceptPartialSafe(config)).isEqualTo(true);
+    }
+
+    @Test
+    void optionsOverrideWriteUseV2Api() {
+        ClientConfig config = configBuilder
+                .database("my-database")
+                .organization("my-org")
+                .writeUseV2Api(false)
+                .build();
+
+        WriteOptions options = new WriteOptions.Builder().useV2Api(true).build();
+
+        Assertions.assertThat(options.useV2ApiSafe(config)).isEqualTo(true);
+    }
+
+    @Test
+    void optionsValidateUseV2ApiAndNoSync() {
+        ClientConfig config = configBuilder.build();
+
+        WriteOptions options = new WriteOptions.Builder()
+                .useV2Api(true)
+                .noSync(true)
+                .build();
+
+        Assertions.assertThatThrownBy(() -> options.validate(config))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("invalid write options: NoSync cannot be used in V2 API");
     }
 
     @Test

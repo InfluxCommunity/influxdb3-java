@@ -541,7 +541,7 @@ public class RestClientTest extends AbstractMockServerTest {
       mockServer.enqueue(createResponse(400,
         "application/json",
         null,
-        "{\"error\":\"parsing failed\",\"data\":{\"error_message\":\"invalid field value\"}}"));
+        "{\"error\":\"parsing failed for write_lp endpoint\",\"data\":{\"error_message\":\"invalid field value\"}}"));
 
       restClient = new RestClient(new ClientConfig.Builder()
               .host(baseURL)

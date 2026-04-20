@@ -36,6 +36,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -245,7 +246,7 @@ final class RestClient implements AutoCloseable {
 
             String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
             List<InfluxDBPartialWriteException.LineError> lineErrors =
-                    parsePartialWriteLineErrors(path, body, contentType);
+                    parsePartialWriteLineErrors(body, contentType);
             if (!lineErrors.isEmpty()) {
                 throw new InfluxDBPartialWriteException(message, response.headers(), response.statusCode(), lineErrors);
             }
@@ -312,13 +313,8 @@ final class RestClient implements AutoCloseable {
 
     @Nonnull
     private List<InfluxDBPartialWriteException.LineError> parsePartialWriteLineErrors(
-            @Nonnull final String path,
             @Nonnull final String body,
             @Nullable final String contentType) {
-        if (!isWriteEndpoint(path)) {
-            return List.of();
-        }
-
         if (body.isEmpty()) {
             return List.of();
         }
@@ -337,7 +333,7 @@ final class RestClient implements AutoCloseable {
 
             final String error = errNonEmptyField(root, "error");
             final JsonNode dataNode = root.get("data");
-            if (error == null || dataNode == null) {
+            if (!isV3PartialWriteError(error) || dataNode == null) {
                 return List.of();
             }
 
@@ -374,8 +370,13 @@ final class RestClient implements AutoCloseable {
         }
     }
 
-    private boolean isWriteEndpoint(@Nonnull final String path) {
-        return "api/v2/write".equals(path) || "api/v3/write_lp".equals(path);
+    private boolean isV3PartialWriteError(@Nullable final String errorMessage) {
+        if (errorMessage == null || errorMessage.isEmpty()) {
+            return false;
+        }
+        String normalized = errorMessage.toLowerCase(Locale.ROOT);
+        return normalized.contains("partial write of line protocol occurred")
+                || normalized.contains("parsing failed for write_lp endpoint");
     }
 
     @Nullable

@@ -253,10 +253,40 @@ public class E2ETest {
                     + "temperature,room=room3 value=24.064857\n"
                     + "temperature,room=room4 value=43i";
 
-            Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points));
+            WriteOptions options = new WriteOptions.Builder()
+                    .acceptPartial(false)
+                    .build();
+            Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points, options));
+            Assertions.assertThat(thrown).isInstanceOf(InfluxDBPartialWriteException.class);
             Assertions.assertThat(thrown.getMessage())
-                    .isEqualTo("HTTP status code: 400; Message: write buffer error: "
-                            + "line protocol parse failed: Expected at least one space character, got end of input");
+                    .startsWith("HTTP status code: 400; Message: parsing failed for write_lp endpoint");
+        }
+    }
+
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testWriteErrorWithUseV2Api() throws Exception {
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+                System.getenv("TESTING_INFLUXDB_URL"),
+                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+                System.getenv("TESTING_INFLUXDB_DATABASE"),
+                null)) {
+
+            String points = "temperature,room=room1 value=18.94647\n"
+                    + "temperatureroom=room2value=20.268019\n"
+                    + "temperature,room=room3 value=24.064857\n"
+                    + "temperature,room=room4 value=43i";
+
+            WriteOptions options = new WriteOptions.Builder()
+                    .useV2Api(true)
+                    .build();
+            Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points, options));
+            Assertions.assertThat(thrown).isInstanceOf(InfluxDBApiHttpException.class);
+            Assertions.assertThat(thrown).isNotInstanceOf(InfluxDBPartialWriteException.class);
+            Assertions.assertThat(thrown.getMessage())
+                    .contains("write buffer error: line protocol parse failed");
         }
     }
 

@@ -115,11 +115,9 @@ client.writePoint(
 );
 
 //
-// Write with partial acceptance
+// Write with partial acceptance (default behavior)
 //
-WriteOptions partialWrite = new WriteOptions.Builder()
-        .acceptPartial(true)
-        .build();
+WriteOptions partialWrite = new WriteOptions.Builder().build();
 try {
     client.writeRecords(List.of(
             "temperature,region=west value=20.0",
@@ -130,6 +128,14 @@ try {
     e.lineErrors().forEach(line ->
             System.out.printf("line=%s msg=%s lp=%s%n", line.lineNumber(), line.errorMessage(), line.originalLine()));
 }
+
+//
+// Write via v2 compatibility endpoint (InfluxDB Clustered)
+//
+WriteOptions useV2 = new WriteOptions.Builder()
+        .useV2Api(true)
+        .build();
+client.writeRecord("temperature,location=north value=60.0", useV2);
 
 //
 // Write by LineProtocol
