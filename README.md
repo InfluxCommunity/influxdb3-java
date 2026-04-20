@@ -144,6 +144,28 @@ String record = "temperature,location=north value=60.0";
 client.writeRecord(record);
 ```
 
+#### Accept partial writes and inspect failed lines
+
+Partial writes are enabled by default.
+`acceptPartial` can be configured in three ways: client defaults via `WriteOptions`, connection string / environment variable / system property (`writeAcceptPartial` / `INFLUX_WRITE_ACCEPT_PARTIAL` / `influx.writeAcceptPartial`), or per-write `WriteOptions`.
+
+Set `acceptPartial(false)` to disable partial writes.
+With InfluxDB Core/Enterprise, when a write request fails due to one or more invalid lines, the error message starts with:
+
+- `partial write of line protocol occurred` when partial writes are enabled.
+- `parsing failed for write_lp endpoint` when partial writes are disabled.
+
+When partial writes are disabled, any rejected line causes all lines to be rejected.
+InfluxDB Clustered does not return this structured partial-write error format.
+
+#### Compatibility with InfluxDB Clustered
+
+For InfluxDB Clustered, enable `useV2Api` for writes.
+Like other write options, this can be configured in client code, connection string / environment variable / system property (`writeUseV2Api` / `INFLUX_WRITE_USE_V2_API` / `influx.writeUseV2Api`), or per-write `WriteOptions`.
+
+If `useV2Api` is set, `acceptPartial` is ignored because this compatibility mode does not support partial-write controls.
+Any rejected line causes all lines to be rejected.
+
 to query your data, you can use code like this:
 
 ```java
