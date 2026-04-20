@@ -2,13 +2,17 @@
 
 ## 1.9.0 [2026-04-23]
 
+### BREAKING CHANGES
+
+1. [#365](https://github.com/InfluxCommunity/influxdb3-java/pull/365): Adds partial writes support and aligns write routing with v3 defaults.
+   See [Partial writes](https://docs.influxdata.com/influxdb3/core/write-data/http-api/v3-write-lp/#partial-writes) for more.
+   For InfluxDB Clustered version, set `useV2Api=true` for writing.
+
 ### Features
 
 1. [#360](https://github.com/InfluxCommunity/influxdb3-java/pull/360): Support passing interceptors to the Flight client.
 1. [#363](https://github.com/InfluxCommunity/influxdb3-java/pull/363): Support custom tag order via `tagOrder` write option.
    See [Sort tags by priority](https://docs.influxdata.com/influxdb3/enterprise/write-data/best-practices/schema-design/#sort-tags-by-query-priority) for more.
-1. [#365](https://github.com/InfluxCommunity/influxdb3-java/pull/365): Support partial writes via `acceptPartial` write option.
-   See [Partial writes](https://docs.influxdata.com/influxdb3/core/write-data/http-api/v3-write-lp/#partial-writes) for more.
 
 ## 1.8.0 [2026-02-19]
 
