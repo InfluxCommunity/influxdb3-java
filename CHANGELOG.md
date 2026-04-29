@@ -2,7 +2,7 @@
 
 ## 1.9.0 [2026-04-23]
 
-### BREAKING CHANGES
+### Breaking Changes
 
 1. [#365](https://github.com/InfluxCommunity/influxdb3-java/pull/365): Adds partial writes support and aligns write routing with v3 defaults.
    See [Partial writes](https://docs.influxdata.com/influxdb3/core/write-data/http-api/v3-write-lp/#partial-writes) for more.
