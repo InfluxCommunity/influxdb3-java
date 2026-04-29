@@ -43,6 +43,9 @@ import com.influxdb.v3.client.internal.Arguments;
  *     <li><code>precision</code> - specifies the precision to use for the timestamp of points</li>
  *     <li><code>defaultTags</code> - specifies tags to be added by default to all write operations using points.</li>
  *     <li><code>tagOrder</code> - specifies preferred tag order for point serialization.</li>
+ *     <li><code>noSync</code> - skip waiting for WAL persistence on write</li>
+ *     <li><code>acceptPartial</code> - accept partial writes</li>
+ *     <li><code>useV2Api</code> - use v2 compatibility write endpoint</li>
  *     <li><code>headers</code> - specifies the headers to be added to write request</li>
  * </ul>
  * <p>
@@ -68,6 +71,14 @@ public final class WriteOptions {
      * Default NoSync.
      */
     public static final boolean DEFAULT_NO_SYNC = false;
+    /**
+     * Default AcceptPartial.
+     */
+    public static final boolean DEFAULT_ACCEPT_PARTIAL = true;
+    /**
+     * Default UseV2Api.
+     */
+    public static final boolean DEFAULT_USE_V2_API = false;
 
   /**
    * Default timeout for writes in seconds. Set to {@value}
@@ -81,12 +92,15 @@ public final class WriteOptions {
 
     @Deprecated(forRemoval = true)
     public static final WriteOptions DEFAULTS = new WriteOptions(
-            null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, null, null, null);
+            null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC, DEFAULT_ACCEPT_PARTIAL,
+            DEFAULT_USE_V2_API, null, null, null);
 
     private final String database;
     private final WritePrecision precision;
     private final Integer gzipThreshold;
     private final Boolean noSync;
+    private final Boolean acceptPartial;
+    private final Boolean useV2Api;
     private final Map<String, String> defaultTags;
     private final List<String> tagOrder;
     private final Map<String, String> headers;
@@ -99,6 +113,7 @@ public final class WriteOptions {
      */
     public static WriteOptions defaultWriteOptions() {
         return new WriteOptions(null, DEFAULT_WRITE_PRECISION, DEFAULT_GZIP_THRESHOLD, DEFAULT_NO_SYNC,
+                DEFAULT_ACCEPT_PARTIAL, DEFAULT_USE_V2_API,
                 null, null, null);
     }
 
@@ -152,7 +167,7 @@ public final class WriteOptions {
                         @Nullable final WritePrecision precision,
                         @Nullable final Integer gzipThreshold,
                         @Nullable final Boolean noSync) {
-        this(database, precision, gzipThreshold, noSync, null, null);
+        this(database, precision, gzipThreshold, noSync, null, null, null);
     }
 
     /**
@@ -184,7 +199,7 @@ public final class WriteOptions {
                         @Nullable final Integer gzipThreshold,
                         @Nullable final Map<String, String> defaultTags,
                         @Nullable final Map<String, String> headers) {
-        this(database, precision, gzipThreshold, null, defaultTags, headers);
+        this(database, precision, gzipThreshold, null, null, defaultTags, headers, null);
     }
 
     /**
@@ -209,7 +224,80 @@ public final class WriteOptions {
                         @Nullable final Boolean noSync,
                         @Nullable final Map<String, String> defaultTags,
                         @Nullable final Map<String, String> headers) {
-        this(database, precision, gzipThreshold, noSync, defaultTags, headers, null);
+        this(database, precision, gzipThreshold, noSync, null, null, defaultTags, headers, null);
+    }
+
+    /**
+     * Construct WriteAPI options.
+     *
+     * @param database      The database to be used for InfluxDB operations.
+     *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param precision     The precision to use for the timestamp of points.
+     *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     * @param gzipThreshold The threshold for compressing request body.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
+     * @param noSync        Skip waiting for WAL persistence on write.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_NO_SYNC}.
+     * @param acceptPartial Request partial write acceptance.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_ACCEPT_PARTIAL}.
+     * @param defaultTags   Default tags to be added when writing points.
+     * @param headers       The headers to be added to write request.
+     *                      The headers specified here are preferred over the headers
+     *                      specified in the client configuration.
+     * @param tagOrder      Preferred order of tags in line protocol serialization.
+     *                      Null or empty tag names are ignored.
+     */
+    public WriteOptions(@Nullable final String database,
+                        @Nullable final WritePrecision precision,
+                        @Nullable final Integer gzipThreshold,
+                        @Nullable final Boolean noSync,
+                        @Nullable final Boolean acceptPartial,
+                        @Nullable final Map<String, String> defaultTags,
+                        @Nullable final Map<String, String> headers,
+                        @Nullable final List<String> tagOrder) {
+        this(database, precision, gzipThreshold, noSync, acceptPartial, null, defaultTags, headers, tagOrder);
+    }
+
+    /**
+     * Construct WriteAPI options.
+     *
+     * @param database      The database to be used for InfluxDB operations.
+     *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
+     * @param precision     The precision to use for the timestamp of points.
+     *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     * @param gzipThreshold The threshold for compressing request body.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
+     * @param noSync        Skip waiting for WAL persistence on write.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_NO_SYNC}.
+     * @param acceptPartial Request partial write acceptance.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_ACCEPT_PARTIAL}.
+     * @param useV2Api      Use v2 compatibility write endpoint.
+     *                      If it is not specified then use {@link WriteOptions#DEFAULT_USE_V2_API}.
+     * @param defaultTags   Default tags to be added when writing points.
+     * @param headers       The headers to be added to write request.
+     *                      The headers specified here are preferred over the headers
+     *                      specified in the client configuration.
+     * @param tagOrder      Preferred order of tags in line protocol serialization.
+     *                      Null or empty tag names are ignored.
+     */
+    public WriteOptions(@Nullable final String database,
+                        @Nullable final WritePrecision precision,
+                        @Nullable final Integer gzipThreshold,
+                        @Nullable final Boolean noSync,
+                        @Nullable final Boolean acceptPartial,
+                        @Nullable final Boolean useV2Api,
+                        @Nullable final Map<String, String> defaultTags,
+                        @Nullable final Map<String, String> headers,
+                        @Nullable final List<String> tagOrder) {
+        this.database = database;
+        this.precision = precision;
+        this.gzipThreshold = gzipThreshold;
+        this.noSync = noSync;
+        this.acceptPartial = acceptPartial;
+        this.useV2Api = useV2Api;
+        this.defaultTags = defaultTags == null ? Map.of() : defaultTags;
+        this.tagOrder = sanitizeTagOrder(tagOrder);
+        this.headers = headers == null ? Map.of() : headers;
     }
 
     /**
@@ -237,13 +325,7 @@ public final class WriteOptions {
                         @Nullable final Map<String, String> defaultTags,
                         @Nullable final Map<String, String> headers,
                         @Nullable final List<String> tagOrder) {
-        this.database = database;
-        this.precision = precision;
-        this.gzipThreshold = gzipThreshold;
-        this.noSync = noSync;
-        this.defaultTags = defaultTags == null ? Map.of() : defaultTags;
-        this.tagOrder = sanitizeTagOrder(tagOrder);
-        this.headers = headers == null ? Map.of() : headers;
+        this(database, precision, gzipThreshold, noSync, null, null, defaultTags, headers, tagOrder);
     }
 
     /**
@@ -299,8 +381,37 @@ public final class WriteOptions {
      */
     public boolean noSyncSafe(@Nonnull final ClientConfig config) {
         Arguments.checkNotNull(config, "config");
-        return noSync != null ? noSync
-                : (config.getWriteNoSync() != null ? config.getWriteNoSync() : DEFAULT_NO_SYNC);
+        return noSync != null ? noSync : config.getWriteNoSync();
+    }
+
+    /**
+     * @param config with default value
+     * @return Accept partial write.
+     */
+    public boolean acceptPartialSafe(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
+        return acceptPartial != null ? acceptPartial : config.getWriteAcceptPartial();
+    }
+
+    /**
+     * @param config with default value
+     * @return Use v2 compatibility write endpoint.
+     */
+    public boolean useV2ApiSafe(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
+        return useV2Api != null ? useV2Api : config.getWriteUseV2Api();
+    }
+
+    /**
+     * Validate write option combinations.
+     *
+     * @param config with default values
+     */
+    public void validate(@Nonnull final ClientConfig config) {
+        Arguments.checkNotNull(config, "config");
+        if (useV2ApiSafe(config) && noSyncSafe(config)) {
+            throw new IllegalArgumentException("invalid write options: NoSync cannot be used in V2 API");
+        }
     }
 
     /**
@@ -332,6 +443,8 @@ public final class WriteOptions {
                 && precision == that.precision
                 && Objects.equals(gzipThreshold, that.gzipThreshold)
                 && Objects.equals(noSync, that.noSync)
+                && Objects.equals(acceptPartial, that.acceptPartial)
+                && Objects.equals(useV2Api, that.useV2Api)
                 && defaultTags.equals(that.defaultTags)
                 && tagOrder.equals(that.tagOrder)
                 && headers.equals(that.headers);
@@ -339,7 +452,8 @@ public final class WriteOptions {
 
     @Override
     public int hashCode() {
-        return Objects.hash(database, precision, gzipThreshold, noSync, defaultTags, tagOrder, headers);
+        return Objects.hash(database, precision, gzipThreshold, noSync, acceptPartial, useV2Api, defaultTags, tagOrder,
+                headers);
     }
 
     private boolean isNotDefined(final String option) {
@@ -368,6 +482,8 @@ public final class WriteOptions {
         private WritePrecision precision;
         private Integer gzipThreshold;
         private Boolean noSync;
+        private Boolean acceptPartial;
+        private Boolean useV2Api;
         private Map<String, String> defaultTags = new HashMap<>();
         private List<String> tagOrder = List.of();
         private Map<String, String> headers = new HashMap<>();
@@ -425,6 +541,32 @@ public final class WriteOptions {
         }
 
         /**
+         * Sets whether to request partial write acceptance.
+         *
+         * @param acceptPartial request partial write acceptance
+         * @return this
+         */
+        @Nonnull
+        public Builder acceptPartial(@Nonnull final Boolean acceptPartial) {
+
+            this.acceptPartial = acceptPartial;
+            return this;
+        }
+
+        /**
+         * Sets whether to use v2 compatibility write endpoint.
+         *
+         * @param useV2Api use v2 compatibility write endpoint
+         * @return this
+         */
+        @Nonnull
+        public Builder useV2Api(@Nonnull final Boolean useV2Api) {
+
+            this.useV2Api = useV2Api;
+            return this;
+        }
+
+        /**
          * Sets defaultTags.
          *
          * @param defaultTags to be used when writing points
@@ -473,7 +615,8 @@ public final class WriteOptions {
     }
 
     private WriteOptions(@Nonnull final Builder builder) {
-        this(builder.database, builder.precision, builder.gzipThreshold, builder.noSync, builder.defaultTags,
-                builder.headers, builder.tagOrder);
+        this(builder.database, builder.precision, builder.gzipThreshold, builder.noSync, builder.acceptPartial,
+                builder.useV2Api,
+                builder.defaultTags, builder.headers, builder.tagOrder);
     }
 }
