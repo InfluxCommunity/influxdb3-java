@@ -92,9 +92,9 @@
         <junit-platform.version>1.14.4</junit-platform.version>
         <arrow.version>19.0.0</arrow.version>
         <!-- grpc-bom 1.79.0 is very likely incompatible with Arrow 18.3.0 -->
-        <grpc-bom.version>1.80.0</grpc-bom.version>
+        <grpc-bom.version>1.81.0</grpc-bom.version>
         <!-- keep aligned with gRPC/Arrow -->
-        <netty-bom.version>4.2.12.Final</netty-bom.version>
+        <netty-bom.version>4.2.13.Final</netty-bom.version>
 
         <plugin.surefire.version>3.5.5</plugin.surefire.version>
         <plugin.jacoco.version>0.8.14</plugin.jacoco.version>
