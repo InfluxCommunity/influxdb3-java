@@ -557,6 +557,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>precision - timestamp precision when writing data</li>
      *   <li>gzipThreshold - payload size size for gzipping data</li>
      *   <li>writeNoSync - skip waiting for WAL persistence on write</li>
+     *   <li>writeAcceptPartial - accept partial writes</li>
+     *   <li>writeUseV2Api - use v2 compatibility write endpoint</li>
      * </ul>
      *
      * @param connectionString connection string
@@ -590,6 +592,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>INFLUX_PRECISION - timestamp precision when writing data</li>
      *   <li>INFLUX_GZIP_THRESHOLD - payload size size for gzipping data</li>
      *   <li>INFLUX_WRITE_NO_SYNC - skip waiting for WAL persistence on write</li>
+     *   <li>INFLUX_WRITE_ACCEPT_PARTIAL - accept partial writes</li>
+     *   <li>INFLUX_WRITE_USE_V2_API - use v2 compatibility write endpoint</li>
      * </ul>
      * Supported system properties:
      * <ul>
@@ -601,6 +605,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>influx.precision - timestamp precision when writing data</li>
      *   <li>influx.gzipThreshold - payload size size for gzipping data</li>
      *   <li>influx.writeNoSync - skip waiting for WAL persistence on write</li>
+     *   <li>influx.writeAcceptPartial - accept partial writes</li>
+     *   <li>influx.writeUseV2Api - use v2 compatibility write endpoint</li>
      * </ul>
      *
      * @return instance of {@link InfluxDBClient}

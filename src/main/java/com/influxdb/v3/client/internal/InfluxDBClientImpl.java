@@ -305,27 +305,33 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         }
 
         WritePrecision precision = options.precisionSafe(config);
+        options.validate(config);
 
         String path;
         Map<String, String> queryParams;
         boolean noSync = options.noSyncSafe(config);
-        if (noSync) {
-            // Setting no_sync=true is supported only in the v3 API.
-            path = "api/v3/write_lp";
-            queryParams = new HashMap<>() {{
-                put("org", config.getOrganization());
-                put("db", database);
-                put("precision", WritePrecisionConverter.toV3ApiString(precision));
-                put("no_sync", "true");
-            }};
-        } else {
-            // By default, use the v2 API.
+        boolean acceptPartial = options.acceptPartialSafe(config);
+        boolean useV2Api = options.useV2ApiSafe(config);
+        if (useV2Api) {
             path = "api/v2/write";
             queryParams = new HashMap<>() {{
                 put("org", config.getOrganization());
                 put("bucket", database);
                 put("precision", WritePrecisionConverter.toV2ApiString(precision));
             }};
+        } else {
+            path = "api/v3/write_lp";
+            queryParams = new HashMap<>() {{
+                put("org", config.getOrganization());
+                put("db", database);
+                put("precision", WritePrecisionConverter.toV3ApiString(precision));
+            }};
+            if (noSync) {
+                queryParams.put("no_sync", "true");
+            }
+            if (!acceptPartial) {
+                queryParams.put("accept_partial", "false");
+            }
         }
 
         Map<String, String> defaultTags = options.defaultTagsSafe(config);
@@ -373,10 +379,11 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         try {
             restClient.request(path, HttpMethod.POST, body, queryParams, headers);
         } catch (InfluxDBApiHttpException e) {
-            if (noSync && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
-                // Server does not support the v3 write API, can't use the NoSync option.
-                throw new InfluxDBApiHttpException("Server doesn't support write with NoSync=true "
-                        + "(supported by InfluxDB 3 Core/Enterprise servers only).", e.headers(), e.statusCode());
+            if (!useV2Api && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
+                throw new InfluxDBApiHttpException("Server doesn't support v3 write API. "
+                        + "Use WriteOptions.Builder.useV2Api(true) for v2 compatibility endpoint.",
+                        e.headers(),
+                        e.statusCode());
             }
             throw e;
         }
