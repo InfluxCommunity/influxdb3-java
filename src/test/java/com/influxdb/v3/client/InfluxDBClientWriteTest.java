@@ -401,7 +401,7 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         mockServer.enqueue(createResponse(200));
 
         ClientConfig cfg = new ClientConfig.Builder().host(baseURL).token("TOKEN".toCharArray()).database("DB")
-                .writePrecision(WritePrecision.S)
+                .writePrecision(WritePrecision.US)
                 .writeNoSync(true)
                 .gzipThreshold(1)
                 .build();
@@ -412,7 +412,10 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writePoint(point);
         }
 
-        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, "true", null, true);
+        // When writing Point, precision send to the servers is always nanosecond
+        var expectedPrecision = "nanosecond";
+
+        checkWriteCalled("/api/v3/write_lp", "DB", expectedPrecision, true, "true", null, true);
     }
 
     @Test
@@ -447,7 +450,10 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writePoints(List.of(point));
         }
 
-        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, "true", null, true);
+        // When writing Point, precision send to the servers is always nanosecond
+        var expectedPrecision = "nanosecond";
+
+        checkWriteCalled("/api/v3/write_lp", "DB", expectedPrecision, true, "true", null, true);
     }
 
     private void checkWriteCalled(final String expectedPath, final String expectedDB,
