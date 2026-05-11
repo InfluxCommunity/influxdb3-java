@@ -620,12 +620,12 @@ public class E2ETest {
                             .setTag("type", "test")
                             .setFloatField("rads", 3.14)
                             .setIntegerField("life", 12)
-                            .setTimestamp(Instant.now().toEpochMilli() / 1000, WritePrecision.S),
+                            .setTimestamp(Instant.now().plusSeconds(1).toEpochMilli() / 1000, WritePrecision.S),
                     Point.measurement(measurement)
                             .setTag("type", "test")
                             .setFloatField("rads", 3.14)
                             .setIntegerField("life", 432)
-                            .setTimestamp(Instant.now().toEpochMilli() * 1000, WritePrecision.US)
+                            .setTimestamp(Instant.now().plusSeconds(2).toEpochMilli() * 1000, WritePrecision.US)
             );
             client.writePoints(points, writeOptions);
             var results = client.queryPoints("select * from " + measurement).collect(Collectors.toList());
