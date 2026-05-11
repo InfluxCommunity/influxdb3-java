@@ -304,7 +304,13 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                     + "or use default configuration at 'ClientConfig.database'.");
         }
 
-        WritePrecision precision = options.precisionSafe(config);
+        WritePrecision precision;
+        if (!data.isEmpty() && data.get(0) instanceof Point) {
+            // When writing points, timestamp always be converted to nanoseconds.
+            precision = WritePrecision.NS;
+        } else {
+            precision = options.precisionSafe(config);
+        }
         options.validate(config);
 
         String path;
