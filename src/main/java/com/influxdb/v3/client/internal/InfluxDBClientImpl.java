@@ -304,7 +304,14 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
                     + "or use default configuration at 'ClientConfig.database'.");
         }
 
-        WritePrecision precision = options.precisionSafe(config);
+        WritePrecision precision;
+
+        if (isWritePoint(data)) {
+            // When writing Point(s), the timestamp is always converted to nanoseconds.
+            precision = WritePrecision.NS;
+        } else {
+            precision = options.precisionSafe(config);
+        }
         options.validate(config);
 
         String path;
@@ -471,5 +478,14 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         gzip.close();
 
         return out.toByteArray();
+    }
+
+    private <T> boolean isWritePoint(@Nonnull final List<T> data) {
+        for (T writeAble : data) {
+            if (writeAble instanceof Point) {
+                return true;
+            }
+        }
+        return false;
     }
 }

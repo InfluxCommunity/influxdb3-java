@@ -53,7 +53,10 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>authScheme</code> - authentication scheme</li>
  *     <li><code>organization</code> - organization to be used for operations</li>
  *     <li><code>database</code> - database to be used for InfluxDB operations</li>
- *     <li><code>writePrecision</code> - precision to use when writing points to InfluxDB</li>
+ *     <li><code>writePrecision</code> - precision to use when writing points to InfluxDB.
+ *      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+ *      for those writes, the client always sends {@link WritePrecision#NS}
+ *      precision to the server.</li>
  *     <li><code>defaultTags</code> - defaultTags added when writing points to InfluxDB</li>
  *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
  *     <li><code>writeNoSync</code> - skip waiting for WAL persistence on write</li>
@@ -548,7 +551,10 @@ public final class ClientConfig {
          * if no precision is specified in the write API call.
          *
          * @param writePrecision default precision to use for the timestamp of points
-         *                       if no precision is specified in the write API call
+         *                       if no precision is specified in the write API call.
+         *                       This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+         *                       for those writes, the client always sends {@link WritePrecision#NS}
+         *                       precision to the server.
          * @return this
          */
         @Nonnull

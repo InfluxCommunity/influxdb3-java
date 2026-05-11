@@ -6,6 +6,11 @@
    See [Partial writes](https://docs.influxdata.com/influxdb3/core/write-data/http-api/v3-write-lp/#partial-writes) for more.
    For InfluxDB Clustered version, set `useV2Api=true` for writing.
 
+### Bug Fixes
+
+1. [#384](https://github.com/InfluxCommunity/influxdb3-java/pull/384): Always set `precision` to `nanosecond` when
+   writing Points.
+
 ## 1.9.0 [2026-04-23]
 
 ### Features
