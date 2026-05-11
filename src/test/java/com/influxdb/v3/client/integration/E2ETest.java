@@ -595,10 +595,43 @@ public class E2ETest {
                 }
             }
         }
-
-
     }
 
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_URL", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_TOKEN", matches = ".*")
+    @EnabledIfEnvironmentVariable(named = "TESTING_INFLUXDB_DATABASE", matches = ".*")
+    @Test
+    public void testWriteWithDifferentTimeUnit() throws Exception {
+        // These tests make sure that timestamp always converted to nanoseconds when writing Points.
+        try (InfluxDBClient client = InfluxDBClient.getInstance(
+                System.getenv("TESTING_INFLUXDB_URL"),
+                System.getenv("TESTING_INFLUXDB_TOKEN").toCharArray(),
+                System.getenv("TESTING_INFLUXDB_DATABASE"),
+                null)) {
+            var writeOptions = new WriteOptions.Builder().precision(WritePrecision.MS).build();
+            String measurement = "test_" + Instant.now().toEpochMilli() % 1000;
+            List<Point> points = List.of(
+                    Point.measurement(measurement)
+                            .setTag("type", "test")
+                            .setFloatField("rads", 3.14)
+                            .setIntegerField("life", 42)
+                            .setTimestamp(Instant.now().toEpochMilli(), WritePrecision.MS),
+                    Point.measurement(measurement)
+                            .setTag("type", "test")
+                            .setFloatField("rads", 3.14)
+                            .setIntegerField("life", 12)
+                            .setTimestamp(Instant.now().toEpochMilli() / 1000, WritePrecision.S),
+                    Point.measurement(measurement)
+                            .setTag("type", "test")
+                            .setFloatField("rads", 3.14)
+                            .setIntegerField("life", 432)
+                            .setTimestamp(Instant.now().toEpochMilli() * 1000, WritePrecision.US)
+            );
+            client.writePoints(points, writeOptions);
+            var results = client.queryPoints("select * from " + measurement).collect(Collectors.toList());
+            Assertions.assertThat(results).hasSize(3);
+        }
+    }
 
     private void assertGetDataSuccess(@Nonnull final InfluxDBClient influxDBClient) {
         influxDBClient.writePoint(
