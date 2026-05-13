@@ -459,9 +459,9 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("pointPrecisionIgnoredCases")
     void pointWritesIgnoreWriteOptionsPrecision(
-            String name,
-            WritePrecision configuredPrecision,
-            boolean manyPoints) throws Exception {
+            @Nonnull final String name,
+            @Nonnull final WritePrecision configuredPrecision,
+            final boolean manyPoints) throws Exception {
         mockServer.enqueue(createResponse(200));
         ClientConfig cfg = new ClientConfig.Builder()
                 .host(baseURL)
