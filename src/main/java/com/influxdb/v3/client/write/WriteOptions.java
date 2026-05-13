@@ -40,7 +40,9 @@ import com.influxdb.v3.client.internal.Arguments;
  * <ul>
  *     <li><code>database</code> - specifies the database to be used for InfluxDB operations</li>
  *     <li><code>organization</code> - specifies the organization to be used for InfluxDB operations</li>
- *     <li><code>precision</code> - specifies the precision to use for the timestamp of points</li>
+ *     <li><code>precision</code> - specifies the precision to use for timestamps in line protocol records.
+ *     This setting is ignored when writing {@link com.influxdb.v3.client.Point}; for those writes, the client
+ *     always sends {@link WritePrecision#NS} precision to the server.</li>
  *     <li><code>defaultTags</code> - specifies tags to be added by default to all write operations using points.</li>
  *     <li><code>tagOrder</code> - specifies preferred tag order for point serialization.</li>
  *     <li><code>noSync</code> - skip waiting for WAL persistence on write</li>
@@ -122,8 +124,11 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+     *                      for those writes, the client always sends {@link WritePrecision#NS}
+     *                      precision to the server.
      * @param gzipThreshold The threshold for compressing request body.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      */
@@ -138,8 +143,11 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+     *                      for those writes, the client always sends {@link WritePrecision#NS}
+     *                      precision to the server.
      * @param gzipThreshold The threshold for compressing request body.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      * @param defaultTags   Default tags to be added when writing points.
@@ -156,8 +164,11 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+     *                      for those writes, the client always sends {@link WritePrecision#NS}
+     *                      precision to the server.
      * @param gzipThreshold The threshold for compressing request body.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      * @param noSync        Skip waiting for WAL persistence on write.
@@ -185,8 +196,11 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+     *                      for those writes, the client always sends {@link WritePrecision#NS}
+     *                      precision to the server.
      * @param gzipThreshold The threshold for compressing request body.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      * @param defaultTags   Default tags to be added when writing points.
@@ -207,8 +221,11 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+     *                      for those writes, the client always sends {@link WritePrecision#NS}
+     *                      precision to the server.
      * @param gzipThreshold The threshold for compressing request body.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      * @param noSync        Skip waiting for WAL persistence on write.
@@ -232,8 +249,11 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+     *                      for those writes, the client always sends {@link WritePrecision#NS}
+     *                      precision to the server.
      * @param gzipThreshold The threshold for compressing request body.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      * @param noSync        Skip waiting for WAL persistence on write.
@@ -263,8 +283,11 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+     *                      for those writes, the client always sends {@link WritePrecision#NS}
+     *                      precision to the server.
      * @param gzipThreshold The threshold for compressing request body.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      * @param noSync        Skip waiting for WAL persistence on write.
@@ -305,8 +328,11 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
+     *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
+     *                      for those writes, the client always sends {@link WritePrecision#NS}
+     *                      precision to the server.
      * @param gzipThreshold The threshold for compressing request body.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_GZIP_THRESHOLD}.
      * @param noSync        Skip waiting for WAL persistence on write.

@@ -412,7 +412,10 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writePoint(point);
         }
 
-        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, "true", null, true);
+        // When writing Point, precision sent to the server is always nanosecond
+        var expectedPrecision = "nanosecond";
+
+        checkWriteCalled("/api/v3/write_lp", "DB", expectedPrecision, true, "true", null, true);
     }
 
     @Test
@@ -447,7 +450,47 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
             client.writePoints(List.of(point));
         }
 
-        checkWriteCalled("/api/v3/write_lp", "DB", "second", true, "true", null, true);
+        // When writing Point, precision sent to the server is always nanosecond
+        var expectedPrecision = "nanosecond";
+
+        checkWriteCalled("/api/v3/write_lp", "DB", expectedPrecision, true, "true", null, true);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("pointPrecisionIgnoredCases")
+    void pointWritesIgnoreWriteOptionsPrecision(
+            @Nonnull final String name,
+            @Nonnull final WritePrecision configuredPrecision,
+            final boolean manyPoints) throws Exception {
+        mockServer.enqueue(createResponse(200));
+        ClientConfig cfg = new ClientConfig.Builder()
+                .host(baseURL)
+                .token("TOKEN".toCharArray())
+                .database("DB")
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            Point point = new Point("mem");
+            point.setTag("tag", "one");
+            point.setField("value", 1.0);
+            WriteOptions options = new WriteOptions.Builder()
+                    .precision(configuredPrecision)
+                    .build();
+            if (manyPoints) {
+                client.writePoints(List.of(point), options);
+            } else {
+                client.writePoint(point, options);
+            }
+        }
+        checkWriteCalled("/api/v3/write_lp", "DB", "nanosecond", true, null, null, false);
+    }
+
+    private static Stream<Arguments> pointPrecisionIgnoredCases() {
+        return Stream.of(
+                Arguments.of("writePoint precision=S", WritePrecision.S, false),
+                Arguments.of("writePoint precision=MS", WritePrecision.MS, false),
+                Arguments.of("writePoints precision=S", WritePrecision.S, true),
+                Arguments.of("writePoints precision=US", WritePrecision.US, true)
+        );
     }
 
     private void checkWriteCalled(final String expectedPath, final String expectedDB,
