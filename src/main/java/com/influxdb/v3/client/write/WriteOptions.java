@@ -143,7 +143,7 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
      *                      for those writes, the client always sends {@link WritePrecision#NS}
@@ -164,7 +164,7 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
      *                      for those writes, the client always sends {@link WritePrecision#NS}
@@ -196,7 +196,7 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
      *                      for those writes, the client always sends {@link WritePrecision#NS}
@@ -221,7 +221,7 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
      *                      for those writes, the client always sends {@link WritePrecision#NS}
@@ -249,7 +249,7 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
      *                      for those writes, the client always sends {@link WritePrecision#NS}
@@ -283,7 +283,7 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
      *                      for those writes, the client always sends {@link WritePrecision#NS}
@@ -328,7 +328,7 @@ public final class WriteOptions {
      *
      * @param database      The database to be used for InfluxDB operations.
      *                      If it is not specified then use {@link ClientConfig#getDatabase()}.
-     * @param precision     The precision to use for the timestamp of points.
+     * @param precision     The precision to use for the timestamp.
      *                      If it is not specified then use {@link ClientConfig#getWritePrecision()}.
      *                      This setting is ignored when writing {@link com.influxdb.v3.client.Point};
      *                      for those writes, the client always sends {@link WritePrecision#NS}
