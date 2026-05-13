@@ -456,6 +456,43 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         checkWriteCalled("/api/v3/write_lp", "DB", expectedPrecision, true, "true", null, true);
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("pointPrecisionIgnoredCases")
+    void pointWritesIgnoreWriteOptionsPrecision(
+            String name,
+            WritePrecision configuredPrecision,
+            boolean manyPoints) throws Exception {
+        mockServer.enqueue(createResponse(200));
+        ClientConfig cfg = new ClientConfig.Builder()
+                .host(baseURL)
+                .token("TOKEN".toCharArray())
+                .database("DB")
+                .build();
+        try (InfluxDBClient client = InfluxDBClient.getInstance(cfg)) {
+            Point point = new Point("mem");
+            point.setTag("tag", "one");
+            point.setField("value", 1.0);
+            WriteOptions options = new WriteOptions.Builder()
+                    .precision(configuredPrecision)
+                    .build();
+            if (manyPoints) {
+                client.writePoints(List.of(point), options);
+            } else {
+                client.writePoint(point, options);
+            }
+        }
+        checkWriteCalled("/api/v3/write_lp", "DB", "nanosecond", true, null, null, false);
+    }
+
+    private static Stream<Arguments> pointPrecisionIgnoredCases() {
+        return Stream.of(
+                Arguments.of("writePoint precision=S", WritePrecision.S, false),
+                Arguments.of("writePoint precision=MS", WritePrecision.MS, false),
+                Arguments.of("writePoints precision=S", WritePrecision.S, true),
+                Arguments.of("writePoints precision=US", WritePrecision.US, true)
+        );
+    }
+
     private void checkWriteCalled(final String expectedPath, final String expectedDB,
                                   final String expectedPrecision, final boolean expectedV3,
                                   @Nullable final String expectedNoSync,
