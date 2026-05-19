@@ -446,8 +446,8 @@ final class RestClient implements AutoCloseable {
     }
 
     @Nullable
-    private String errNonEmptyRawJsonToken(@Nullable final JsonNode node) {
-        if (node == null || node.isNull()) {
+    private String errNonEmptyRawJsonToken(@Nonnull final JsonNode node) {
+        if (node.isNull()) {
             return null;
         }
 
