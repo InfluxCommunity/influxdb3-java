@@ -46,8 +46,8 @@ import com.influxdb.v3.client.internal.Arguments;
  *     <li><code>defaultTags</code> - specifies tags to be added by default to all write operations using points.</li>
  *     <li><code>tagOrder</code> - specifies preferred tag order for point serialization.</li>
  *     <li><code>noSync</code> - skip waiting for WAL persistence on write</li>
- *     <li><code>acceptPartial</code> - accept partial writes</li>
- *     <li><code>useV2Api</code> - use v2 compatibility write endpoint</li>
+ *     <li><code>acceptPartial</code> - accept partial writes on the V3 API endpoint</li>
+ *     <li><code>useV2Api</code> - route writes to the V2 API endpoint</li>
  *     <li><code>headers</code> - specifies the headers to be added to write request</li>
  * </ul>
  * <p>
@@ -80,7 +80,7 @@ public final class WriteOptions {
     /**
      * Default UseV2Api.
      */
-    public static final boolean DEFAULT_USE_V2_API = false;
+    public static final boolean DEFAULT_USE_V2_API = true;
 
   /**
    * Default timeout for writes in seconds. Set to {@value}
@@ -294,7 +294,7 @@ public final class WriteOptions {
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_NO_SYNC}.
      * @param acceptPartial Request partial write acceptance.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_ACCEPT_PARTIAL}.
-     * @param useV2Api      Use v2 compatibility write endpoint.
+     * @param useV2Api      Use V2 API endpoint.
      *                      If it is not specified then use {@link WriteOptions#DEFAULT_USE_V2_API}.
      * @param defaultTags   Default tags to be added when writing points.
      * @param headers       The headers to be added to write request.
@@ -421,7 +421,7 @@ public final class WriteOptions {
 
     /**
      * @param config with default value
-     * @return Use v2 compatibility write endpoint.
+     * @return Route writes to the V2 API endpoint.
      */
     public boolean useV2ApiSafe(@Nonnull final ClientConfig config) {
         Arguments.checkNotNull(config, "config");
@@ -436,7 +436,7 @@ public final class WriteOptions {
     public void validate(@Nonnull final ClientConfig config) {
         Arguments.checkNotNull(config, "config");
         if (useV2ApiSafe(config) && noSyncSafe(config)) {
-            throw new IllegalArgumentException("invalid write options: NoSync cannot be used in V2 API");
+            throw new IllegalArgumentException("invalid write options: noSync requires useV2Api=false");
         }
     }
 
@@ -580,9 +580,9 @@ public final class WriteOptions {
         }
 
         /**
-         * Sets whether to use v2 compatibility write endpoint.
+         * Sets whether to use V2 API endpoint.
          *
-         * @param useV2Api use v2 compatibility write endpoint
+         * @param useV2Api use V2 API endpoint
          * @return this
          */
         @Nonnull

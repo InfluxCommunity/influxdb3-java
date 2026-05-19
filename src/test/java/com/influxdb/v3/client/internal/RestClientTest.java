@@ -684,7 +684,8 @@ public class RestClientTest extends AbstractMockServerTest {
           "empty original_line uses message-only detail",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
             + "\"only error message\",\"line_number\":2,\"original_line\":\"\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: only error message"
         ),
         Arguments.of(
           "multiple valid details append without extra colon",
@@ -698,8 +699,8 @@ public class RestClientTest extends AbstractMockServerTest {
           "array of strings fallback",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[\"bad line 1\",\"bad line 2\"]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tbad line 1\n"
-            + "\tbad line 2"
+            + "\t\"bad line 1\"\n"
+            + "\t\"bad line 2\""
         ),
         Arguments.of(
           "textual numeric line_number",

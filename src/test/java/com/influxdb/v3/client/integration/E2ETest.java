@@ -204,6 +204,7 @@ public class E2ETest {
                     + "home,room=Sunroom temp=88i 1735545620";
 
             WriteOptions options = new WriteOptions.Builder()
+                    .useV2Api(false)
                     .acceptPartial(true)
                     .build();
 
@@ -254,6 +255,7 @@ public class E2ETest {
                     + "home,room=Sunroom temp=88i 1735545620";
 
             WriteOptions options = new WriteOptions.Builder()
+                    .useV2Api(false)
                     .acceptPartial(false)
                     .build();
             Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points, options));

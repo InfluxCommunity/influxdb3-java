@@ -390,9 +390,7 @@ final class RestClient implements AutoCloseable {
         }
 
         final String value;
-        if (node.isTextual()) {
-            value = node.asText();
-        } else if (node.isNumber() || node.isBoolean()) {
+        if (node.isNumber() || node.isBoolean()) {
             value = node.asText();
         } else {
             value = node.toString();
@@ -420,11 +418,14 @@ final class RestClient implements AutoCloseable {
                     continue;
                 }
 
-                if (lineError.lineNumber() != null
-                        && lineError.originalLine() != null
-                        && !lineError.originalLine().isEmpty()) {
-                    details.add("line " + lineError.lineNumber() + ": "
-                            + lineError.errorMessage() + " (" + lineError.originalLine() + ")");
+                if (lineError.lineNumber() != null) {
+                    final StringBuilder detail = new StringBuilder()
+                            .append("line ").append(lineError.lineNumber())
+                            .append(": ").append(lineError.errorMessage());
+                    if (lineError.originalLine() != null && !lineError.originalLine().isEmpty()) {
+                        detail.append(" (").append(lineError.originalLine()).append(")");
+                    }
+                    details.add(detail.toString());
                 } else {
                     details.add(lineError.errorMessage());
                 }

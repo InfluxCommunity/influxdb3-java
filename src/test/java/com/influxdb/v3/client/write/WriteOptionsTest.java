@@ -284,7 +284,7 @@ class WriteOptionsTest {
 
         Assertions.assertThatThrownBy(() -> options.validate(config))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("invalid write options: NoSync cannot be used in V2 API");
+                .hasMessage("invalid write options: noSync requires useV2Api=false");
     }
 
     @Test

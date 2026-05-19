@@ -134,7 +134,7 @@ try {
 }
 
 //
-// Write via v2 compatibility endpoint (InfluxDB Clustered)
+// Write via V2 API endpoint (InfluxDB Clustered and InfluxDB Cloud Dedicated/Serverless)
 //
 WriteOptions useV2 = new WriteOptions.Builder()
         .useV2Api(true)
@@ -150,7 +150,7 @@ client.writeRecord(record);
 
 #### Accept partial writes and inspect failed lines
 
-Partial writes are enabled by default.
+Partial writes are enabled by default when writing through the V3 API endpoint (`useV2Api=false`).
 `acceptPartial` can be configured in three ways: client defaults via `WriteOptions`, connection string / environment variable / system property (`writeAcceptPartial` / `INFLUX_WRITE_ACCEPT_PARTIAL` / `influx.writeAcceptPartial`), or per-write `WriteOptions`.
 
 Set `acceptPartial(false)` to disable partial writes.
@@ -162,13 +162,13 @@ With InfluxDB Core/Enterprise, when a write request fails due to one or more inv
 When partial writes are disabled, any rejected line causes all lines to be rejected.
 InfluxDB Clustered does not return this structured partial-write error format.
 
-#### Compatibility with InfluxDB Clustered
+#### Compatibility with InfluxDB Clustered and InfluxDB Cloud Dedicated/Serverless
 
-For InfluxDB Clustered, enable `useV2Api` for writes.
+Writes use the V2 API endpoint by default.
 Like other write options, this can be configured in client code, connection string / environment variable / system property (`writeUseV2Api` / `INFLUX_WRITE_USE_V2_API` / `influx.writeUseV2Api`), or per-write `WriteOptions`.
 
-If `useV2Api` is set, `acceptPartial` is ignored because this compatibility mode does not support partial-write controls.
-Any rejected line causes all lines to be rejected.
+`NoSync` requires the V3 API endpoint, which is available with InfluxDB 3 Core/Enterprise. `acceptPartial` applies only when writes are sent to the V3 API endpoint and is ignored when using the V2 API endpoint. To use `NoSync`, set `useV2Api=false`.
+Note: when writes use the V2 API endpoint, `NoSync=true` returns a validation error (`invalid write options: noSync requires useV2Api=false`).
 
 ### Query
 

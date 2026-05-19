@@ -95,7 +95,7 @@ class ClientConfigTest {
         Assertions.assertThat(configString.contains("gzipThreshold=1000")).isEqualTo(true);
         Assertions.assertThat(configString).contains("writeNoSync=false");
         Assertions.assertThat(configString).contains("writeAcceptPartial=true");
-        Assertions.assertThat(configString).contains("writeUseV2Api=false");
+        Assertions.assertThat(configString).contains("writeUseV2Api=true");
         Assertions.assertThat(configString).contains("timeout=PT30S");
         Assertions.assertThat(configString).contains("writeTimeout=PT35S");
         Assertions.assertThat(configString).contains("queryTimeout=PT2M");
