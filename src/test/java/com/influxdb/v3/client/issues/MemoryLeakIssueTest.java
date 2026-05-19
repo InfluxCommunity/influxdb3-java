@@ -64,6 +64,7 @@ public class MemoryLeakIssueTest {
                 .token(token.toCharArray())
                 .database(database)
                 .writeNoSync(true)
+                .writeUseV2Api(false)
                 .build();
 
         try (InfluxDBClient client = InfluxDBClient.getInstance(config)) {
