@@ -3,7 +3,7 @@
 ### Features
 
 1. [#388](https://github.com/InfluxCommunity/influxdb3-java/pull/388): Adds partial writes support and defaults writes to the V2 API endpoint.
-   - `NoSync` requires `useV2Api=false` and the V3 API endpoint.
+   - `noSync` requires `useV2Api=false` and the V3 API endpoint.
    - `acceptPartial` applies only when writes are sent to the V3 API endpoint and is ignored when using the V2 API endpoint.
    - See [Partial writes](https://docs.influxdata.com/influxdb3/core/write-data/http-api/v3-write-lp/#partial-writes) for more.
 
