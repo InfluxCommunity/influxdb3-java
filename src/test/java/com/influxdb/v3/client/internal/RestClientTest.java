@@ -407,6 +407,41 @@ public class RestClientTest extends AbstractMockServerTest {
               .hasMessage("HTTP status code: 401; Message: token does not have sufficient permissions");
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("errorFromBodyScalarMessageCases")
+    public void errorFromBodyScalarMessage(final String testName,
+                                           final String responseBody,
+                                           final String expectedMessage) {
+
+      mockServer.enqueue(createResponse(401,
+        "application/json",
+        null,
+        responseBody));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+              .host(baseURL)
+              .build());
+
+      Assertions.assertThatThrownBy(
+         () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+      )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage(expectedMessage);
+    }
+
+    private static Stream<Arguments> errorFromBodyScalarMessageCases() {
+      return Stream.of(
+        Arguments.of(
+          "numeric message",
+          "{\"message\":123}",
+          "HTTP status code: 401; Message: 123"),
+        Arguments.of(
+          "boolean message",
+          "{\"message\":true}",
+          "HTTP status code: 401; Message: true")
+      );
+    }
+
     @Test
     public void errorFromBodyIgnoredForNonJsonContentType() {
       mockServer.enqueue(createResponse(400,

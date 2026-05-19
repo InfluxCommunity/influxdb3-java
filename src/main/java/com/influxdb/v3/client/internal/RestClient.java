@@ -424,7 +424,7 @@ final class RestClient implements AutoCloseable {
                     final StringBuilder detail = new StringBuilder()
                             .append("line ").append(lineError.lineNumber())
                             .append(": ").append(lineError.errorMessage());
-                    if (lineError.originalLine() != null && !lineError.originalLine().isEmpty()) {
+                    if (lineError.originalLine() != null) {
                         detail.append(" (").append(lineError.originalLine()).append(")");
                     }
                     details.add(detail.toString());
@@ -457,7 +457,7 @@ final class RestClient implements AutoCloseable {
         } else {
             value = node.toString();
         }
-        return value.isEmpty() ? null : value;
+        return value;
     }
 
     @Nullable
