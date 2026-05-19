@@ -390,7 +390,9 @@ final class RestClient implements AutoCloseable {
         }
 
         final String value;
-        if (node.isNumber() || node.isBoolean()) {
+        if (node.isTextual()) {
+            value = node.asText();
+        } else if (node.isNumber() || node.isBoolean()) {
             value = node.asText();
         } else {
             value = node.toString();
@@ -435,12 +437,27 @@ final class RestClient implements AutoCloseable {
 
         final List<String> details = new ArrayList<>();
         for (JsonNode item : dataNode) {
-            final String raw = errNonEmptyText(item);
+            final String raw = errNonEmptyRawJsonToken(item);
             if (raw != null) {
                 details.add(raw);
             }
         }
         return details;
+    }
+
+    @Nullable
+    private String errNonEmptyRawJsonToken(@Nullable final JsonNode node) {
+        if (node == null || node.isNull()) {
+            return null;
+        }
+
+        final String value;
+        if (node.isNumber() || node.isBoolean()) {
+            value = node.asText();
+        } else {
+            value = node.toString();
+        }
+        return value.isEmpty() ? null : value;
     }
 
     @Nullable
