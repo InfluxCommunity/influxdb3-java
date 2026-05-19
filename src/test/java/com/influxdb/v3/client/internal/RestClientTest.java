@@ -688,6 +688,13 @@ public class RestClientTest extends AbstractMockServerTest {
             + "\tline 2: only error message"
         ),
         Arguments.of(
+          "missing original_line uses line-prefixed detail",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"only error message\",\"line_number\":2}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: only error message"
+        ),
+        Arguments.of(
           "multiple valid details append without extra colon",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
             + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"},{\"error_message\":\"second issue\"}]}",
@@ -703,11 +710,25 @@ public class RestClientTest extends AbstractMockServerTest {
             + "\t\"bad line 2\""
         ),
         Arguments.of(
+          "array fallback skips null and renders boolean",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[null,true,\"bad line\"]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\ttrue\n"
+            + "\t\"bad line\""
+        ),
+        Arguments.of(
           "textual numeric line_number",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
             + "\"bad line\",\"line_number\":\"2\",\"original_line\":\"bad lp\"}]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
             + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "line_number integer overflow falls back to raw token details",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"bad line\",\"line_number\":2147483648,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\t{\"error_message\":\"bad line\",\"line_number\":2147483648,\"original_line\":\"bad lp\"}"
         ),
         Arguments.of(
           "textual non-numeric line_number",
