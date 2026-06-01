@@ -1,10 +1,11 @@
 ## 1.10.0 [unreleased]
 
-### Breaking Changes
+### Features
 
-1. [#365](https://github.com/InfluxCommunity/influxdb3-java/pull/365): Adds partial writes support and aligns write routing with v3 defaults.
-   See [Partial writes](https://docs.influxdata.com/influxdb3/core/write-data/http-api/v3-write-lp/#partial-writes) for more.
-   For InfluxDB Clustered version, set `useV2Api=true` for writing.
+1. [#388](https://github.com/InfluxCommunity/influxdb3-java/pull/388): Adds partial writes support and defaults writes to the V2 API endpoint.
+   - `noSync` requires `useV2Api=false` and the V3 API endpoint.
+   - `acceptPartial` applies only when writes are sent to the V3 API endpoint and is ignored when using the V2 API endpoint.
+   - See [Partial writes](https://docs.influxdata.com/influxdb3/core/write-data/http-api/v3-write-lp/#partial-writes) for more.
 
 ### Bug Fixes
 

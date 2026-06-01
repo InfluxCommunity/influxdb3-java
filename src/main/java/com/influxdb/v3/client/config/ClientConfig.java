@@ -61,7 +61,7 @@ import com.influxdb.v3.client.write.WritePrecision;
  *     <li><code>gzipThreshold</code> - threshold when gzip compression is used for writing points to InfluxDB</li>
  *     <li><code>writeNoSync</code> - skip waiting for WAL persistence on write</li>
  *     <li><code>writeAcceptPartial</code> - accept partial writes</li>
- *     <li><code>writeUseV2Api</code> - use v2 compatibility write endpoint</li>
+ *     <li><code>writeUseV2Api</code> - use V2 API endpoint</li>
  *     <li><code>timeout</code> - <i>deprecated in 1.4.0</i> timeout when connecting to InfluxDB,
  *     please use more informative properties <code>writeTimeout</code> and <code>queryTimeout</code></li>
  *     <li><code>writeTimeout</code> - timeout when writing data to InfluxDB</li>
@@ -226,9 +226,9 @@ public final class ClientConfig {
     }
 
     /**
-     * Use v2 compatibility write endpoint?
+     * Use V2 API endpoint?
      *
-     * @return use v2 compatibility write endpoint
+     * @return use V2 API endpoint
      */
     @Nonnull
     public Boolean getWriteUseV2Api() {
@@ -604,9 +604,9 @@ public final class ClientConfig {
         }
 
         /**
-         * Sets whether to use v2 compatibility write endpoint.
+         * Sets whether to use V2 API endpoint.
          *
-         * @param writeUseV2Api use v2 compatibility write endpoint
+         * @param writeUseV2Api use V2 API endpoint
          * @return this
          */
         @Nonnull
