@@ -94,9 +94,9 @@
         <!-- grpc-bom 1.79.0 is very likely incompatible with Arrow 18.3.0 -->
         <grpc-bom.version>1.81.0</grpc-bom.version>
         <!-- keep aligned with gRPC/Arrow -->
-        <netty-bom.version>4.2.13.Final</netty-bom.version>
+        <netty-bom.version>4.2.14.Final</netty-bom.version>
 
-        <plugin.surefire.version>3.5.5</plugin.surefire.version>
+        <plugin.surefire.version>3.5.6</plugin.surefire.version>
         <plugin.jacoco.version>0.8.14</plugin.jacoco.version>
         <plugin.checkstyle.version>3.6.0</plugin.checkstyle.version>
         <plugin.javadoc.version>3.12.0</plugin.javadoc.version>
@@ -638,7 +638,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.21.0</version>
+                <version>3.22.0</version>
             </plugin>
 
         </plugins>
