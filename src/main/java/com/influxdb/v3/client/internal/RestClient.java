@@ -420,11 +420,14 @@ final class RestClient implements AutoCloseable {
                     continue;
                 }
 
-                if (lineError.lineNumber() != null
-                        && lineError.originalLine() != null
-                        && !lineError.originalLine().isEmpty()) {
-                    details.add("line " + lineError.lineNumber() + ": "
-                            + lineError.errorMessage() + " (" + lineError.originalLine() + ")");
+                if (lineError.lineNumber() != null) {
+                    final StringBuilder detail = new StringBuilder()
+                            .append("line ").append(lineError.lineNumber())
+                            .append(": ").append(lineError.errorMessage());
+                    if (lineError.originalLine() != null) {
+                        detail.append(" (").append(lineError.originalLine()).append(")");
+                    }
+                    details.add(detail.toString());
                 } else {
                     details.add(lineError.errorMessage());
                 }
@@ -434,12 +437,27 @@ final class RestClient implements AutoCloseable {
 
         final List<String> details = new ArrayList<>();
         for (JsonNode item : dataNode) {
-            final String raw = errNonEmptyText(item);
+            final String raw = errNonEmptyRawJsonToken(item);
             if (raw != null) {
                 details.add(raw);
             }
         }
         return details;
+    }
+
+    @Nullable
+    private String errNonEmptyRawJsonToken(@Nonnull final JsonNode node) {
+        if (node.isNull()) {
+            return null;
+        }
+
+        final String value;
+        if (node.isNumber() || node.isBoolean()) {
+            value = node.asText();
+        } else {
+            value = node.toString();
+        }
+        return value;
     }
 
     @Nullable

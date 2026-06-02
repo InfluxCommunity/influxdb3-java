@@ -407,6 +407,41 @@ public class RestClientTest extends AbstractMockServerTest {
               .hasMessage("HTTP status code: 401; Message: token does not have sufficient permissions");
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("errorFromBodyScalarMessageCases")
+    public void errorFromBodyScalarMessage(final String testName,
+                                           final String responseBody,
+                                           final String expectedMessage) {
+
+      mockServer.enqueue(createResponse(401,
+        "application/json",
+        null,
+        responseBody));
+
+      restClient = new RestClient(new ClientConfig.Builder()
+              .host(baseURL)
+              .build());
+
+      Assertions.assertThatThrownBy(
+         () -> restClient.request("ping", HttpMethod.GET, null, null, null)
+      )
+        .isInstanceOf(InfluxDBApiException.class)
+        .hasMessage(expectedMessage);
+    }
+
+    private static Stream<Arguments> errorFromBodyScalarMessageCases() {
+      return Stream.of(
+        Arguments.of(
+          "numeric message",
+          "{\"message\":123}",
+          "HTTP status code: 401; Message: 123"),
+        Arguments.of(
+          "boolean message",
+          "{\"message\":true}",
+          "HTTP status code: 401; Message: true")
+      );
+    }
+
     @Test
     public void errorFromBodyIgnoredForNonJsonContentType() {
       mockServer.enqueue(createResponse(400,
@@ -684,7 +719,15 @@ public class RestClientTest extends AbstractMockServerTest {
           "empty original_line uses message-only detail",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
             + "\"only error message\",\"line_number\":2,\"original_line\":\"\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: only error message"
+        ),
+        Arguments.of(
+          "missing original_line uses line-prefixed detail",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"only error message\",\"line_number\":2}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\tline 2: only error message"
         ),
         Arguments.of(
           "multiple valid details append without extra colon",
@@ -698,8 +741,15 @@ public class RestClientTest extends AbstractMockServerTest {
           "array of strings fallback",
           "{\"error\":\"partial write of line protocol occurred\",\"data\":[\"bad line 1\",\"bad line 2\"]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tbad line 1\n"
-            + "\tbad line 2"
+            + "\t\"bad line 1\"\n"
+            + "\t\"bad line 2\""
+        ),
+        Arguments.of(
+          "array fallback skips null and renders boolean",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[null,true,\"bad line\"]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\ttrue\n"
+            + "\t\"bad line\""
         ),
         Arguments.of(
           "textual numeric line_number",
@@ -707,6 +757,13 @@ public class RestClientTest extends AbstractMockServerTest {
             + "\"bad line\",\"line_number\":\"2\",\"original_line\":\"bad lp\"}]}",
           "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
             + "\tline 2: bad line (bad lp)"
+        ),
+        Arguments.of(
+          "line_number integer overflow falls back to raw token details",
+          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
+            + "\"bad line\",\"line_number\":2147483648,\"original_line\":\"bad lp\"}]}",
+          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
+            + "\t{\"error_message\":\"bad line\",\"line_number\":2147483648,\"original_line\":\"bad lp\"}"
         ),
         Arguments.of(
           "textual non-numeric line_number",

@@ -386,11 +386,21 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         try {
             restClient.request(path, HttpMethod.POST, body, queryParams, headers);
         } catch (InfluxDBApiHttpException e) {
-            if (!useV2Api && e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
-                throw new InfluxDBApiHttpException("Server doesn't support v3 write API. "
-                        + "Use WriteOptions.Builder.useV2Api(true) for v2 compatibility endpoint.",
-                        e.headers(),
-                        e.statusCode());
+            if (e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
+                if (useV2Api && "api/v2/write".equals(path)) {
+                    throw new InfluxDBApiHttpException(
+                            "Server doesn't support the V2 API endpoint (/api/v2/write). "
+                                    + "Set useV2Api=false to use the V3 API endpoint.",
+                            e.headers(),
+                            e.statusCode());
+                }
+                if (!useV2Api && "api/v3/write_lp".equals(path)) {
+                    throw new InfluxDBApiHttpException(
+                            "Server doesn't support the V3 API endpoint (/api/v3/write_lp). "
+                                    + "Set useV2Api=true to use the V2 API endpoint.",
+                            e.headers(),
+                            e.statusCode());
+                }
             }
             throw e;
         }
