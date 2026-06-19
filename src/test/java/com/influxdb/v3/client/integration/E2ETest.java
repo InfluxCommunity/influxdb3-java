@@ -261,7 +261,7 @@ public class E2ETest {
             Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points, options));
             Assertions.assertThat(thrown).isInstanceOf(InfluxDBPartialWriteException.class);
             Assertions.assertThat(thrown.getMessage())
-                    .contains("parsing failed for write_lp endpoint");
+                    .contains("line protocol parsing error");
 
             InfluxDBPartialWriteException partialError = (InfluxDBPartialWriteException) thrown;
             Assertions.assertThat(partialError.lineErrors()).hasSize(1);

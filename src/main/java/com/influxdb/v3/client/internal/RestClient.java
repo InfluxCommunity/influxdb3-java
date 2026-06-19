@@ -374,7 +374,8 @@ final class RestClient implements AutoCloseable {
         }
         String normalized = errorMessage.toLowerCase(Locale.ROOT);
         return normalized.contains("partial write of line protocol occurred")
-                || normalized.contains("parsing failed for write_lp endpoint");
+                || normalized.contains("parsing failed for write_lp endpoint") // for Core 3.9 and earlier
+                || normalized.contains("line protocol parsing error"); // for Core 3.10 and later
     }
 
     private boolean errIsJsonLikeContentType(@Nullable final String contentType) {
