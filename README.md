@@ -61,6 +61,25 @@ dependencies {
 }
 ```
 
+### Packaging executable JARs
+
+The query API uses gRPC and Apache Arrow Flight. If you package your application
+as a single executable JAR, make sure `META-INF/services` files from dependencies
+are merged instead of overwritten.
+
+Without this, the application can work from an IDE or Maven classpath but fail
+when started with `java -jar` with an error like:
+
+```text
+java.lang.IllegalArgumentException: Address types of NameResolver 'unix' ... not supported by transport
+```
+
+For the Maven Shade Plugin, add `ServicesResourceTransformer`:
+
+```xml
+<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+```
+
 ## Usage
 
 ### Create client
