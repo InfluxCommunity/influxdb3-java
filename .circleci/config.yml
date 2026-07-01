@@ -3,7 +3,7 @@ version: 2.1
 parameters:
   default-maven-image:
     type: string
-    default: "cimg/openjdk:11.0"
+    default: "cimg/openjdk:17.0"
 
 executors:
   docker-amd64-image:
@@ -225,7 +225,7 @@ workflows:
             alias: tests-java-jdk-old
             parameters:
               exe: [ docker-amd64-image, docker-arm64-image ]
-              maven-image: [ << pipeline.parameters.default-maven-image >>, "cimg/openjdk:17.0", "cimg/openjdk:21.0" ]
+              maven-image: [ << pipeline.parameters.default-maven-image >>, "cimg/openjdk:21.0" ]
       # Java test matrix for JDK 25+
       - tests-java:
           matrix:
