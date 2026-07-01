@@ -1,5 +1,9 @@
 ## 1.11.0 [unreleased]
 
+### Breaking Changes
+
+1. [#407](https://github.com/InfluxCommunity/influxdb3-java/pull/407): Upgrade minium jdk requirement to version 17.
+
 ## 1.10.0 [2026-06-11]
 
 ### Features
