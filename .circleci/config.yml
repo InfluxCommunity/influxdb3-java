@@ -15,6 +15,7 @@ executors:
       - image: <<parameters.maven-image>>
       - image: influxdb:3-core
         environment:
+          - _JAVA_OPTIONS: "-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
           - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
           - INFLUXDB3_OBJECT_STORE=file
           - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
@@ -27,6 +28,7 @@ executors:
       - image: <<parameters.maven-image>>
       - image: influxdb:3-core
         environment:
+          - _JAVA_OPTIONS: "-Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
           - INFLUXDB3_NODE_IDENTIFIER_PREFIX=node01
           - INFLUXDB3_OBJECT_STORE=file
           - INFLUXDB3_DB_DIR=/var/lib/influxdb3/data
@@ -70,7 +72,7 @@ jobs:
         default: docker-amd64-image
       arg-line:
         type: string
-        default: "--add-opens=java.base/java.nio=ALL-UNNAMED -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+        default: "--add-opens=java.base/java.nio=ALL-UNNAMED"
     executor:
       name: << parameters.exe >>
       maven-image: << parameters.maven-image >>
