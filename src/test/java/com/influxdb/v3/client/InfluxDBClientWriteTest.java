@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client;
 
+import java.net.InetAddress;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
+import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
 import okhttp3.HttpUrl;
 import org.assertj.core.api.Assertions;
@@ -568,6 +570,24 @@ class InfluxDBClientWriteTest extends AbstractMockServerTest {
         assertThat(request.getHeaders().get("Content-Encoding")).isEqualTo("gzip");
         assertThat(request.getUrl().queryParameter("precision")).isEqualTo("s");
         assertThat(request.getUrl().queryParameter("bucket")).isEqualTo("your-database");
+    }
+
+    @Test
+    void writeWithIpv6Host() throws Exception {
+        try (MockWebServer mockWebServer = new MockWebServer()) {
+            mockWebServer.start(InetAddress.getByName("::"), 0);
+            mockWebServer.enqueue(createResponse(200));
+            String targetUrl = String.format("http://[%s]:%d/", mockWebServer.getHostName(), mockWebServer.getPort());
+
+            var influxdbClient = InfluxDBClient.getInstance(targetUrl, "my-token".toCharArray(), "my-database");
+            influxdbClient.writePoint(
+                    Point.measurement("mem")
+                            .setTag("tag", "one")
+                            .setField("value", 1.0)
+            );
+            influxdbClient.close();
+            assertThat(mockWebServer.takeRequest().getBody().utf8()).isEqualTo("mem,tag=one value=1.0");
+        }
     }
 
     @Test
