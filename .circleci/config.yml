@@ -70,7 +70,7 @@ jobs:
         default: docker-amd64-image
       arg-line:
         type: string
-        default: "--add-opens=java.base/java.nio=ALL-UNNAMED -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+        default: "--add-opens=java.base/java.nio=ALL-UNNAMED --Djava.net.preferIPv4Stack=false --Djava.net.preferIPv6Addresses=true"
     executor:
       name: << parameters.exe >>
       maven-image: << parameters.maven-image >>
