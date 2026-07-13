@@ -129,7 +129,7 @@
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>6.1.1</version> <!-- or your specific 6.x version -->
+                <version>6.1.2</version> <!-- or your specific 6.x version -->
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
