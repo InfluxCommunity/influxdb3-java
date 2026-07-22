@@ -91,7 +91,7 @@
         <junit-jupiter.version>6.1.1</junit-jupiter.version>
         <arrow.version>19.0.0</arrow.version>
         <!-- grpc-bom 1.79.0 is very likely incompatible with Arrow 18.3.0 -->
-        <grpc-bom.version>1.82.2</grpc-bom.version>
+        <grpc-bom.version>1.83.0</grpc-bom.version>
         <!-- keep aligned with gRPC/Arrow -->
         <netty-bom.version>4.2.16.Final</netty-bom.version>
 
