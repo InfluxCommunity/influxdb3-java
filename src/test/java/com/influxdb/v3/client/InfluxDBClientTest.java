@@ -21,6 +21,9 @@
  */
 package com.influxdb.v3.client;
 
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -41,6 +44,38 @@ public class InfluxDBClientTest {
     }
 
     @Test
+    void parseIpv6() throws UnknownHostException, URISyntaxException {
+        record Test(String url, boolean isCorrect) {
+        }
+        var tests = List.of(
+                new Test("http://[2001:db8::1]/", true),
+                new Test("http://[2001:db8:a0b:12f0::1]/index.html", true),
+                new Test("http://[2001:db8:a0b:12f0::1]:80/index.html", true),
+                new Test("https://[2001:db8:a0b:12f0::1%25eth0]:15000/", true),
+                new Test("http://[2607:f8b0:4005:802::1007]/", true),
+                new Test("http://2001:db8::1/", false),
+                new Test("http://2001:db8::1:8080/", false)
+        );
+        for (Test test : tests) {
+            if (!test.isCorrect()) {
+                Assertions.assertThatThrownBy(() -> {
+                    try (var client = InfluxDBClient.getInstance(test.url(), "my-token".toCharArray(), "bucket0")) {
+                        client.getServerVersion();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }).hasMessageContaining("Invalid URL.");
+            } else {
+                Assertions.assertThatNoException().isThrownBy(() -> {
+                    try (var ignored = InfluxDBClient.getInstance(test.url(), "my-token".toCharArray(), "bucket0")) {
+                        Assertions.assertThat(true);
+                    }
+                });
+            }
+        }
+    }
+
+    @Test
     void withSslRootsFilePath() {
         String path = "/path/to/cert";
         ClientConfig.Builder builder = new ClientConfig.Builder();
@@ -51,10 +86,13 @@ public class InfluxDBClientTest {
 
     @Test
     void requiredHost() {
-
         Assertions.assertThatThrownBy(() -> InfluxDBClient.getInstance(null, "my-token".toCharArray(), "my-database"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("The URL of the InfluxDB server has to be defined.");
+                .hasMessage("Invalid URL.");
+
+        Assertions.assertThatThrownBy(() -> InfluxDBClient.getInstance(" ", "my-token".toCharArray(), "my-database"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid URL.");
     }
 
     @Test

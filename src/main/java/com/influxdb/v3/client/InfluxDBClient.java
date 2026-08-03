@@ -483,7 +483,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
      * common operations such as writing, querying.
      *
-     * @param host     the URL of the InfluxDB server
+     * @param host     the URL of the InfluxDB server.<br>
+     *                 NOTE: IPv6 must be wrapped inside square brackets .e.g: http://[2001:db8::1].
      * @param token    the authentication token for accessing the InfluxDB server, can be null
      * @param database the database to be used for InfluxDB operations, can be null
      * @return new instance of the {@link InfluxDBClient}
@@ -505,7 +506,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * Creates a new instance of the {@link InfluxDBClient} for interacting with an InfluxDB server, simplifying
      * common operations such as writing, querying.
      *
-     * @param host        the URL of the InfluxDB server
+     * @param host        the URL of the InfluxDB server.<br>
+     *                    NOTE: IPv6 must be wrapped inside square brackets .e.g: http://[2001:db8::1].
      * @param token       the authentication token for accessing the InfluxDB server, can be null
      * @param database    the database to be used for InfluxDB operations, can be null
      * @param defaultTags tags to be added by default to writes of points
@@ -561,7 +563,8 @@ public interface InfluxDBClient extends AutoCloseable {
      *   <li>writeUseV2Api - use V2 API endpoint</li>
      * </ul>
      *
-     * @param connectionString connection string
+     * @param connectionString connection string.<br>
+     *                         NOTE: IPv6 must be wrapped inside square brackets .e.g: http://[2001:db8::1].
      * @return instance of {@link InfluxDBClient}
      */
     @Nonnull
@@ -584,7 +587,10 @@ public interface InfluxDBClient extends AutoCloseable {
      * <p>
      * Supported environment variables:
      * <ul>
-     *   <li>INFLUX_HOST - cloud/server URL <i>required</i></li>
+     *   <li>INFLUX_HOST - cloud/server URL.<br>
+     *   NOTE: IPv6 must be wrapped inside square brackets .e.g: http://[2001:db8::1].
+     *   <i>required</i>
+     *   </li>
      *   <li>INFLUX_TOKEN - authentication token <i>required</i></li>
      *   <li>INFLUX_AUTH_SCHEME - authentication scheme</li>
      *   <li>INFLUX_ORG - organization name</li>
@@ -597,7 +603,8 @@ public interface InfluxDBClient extends AutoCloseable {
      * </ul>
      * Supported system properties:
      * <ul>
-     *   <li>influx.host - cloud/server URL <i>required</i></li>
+     *   <li>influx.host - cloud/server URL.<br>
+     *   NOTE: IPv6 must be wrapped inside square brackets .e.g: http://[2001:db8::1]. <i>required</i></li>
      *   <li>influx.token - authentication token <i>required</i></li>
      *   <li>influx.authScheme - authentication scheme</li>
      *   <li>influx.org - organization name</li>
