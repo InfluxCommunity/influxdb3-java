@@ -21,6 +21,9 @@
  */
 package com.influxdb.v3.client;
 
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -38,6 +41,30 @@ public class InfluxDBClientTest {
         builder.proxyUrl(proxyUrl);
         ClientConfig clientConfig = builder.build();
         Assertions.assertThat(clientConfig.getProxyUrl()).isEqualTo(proxyUrl);
+    }
+
+    @Test
+    void parseIpv6() throws UnknownHostException, URISyntaxException {
+        record Test(String url, boolean isCorrect) {
+        }
+        var tests = List.of(
+                new Test("http://[2001:db8::1]/", true),
+                new Test("http://[2001:db8:a0b:12f0::1]/index.html", true),
+                new Test("http://[2001:db8:a0b:12f0::1]:80/index.html", true),
+                new Test("https://[2001:db8:a0b:12f0::1%25eth0]:15000/", true),
+                new Test("http://[2607:f8b0:4005:802::1007]/", true),
+                new Test("http://2001:db8::1/", false),
+                new Test("http://2001:db8::1:8080/", false)
+        );
+        for (Test test : tests) {
+            if (!test.isCorrect) {
+                Assertions.assertThatThrownBy(() ->
+                        InfluxDBClient.getInstance(test.url, "my-token".toCharArray(), "bucket0")
+                ).hasMessageContaining("Invalid url");
+            } else {
+                InfluxDBClient.getInstance(test.url, "my-token".toCharArray(), "bucket0");
+            }
+        }
     }
 
     @Test

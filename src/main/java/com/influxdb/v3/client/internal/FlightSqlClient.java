@@ -205,6 +205,9 @@ final class FlightSqlClient implements AutoCloseable {
     private Location createLocation(@Nonnull final ClientConfig config) {
         try {
             URI uri = new URI(config.getHost());
+            if (uri.getHost() == null) {
+                throw new URISyntaxException(config.getHost(), "Invalid url.");
+            }
             if ("https".equals(uri.getScheme())) {
                 return Location.forGrpcTls(uri.getHost(), uri.getPort() != -1 ? uri.getPort() : 443);
             } else {
