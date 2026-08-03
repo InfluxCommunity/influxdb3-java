@@ -24,6 +24,8 @@ package com.influxdb.v3.client.config;
 import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.ProxySelector;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Arrays;
@@ -48,7 +50,10 @@ import com.influxdb.v3.client.write.WritePrecision;
  * <p>
  * You can configure following properties:
  * <ul>
- *     <li><code>host</code> - hostname or IP address of the InfluxDB server</li>
+ *     <li>
+ *         <code>host</code> - hostname or IP address of the InfluxDB server.<br>
+ *         NOTE: IPv6 must be wrapped inside square brackets .e.g: http://[2001:db8::1].
+ *     </li>
  *     <li><code>token</code> - authentication token for accessing the InfluxDB server</li>
  *     <li><code>authScheme</code> - authentication scheme</li>
  *     <li><code>organization</code> - organization to be used for operations</li>
@@ -375,8 +380,17 @@ public final class ClientConfig {
      * Validates the configuration properties.
      */
     public void validate() {
-        if (host == null || host.isBlank()) {
-            throw new IllegalArgumentException("The URL of the InfluxDB server has to be defined.");
+        try {
+            if (host == null || host.isBlank()) {
+                throw new IllegalArgumentException("Invalid URL.");
+            }
+
+            URI uri = new URI(host);
+            if (uri.getHost() == null) {
+                throw new URISyntaxException(host, "Invalid URL.");
+            }
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid URL.");
         }
     }
 
@@ -481,7 +495,8 @@ public final class ClientConfig {
         private List<ClientInterceptor> interceptors;
 
         /**
-         * Sets the URL of the InfluxDB server.
+         * Sets the URL of the InfluxDB server.<br>
+         * NOTE: IPv6 must be wrapped inside square brackets .e.g: http://[2001:db8::1].
          *
          * @param host URL of the InfluxDB server
          * @return this
@@ -827,7 +842,8 @@ public final class ClientConfig {
         /**
          * Build an instance of {@code ClientConfig} from connection string.
          *
-         * @param connectionString connection string in URL format
+         * @param connectionString connection string in URL format.<br>
+         *                         NOTE: IPv6 must be wrapped inside square brackets .e.g: http://[2001:db8::1].
          * @return the configuration for an {@code InfluxDBClient}
          * @throws MalformedURLException when argument is not valid URL
          */
