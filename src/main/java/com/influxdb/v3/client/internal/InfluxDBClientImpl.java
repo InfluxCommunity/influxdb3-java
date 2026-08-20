@@ -384,7 +384,7 @@ public final class InfluxDBClientImpl implements InfluxDBClient {
         headers.putAll(options.headersSafe());
 
         try {
-            restClient.request(path, HttpMethod.POST, body, queryParams, headers);
+            restClient.request(path, HttpMethod.POST, body, queryParams, headers, acceptPartial, useV2Api);
         } catch (InfluxDBApiHttpException e) {
             if (e.statusCode() == HttpResponseStatus.METHOD_NOT_ALLOWED.code()) {
                 if (useV2Api && "api/v2/write".equals(path)) {
