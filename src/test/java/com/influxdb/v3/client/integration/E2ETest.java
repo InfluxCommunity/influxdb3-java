@@ -259,18 +259,11 @@ public class E2ETest {
                     .acceptPartial(false)
                     .build();
             Throwable thrown = Assertions.catchThrowable(() -> client.writeRecord(points, options));
-            Assertions.assertThat(thrown).isInstanceOf(InfluxDBPartialWriteException.class);
-            Assertions.assertThat(thrown.getMessage())
-                    .contains("line protocol parsing error");
-
-            InfluxDBPartialWriteException partialError = (InfluxDBPartialWriteException) thrown;
-            Assertions.assertThat(partialError.lineErrors()).hasSize(1);
-            Assertions.assertThat(partialError.lineErrors().get(0).lineNumber()).isEqualTo(2);
-            Assertions.assertThat(partialError.lineErrors().get(0).errorMessage())
-                    .isEqualTo("invalid column type for column 'temp', expected iox::column_type::field::float, "
-                            + "got iox::column_type::field::string");
-            Assertions.assertThat(partialError.lineErrors().get(0).originalLine())
-                    .isEqualTo("home,room=Sunroom te");
+            Assertions.assertThat(thrown).isInstanceOf(InfluxDBApiHttpException.class);
+            Assertions.assertThat(thrown.getMessage()).isEqualTo("HTTP status code: 400; Message: line "
+                    + "protocol parsing error:\n"
+                    + "\tline 2: invalid column type for column 'temp', expected iox::column_type::field::float, "
+                    + "got iox::column_type::field::string (home,room=Sunroom te)");
         }
     }
 

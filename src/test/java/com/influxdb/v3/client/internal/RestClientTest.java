@@ -31,6 +31,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -572,7 +573,6 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void errorFromBodyV3WithDataObject() { // Core/Enterprise object format
-
       mockServer.enqueue(createResponse(400,
         "application/json",
         null,
@@ -584,22 +584,31 @@ public class RestClientTest extends AbstractMockServerTest {
 
       Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST, null, null, null));
       Assertions.assertThat(thrown)
-              .isInstanceOf(InfluxDBPartialWriteException.class)
               .isInstanceOf(InfluxDBApiHttpException.class)
               .hasMessage("HTTP status code: 400; Message: parsing failed for write_lp endpoint:\n"
                       + "\tinvalid field value");
-
-      InfluxDBPartialWriteException partialWriteException = (InfluxDBPartialWriteException) thrown;
-      Assertions.assertThat(partialWriteException.statusCode()).isEqualTo(400);
-      Assertions.assertThat(partialWriteException.lineErrors()).hasSize(1);
-      InfluxDBPartialWriteException.LineError lineError = partialWriteException.lineErrors().get(0);
-      Assertions.assertThat(lineError.lineNumber()).isNull();
-      Assertions.assertThat(lineError.errorMessage()).isEqualTo("invalid field value");
-      Assertions.assertThat(lineError.originalLine()).isNull();
     }
 
     @Test
-    public void errorFromBodyV3WithDataArray() {
+    public void errorFromBodyV3WithDataObjectEmptyErrorMessage() { // Core/Enterprise object format
+        mockServer.enqueue(createResponse(400,
+                "application/json",
+                null,
+                "{\"data\":{\"error_message\":\"invalid field value\"}}"));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+
+        Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp",
+                HttpMethod.POST, null, null, null));
+        Assertions.assertThat(thrown)
+                .isInstanceOf(InfluxDBApiHttpException.class)
+                .hasMessage("HTTP status code: 400; Message: {\"data\":{\"error_message\":\"invalid field value\"}}");
+    }
+
+    @Test
+    public void partialErrorFromBodyV3WithDataArray() {
       mockServer.enqueue(createResponse(400,
         "application/json",
         null,
@@ -612,7 +621,8 @@ public class RestClientTest extends AbstractMockServerTest {
         .host(baseURL)
         .build());
 
-      Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST, null, null, null));
+        Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST, null,
+                null, null, true, false));
       Assertions.assertThat(thrown)
               .isInstanceOf(InfluxDBPartialWriteException.class)
               .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
@@ -630,7 +640,7 @@ public class RestClientTest extends AbstractMockServerTest {
     }
 
     @Test
-    public void errorFromBodyV3WithDataArrayAnyInvalidItemFallsBackToHttpException() {
+    public void partialErrorFromBodyV3WithInvalidDataArray() {
       mockServer.enqueue(createResponse(400,
         "application/json",
         null,
@@ -642,157 +652,250 @@ public class RestClientTest extends AbstractMockServerTest {
         .host(baseURL)
         .build());
 
-      Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST, null, null, null));
+     Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST, null,
+              null, null, true, false));
       Assertions.assertThat(thrown)
-        .isInstanceOf(InfluxDBApiHttpException.class)
-        .isNotInstanceOf(InfluxDBPartialWriteException.class)
+        .isInstanceOf(InfluxDBPartialWriteException.class)
         .hasMessage("HTTP status code: 400; Message: partial write of line protocol occurred:\n"
           + "\t{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}\n"
           + "\t{\"error_message\":\"bad line 2\",\"line_number\":\"x\",\"original_line\":\"bad lp 2\"}");
     }
 
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("errorFromBodyV3WithDataArrayCases")
-    public void errorFromBodyV3WithDataArrayCase(final String testName,
-                                                  final String body,
-                                                  final String expectedMessage) {
+    private static final String REJECTED_LINE = "home,room=Sunroom temp=\"hi\" 1735545610";
+    private static final String REJECTED_LINE_JSON = "home,room=Sunroom temp=\\\"hi\\\" 1735545610";
+    private static final String LINE_ERROR = "invalid column type for column 'temp', expected "
+            + "iox::column_type::field::float, got iox::column_type::field::string";
 
-      mockServer.enqueue(createResponse(400,
-        "application/json",
-        null,
-        body));
-
-      restClient = new RestClient(new ClientConfig.Builder()
-        .host(baseURL)
-        .build());
-
-      Assertions.assertThatThrownBy(
-          () -> restClient.request("ping", HttpMethod.GET, null, null, null)
-        )
-        .isInstanceOf(InfluxDBApiException.class)
-        .hasMessage(expectedMessage);
+    private static Stream<Arguments> testCases() {
+        return Stream.of(
+                Arguments.of(
+                        "V3 accept partial with renamed error and non-empty array",
+                        400,
+                        "application/json",
+                        "{\"error\":\"write completed with rejected rows\","
+                                + "\"data\":[{\"error_message\":\"" + LINE_ERROR + "\",\"line_number\":2,"
+                                + "\"original_line\":\"" + REJECTED_LINE_JSON + "\"}]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write completed with rejected rows:"
+                                + "\n\tline 2: " + LINE_ERROR + " (" + REJECTED_LINE + ")",
+                        true,
+                        List.of(new InfluxDBPartialWriteException.LineError(2, LINE_ERROR, REJECTED_LINE))
+                ),
+                Arguments.of(
+                        "V3 accept partial without content type",
+                        400,
+                        null,
+                        "{\"error\":\"write completed with rejected rows\","
+                                + "\"data\":[{\"error_message\":\"" + LINE_ERROR + "\",\"line_number\":2,"
+                                + "\"original_line\":\"" + REJECTED_LINE_JSON + "\"}]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write completed with rejected rows:"
+                                + "\n\tline 2: " + LINE_ERROR + " (" + REJECTED_LINE + ")",
+                        true,
+                        List.of(new InfluxDBPartialWriteException.LineError(2, LINE_ERROR, REJECTED_LINE))
+                ),
+                Arguments.of(
+                        "V3 accept partial with malformed non-empty array",
+                        400,
+                        "application/json",
+                        "{\"error\":\"write completed with rejected rows\","
+                                + "\"data\":[{\"line_number\":\"invalid\","
+                                + "\"original_line\":\"" + REJECTED_LINE_JSON + "\"}]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write completed with rejected rows:"
+                                + "\n\t{\"line_number\":\"invalid\",\"original_line\":\"" + REJECTED_LINE_JSON
+                                + "\"}",
+                        true,
+                        Collections.emptyList()
+                ),
+                Arguments.of(
+                        "V3 accept partial with mixed primitive and typed entries",
+                        400,
+                        "application/json",
+                        "{\"error\":\"write completed with rejected rows\","
+                                + "\"data\":[1,{\"error_message\":\"" + LINE_ERROR + "\",\"line_number\":2,"
+                                + "\"original_line\":\"" + REJECTED_LINE_JSON + "\"}]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write completed with rejected rows:"
+                                + "\n\t1\n\t{\"error_message\":\"" + LINE_ERROR
+                                + "\",\"line_number\":2,\"original_line\":\"" + REJECTED_LINE_JSON + "\"}",
+                        true,
+                        List.of(new InfluxDBPartialWriteException.LineError(2, LINE_ERROR, REJECTED_LINE))
+                ),
+                Arguments.of(
+                        "V3 accept partial with string entries",
+                        400,
+                        "application/json",
+                        "{\"error\":\"write completed with rejected rows\","
+                                + "\"data\":[\"" + REJECTED_LINE_JSON + "\"]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write completed with rejected rows:"
+                                + "\n\t\"" + REJECTED_LINE_JSON + "\"",
+                        true,
+                        Collections.emptyList()
+                ),
+                Arguments.of(
+                        "V3 accept partial with error message only",
+                        400,
+                        "application/json",
+                        "{\"error\":\"write completed with rejected rows\","
+                                + "\"data\":[{\"error_message\":\"" + LINE_ERROR + "\"}]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write completed with rejected rows:"
+                                + "\n\t" + LINE_ERROR,
+                        true,
+                        List.of(new InfluxDBPartialWriteException.LineError(null, LINE_ERROR, null))
+                ),
+                Arguments.of(
+                        "V3 accept partial with line number but no original line",
+                        400,
+                        "application/json",
+                        "{\"error\":\"write completed with rejected rows\","
+                                + "\"data\":[{\"error_message\":\"" + LINE_ERROR + "\",\"line_number\":2}]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write completed with rejected rows:\n\tline 2: "
+                                + LINE_ERROR,
+                        true,
+                        List.of(new InfluxDBPartialWriteException.LineError(2, LINE_ERROR, null))
+                ),
+                Arguments.of(
+                        "V3 accept partial with entry missing error message",
+                        400,
+                        "application/json",
+                        "{\"error\":\"write completed with rejected rows\","
+                                + "\"data\":[{\"line_number\":2,\"original_line\":\"" + REJECTED_LINE_JSON + "\"}]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write completed with rejected rows:"
+                                + "\n\t{\"line_number\":2,\"original_line\":\"" + REJECTED_LINE_JSON + "\"}",
+                        true,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 accept partial with empty array", 400, "application/json",
+                        "{\"error\":\"write failed\",\"data\":[]}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: write failed",
+                        true,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 accept partial with object details remains generic", 400,
+                        "application/json",
+                        "{\"error\":\"line protocol parsing error\",\"data\":{\"error_message\":\""
+                                + LINE_ERROR + "\",\"line_number\":2,\"original_line\":\""
+                                + REJECTED_LINE_JSON + "\"}}",
+                        false,
+                        true,
+                        "HTTP status code: 400; Message: line protocol parsing error:\n\tline 2: "
+                                + LINE_ERROR + " (" + REJECTED_LINE + ")",
+                        false,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 reject partial with object details", 400, "application/json",
+                        "{\"error\":\"line protocol parsing error\",\"data\":{\"error_message\":\""
+                                + LINE_ERROR + "\",\"line_number\":2,\"original_line\":\""
+                                + REJECTED_LINE_JSON + "\"}}",
+                        false,
+                        false,
+                        "HTTP status code: 400; Message: line protocol parsing error:\n\tline 2: "
+                                + LINE_ERROR + " (" + REJECTED_LINE + ")",
+                        false,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V2 never returns partial write error", 400, "application/json",
+                        "{\"error\":\"partial write of line protocol occurred\","
+                                + "\"data\":[{\"error_message\":\""
+                                + LINE_ERROR + "\",\"line_number\":2,\"original_line\":\""
+                                + REJECTED_LINE_JSON + "\"}]}",
+                        true,
+                        true,
+                        "HTTP status code: 400; Message: partial write of line protocol occurred",
+                        false,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 non-400 never returns partial write error", 500,
+                        "application/json",
+                        "{\"error\":\"partial write of line protocol occurred\","
+                                + "\"data\":[{\"error_message\":\""
+                                + LINE_ERROR + "\",\"line_number\":2,\"original_line\":\"" + REJECTED_LINE_JSON
+                                + "\"}]}",
+                        false, true,
+                        "HTTP status code: 500; Message: partial write of line protocol occurred",
+                        false,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 scalar data remains generic", 400, "application/json",
+                        "{\"error\":\"write failed\",\"data\":\"invalid\"}", false, true,
+                        "HTTP status code: 400; Message: write failed",
+                        false,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 object data error without error_message", 400, "application/json",
+                        "{\"error\":\"write failed\",\"data\":{\"line_number\": 1}}", false, false,
+                        "HTTP status code: 400; Message: write failed",
+                        false,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 empty object data remains generic", 400, "application/json",
+                        "{\"error\":\"write failed\",\"data\":{}}", false, true,
+                        "HTTP status code: 400; Message: write failed",
+                        false,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 null data remains generic", 400, "application/json",
+                        "{\"error\":\"write failed\",\"data\":null}", false, true,
+                        "HTTP status code: 400; Message: write failed",
+                        false,
+                        Collections.emptyList()
+                ),
+                Arguments.of("V3 malformed JSON preserves raw response", 400, "application/json",
+                        "{\"error\":\"write failed\"", false, true,
+                        "HTTP status code: 400; Message: {\"error\":\"write failed\"",
+                        false,
+                        Collections.emptyList()
+                )
+        );
     }
 
-    private static Stream<Arguments> errorFromBodyV3WithDataArrayCases() {
-      return Stream.of(
-        Arguments.of(
-          "message-only detail",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"only error message\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
-        ),
-        Arguments.of(
-          "non-object item skipped",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[null,{\"error_message\":"
-            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline 2: bad line (bad lp)"
-        ),
-        Arguments.of(
-          "no detail fields",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"line_number\":2}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred"
-        ),
-        Arguments.of(
-          "empty error_message skipped",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":\"\"},"
-            + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline 2: bad line (bad lp)"
-        ),
-        Arguments.of(
-          "non-object primitive item skipped",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[1,{\"error_message\":"
-            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\t1\n"
-            + "\t{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}"
-        ),
-        Arguments.of(
-          "null error_message skipped",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":null},"
-            + "{\"error_message\":\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline 2: bad line (bad lp)"
-        ),
-        Arguments.of(
-          "empty original_line uses message-only detail",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"only error message\",\"line_number\":2,\"original_line\":\"\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline 2: only error message"
-        ),
-        Arguments.of(
-          "missing original_line uses line-prefixed detail",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"only error message\",\"line_number\":2}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline 2: only error message"
-        ),
-        Arguments.of(
-          "multiple valid details append without extra colon",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"bad line\",\"line_number\":2,\"original_line\":\"bad lp\"},{\"error_message\":\"second issue\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline 2: bad line (bad lp)\n"
-            + "\tsecond issue"
-        ),
-        Arguments.of(
-          "array of strings fallback",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[\"bad line 1\",\"bad line 2\"]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\t\"bad line 1\"\n"
-            + "\t\"bad line 2\""
-        ),
-        Arguments.of(
-          "array fallback skips null and renders boolean",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[null,true,\"bad line\"]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\ttrue\n"
-            + "\t\"bad line\""
-        ),
-        Arguments.of(
-          "textual numeric line_number",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"bad line\",\"line_number\":\"2\",\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\tline 2: bad line (bad lp)"
-        ),
-        Arguments.of(
-          "line_number integer overflow falls back to raw token details",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"bad line\",\"line_number\":2147483648,\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\t{\"error_message\":\"bad line\",\"line_number\":2147483648,\"original_line\":\"bad lp\"}"
-        ),
-        Arguments.of(
-          "textual non-numeric line_number",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"bad line\",\"line_number\":\"x\",\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\t{\"error_message\":\"bad line\",\"line_number\":\"x\",\"original_line\":\"bad lp\"}"
-        ),
-        Arguments.of(
-          "empty textual line_number with empty original_line",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"only error message\",\"line_number\":\"\",\"original_line\":\"\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n\tonly error message"
-        ),
-        Arguments.of(
-          "non-textual line_number",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"bad line\",\"line_number\":true,\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\t{\"error_message\":\"bad line\",\"line_number\":true,\"original_line\":\"bad lp\"}"
-        ),
-        Arguments.of(
-          "object line_number preserved as text",
-          "{\"error\":\"partial write of line protocol occurred\",\"data\":[{\"error_message\":"
-            + "\"bad line\",\"line_number\":{\"index\":2},\"original_line\":\"bad lp\"}]}",
-          "HTTP status code: 400; Message: partial write of line protocol occurred:\n"
-            + "\t{\"error_message\":\"bad line\",\"line_number\":{\"index\":2},\"original_line\":\"bad lp\"}"
-        )
-      );
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("testCases")
+    public void testWriteErrorException(final String testName,
+                                        final int statusCode,
+                                        final String contentType,
+                                        final String responseBody,
+                                        final boolean useV2Api,
+                                        final boolean acceptPartial,
+                                        final String expectedMsg,
+                                        final boolean expectPartial,
+                                        final List<InfluxDBPartialWriteException.LineError> expectedLines) {
+        mockServer.enqueue(createResponse(statusCode,
+                contentType,
+                null,
+                responseBody));
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST,
+                null, null, null, acceptPartial, useV2Api));
+
+        Assertions.assertThat(thrown).as(testName).isNotNull();
+        Assertions.assertThat(thrown.getMessage()).as(testName).isEqualTo(expectedMsg);
+        if (expectPartial) {
+            Assertions.assertThat(thrown).as(testName).isInstanceOf(InfluxDBPartialWriteException.class);
+            InfluxDBPartialWriteException partial = (InfluxDBPartialWriteException) thrown;
+            Assertions.assertThat(partial.lineErrors())
+                    .as(testName)
+                    .containsExactlyElementsOf(expectedLines);
+        } else {
+            Assertions.assertThat(thrown).as(testName).isInstanceOf(InfluxDBApiHttpException.class);
+        }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -813,7 +916,8 @@ public class RestClientTest extends AbstractMockServerTest {
         .host(baseURL)
         .build());
 
-      Throwable thrown = catchThrowable(() -> restClient.request(requestPath, HttpMethod.GET, null, null, null));
+      Throwable thrown = catchThrowable(() ->
+              restClient.request(requestPath, HttpMethod.GET, null, null, null));
       Assertions.assertThat(thrown)
               .isInstanceOf(expectedClass)
               .hasMessage(expectedMessage);
