@@ -247,16 +247,19 @@ final class RestClient implements AutoCloseable {
         String body = response.body();
         String contentType = response.headers().firstValue("Content-Type").orElse(null);
 
-        if (contentType != null && contentType.regionMatches(true, 0, "text/plain", 0, "text/plain".length())) {
-            throw createHttpException(statusCode, body, response);
-        }
+        if (!errIsJsonLikeContentType(contentType)) {
+            var reason = extractErrorMsgInHeader(response);
+            if (reason.isEmpty()) {
+                reason = body;
+            }
 
-        JsonNode root = parseJsonBody(body);
-        if (!errIsJsonLikeContentType(contentType) && (body == null || body.isEmpty())) {
-            var reason = extractErrorMsgInHeaderOrStatusCode(response);
+            if (reason.isEmpty()) {
+                reason = HttpResponseStatus.valueOf(response.statusCode()).reasonPhrase();
+            }
             throw createHttpException(statusCode, reason, response);
         }
 
+        JsonNode root = parseJsonBody(body);
         if (root == null) {
             throw createHttpException(statusCode, body, response);
         }
@@ -297,6 +300,9 @@ final class RestClient implements AutoCloseable {
     @Nullable
     private JsonNode parseJsonBody(@Nullable final String body) {
         try {
+            if (body == null) {
+                return null;
+            }
             return objectMapper.readTree(body);
         } catch (JsonProcessingException e) {
             LOG.debug("Can't parse msg from response body {}", body, e);
@@ -340,16 +346,13 @@ final class RestClient implements AutoCloseable {
     }
 
     @Nonnull
-    private static String extractErrorMsgInHeaderOrStatusCode(@Nonnull final HttpResponse<String> response) {
+    private static String extractErrorMsgInHeader(@Nonnull final HttpResponse<String> response) {
         String reason = "";
         reason = Stream.of("X-Platform-Error-Code", "X-Influx-Error", "X-InfluxDb-Error")
                 .map(name -> response.headers().firstValue(name).orElse(null))
                 .filter(message -> message != null && !message.isEmpty()).findFirst()
                 .orElse("");
 
-        if (reason.isEmpty()) {
-            reason = HttpResponseStatus.valueOf(response.statusCode()).reasonPhrase();
-        }
         return reason;
     }
 
