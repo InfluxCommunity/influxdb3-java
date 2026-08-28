@@ -270,7 +270,7 @@ final class RestClient implements AutoCloseable {
         // Core/Enterprise object format:
         // {"error":"...","data":{"error_message":"..."}}
         JsonNode dataNode = root.get("data");
-        if (dataNode != null && dataNode.isObject()) {
+        if (!reason.isEmpty() && dataNode != null && dataNode.isObject()) {
             reason = formatObjectDataError(dataNode, reason);
         }
 
