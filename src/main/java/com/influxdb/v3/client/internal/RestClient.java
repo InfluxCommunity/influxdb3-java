@@ -244,24 +244,15 @@ final class RestClient implements AutoCloseable {
                                      final boolean useV2Api
     ) {
         int statusCode = response.statusCode();
-        String body = response.body();
         String contentType = response.headers().firstValue("Content-Type").orElse(null);
 
         if (!errIsJsonLikeContentType(contentType)) {
-            var reason = extractErrorMsgInHeader(response);
-            if (reason.isEmpty()) {
-                reason = body;
-            }
-
-            if (reason.isEmpty()) {
-                reason = HttpResponseStatus.valueOf(response.statusCode()).reasonPhrase();
-            }
-            throw createHttpException(statusCode, reason, response);
+            throw createHttpException(statusCode, extractFallbackReason(response), response);
         }
 
-        JsonNode root = parseJsonBody(body);
+        JsonNode root = parseJsonBody(response.body());
         if (root == null) {
-            throw createHttpException(statusCode, body, response);
+            throw createHttpException(statusCode, extractFallbackReason(response), response);
         }
 
         String rootMessage = errNonEmptyField(root, "message");
@@ -270,7 +261,6 @@ final class RestClient implements AutoCloseable {
         }
 
         String reason = Optional.ofNullable(errNonEmptyField(root, "error")).orElse("");
-
         if (isV3PartialWriteError(statusCode, path, acceptPartial, useV2Api, root) && root.isObject()) {
             // InfluxDB 3 Core/Enterprise partial write error format:
             // {"error":"...","data":[{"error_message":"...","line_number":2,"original_line": "..."}]}
@@ -285,10 +275,22 @@ final class RestClient implements AutoCloseable {
         }
 
         if (reason.isEmpty()) {
-            reason = body;
+            reason = extractFallbackReason(response);
         }
 
         throw createHttpException(statusCode, reason, response);
+    }
+
+    @Nonnull
+    private String extractFallbackReason(@Nonnull final HttpResponse<String> response) {
+        var reason = extractErrorMsgInHeader(response);
+        if (reason.isEmpty()) {
+            reason = response.body();
+        }
+        if (reason.isEmpty()) {
+            reason = HttpResponseStatus.valueOf(response.statusCode()).reasonPhrase();
+        }
+        return reason;
     }
 
     private boolean errIsJsonLikeContentType(@Nullable final String contentType) {
