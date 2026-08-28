@@ -574,7 +574,6 @@ public class RestClientTest extends AbstractMockServerTest {
 
     @Test
     public void errorFromBodyV3WithDataObject() { // Core/Enterprise object format
-
       mockServer.enqueue(createResponse(400,
         "application/json",
         null,
@@ -589,6 +588,24 @@ public class RestClientTest extends AbstractMockServerTest {
               .isInstanceOf(InfluxDBApiHttpException.class)
               .hasMessage("HTTP status code: 400; Message: parsing failed for write_lp endpoint:\n"
                       + "\tinvalid field value");
+    }
+
+    @Test
+    public void errorFromBodyV3WithDataObjectEmptyErrorMessage() { // Core/Enterprise object format
+        mockServer.enqueue(createResponse(400,
+                "application/json",
+                null,
+                "{\"data\":{\"error_message\":\"invalid field value\"}}"));
+
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+
+        Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp",
+                HttpMethod.POST, null, null, null));
+        Assertions.assertThat(thrown)
+                .isInstanceOf(InfluxDBApiHttpException.class)
+                .hasMessage("HTTP status code: 400; Message: {\"data\":{\"error_message\":\"invalid field value\"}}");
     }
 
     @Test
