@@ -1,0 +1,38 @@
+name: Maven Releasing
+
+on:
+
+  release:
+    types: [created]
+    branches:
+
+jobs:
+  release:
+    permissions:
+      contents: write # may want to update version
+    runs-on: ubuntu-latest
+    env:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      MAVEN_SETTINGS_EXPERIM: ${{ vars.MAVEN_SETTINGS_FILE }}
+      GPG_PASSPHRASE_PRELIM: ${{ secrets.GPG_PASSPHRASE }}
+      RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+      IS_PRERELEASE: ${{ github.event.release.prerelease }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+      - name: Add dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxml2-utils
+      - name: Check environment
+        run: |
+          env
