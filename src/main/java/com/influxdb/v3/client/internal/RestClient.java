@@ -36,9 +36,9 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -47,10 +47,10 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringEncoder;
@@ -165,7 +165,19 @@ final class RestClient implements AutoCloseable {
                                  @Nonnull final HttpMethod method,
                                  @Nullable final byte[] data,
                                  @Nullable final Map<String, String> queryParams,
-                                 @Nullable final Map<String, String> headers) {
+                                 @Nullable final Map<String, String> headers
+    ) {
+        return request(path, method, data, queryParams, headers, false, false);
+    }
+
+    HttpResponse<String> request(@Nonnull final String path,
+                                 @Nonnull final HttpMethod method,
+                                 @Nullable final byte[] data,
+                                 @Nullable final Map<String, String> queryParams,
+                                 @Nullable final Map<String, String> headers,
+                                 final boolean acceptPartial,
+                                 final boolean useV2Api
+    ) {
 
         QueryStringEncoder uriEncoder = new QueryStringEncoder(String.format("%s%s", baseUrl, path));
         if (queryParams != null) {
@@ -220,91 +232,80 @@ final class RestClient implements AutoCloseable {
 
         int statusCode = response.statusCode();
         if (statusCode < 200 || statusCode >= 300) {
-            String reason;
-            String body = response.body();
-            String contentType = response.headers().firstValue("Content-Type").orElse(null);
-            reason = formatErrorMessage(body, contentType);
-
-            if (reason == null) {
-                reason = "";
-            }
-
-            if (reason.isEmpty()) {
-                reason = Stream.of("X-Platform-Error-Code", "X-Influx-Error", "X-InfluxDb-Error")
-                        .map(name -> response.headers().firstValue(name).orElse(null))
-                        .filter(message -> message != null && !message.isEmpty()).findFirst()
-                        .orElse("");
-            }
-
-            if (reason.isEmpty()) {
-                reason = body;
-            }
-
-            if (reason.isEmpty()) {
-                reason = HttpResponseStatus.valueOf(statusCode).reasonPhrase();
-            }
-
-            String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
-            List<InfluxDBPartialWriteException.LineError> lineErrors =
-                    parsePartialWriteLineErrors(body, contentType);
-            if (!lineErrors.isEmpty()) {
-                throw new InfluxDBPartialWriteException(message, response.headers(), response.statusCode(), lineErrors);
-            }
-            throw new InfluxDBApiHttpException(message, response.headers(), response.statusCode());
+            handleErrorResponse(response, path, acceptPartial, useV2Api);
         }
 
         return response;
     }
 
-    @Nullable
-    private String formatErrorMessage(@Nonnull final String body, @Nullable final String contentType) {
-        if (body.isEmpty()) {
-            return null;
-        }
+    private void handleErrorResponse(@Nonnull final HttpResponse<String> response,
+                                     @Nonnull final String path,
+                                     final boolean acceptPartial,
+                                     final boolean useV2Api
+    ) {
+        int statusCode = response.statusCode();
+        String contentType = response.headers().firstValue("Content-Type").orElse(null);
 
         if (!errIsJsonLikeContentType(contentType)) {
-            return null;
+            throw createHttpException(statusCode, extractFallbackReason(response), response);
         }
 
+        JsonNode root = parseJsonBody(response.body());
+        if (root == null) {
+            throw createHttpException(statusCode, extractFallbackReason(response), response);
+        }
+
+        String rootMessage = errNonEmptyField(root, "message");
+        if (rootMessage != null) {
+            throw createHttpException(statusCode, rootMessage, response);
+        }
+
+        String reason = Optional.ofNullable(errNonEmptyField(root, "error")).orElse("");
+        if (isV3PartialWriteError(statusCode, path, acceptPartial, useV2Api, root) && root.isObject()) {
+            // InfluxDB 3 Core/Enterprise partial write error format:
+            // {"error":"...","data":[{"error_message":"...","line_number":2,"original_line": "..."}]}
+            handlePartialWriteError(statusCode, response, (ObjectNode) root, reason);
+        }
+
+        // Core/Enterprise object format:
+        // {"error":"...","data":{"error_message":"..."}}
+        JsonNode dataNode = root.get("data");
+        if (!reason.isEmpty() && dataNode != null && dataNode.isObject()) {
+            reason = formatObjectDataError(dataNode, reason);
+        }
+
+        if (reason.isEmpty()) {
+            reason = extractFallbackReason(response);
+        }
+
+        throw createHttpException(statusCode, reason, response);
+    }
+
+    @Nonnull
+    private String extractFallbackReason(@Nonnull final HttpResponse<String> response) {
+        var reason = extractErrorMsgInHeader(response);
+        if (reason.isEmpty()) {
+            reason = response.body();
+        }
+        if (reason.isEmpty()) {
+            reason = HttpResponseStatus.valueOf(response.statusCode()).reasonPhrase();
+        }
+        return reason;
+    }
+
+    private boolean errIsJsonLikeContentType(@Nullable final String contentType) {
+        return contentType == null
+                || contentType.isEmpty()
+                || contentType.regionMatches(true, 0, "application/json", 0, "application/json".length());
+    }
+
+    @Nullable
+    private JsonNode parseJsonBody(@Nullable final String body) {
         try {
-            final JsonNode root = objectMapper.readTree(body);
-            if (!root.isObject()) {
+            if (body == null) {
                 return null;
             }
-
-            final String rootMessage = errNonEmptyField(root, "message");
-            if (rootMessage != null) {
-                return rootMessage;
-            }
-
-            final String error = errNonEmptyField(root, "error");
-            final JsonNode dataNode = root.get("data");
-
-            // InfluxDB 3 Core/Enterprise write error format:
-            // {"error":"...","data":[{"error_message":"...","line_number":2,"original_line":"..."}]}
-            if (error != null && dataNode != null && dataNode.isArray()) {
-                final StringBuilder message = new StringBuilder(error);
-                boolean hasDetails = false;
-                for (String detail : errFormatDataArrayDetails(dataNode)) {
-                    if (!hasDetails) {
-                        message.append(':');
-                        hasDetails = true;
-                    }
-                    message.append("\n\t").append(detail);
-                }
-                return message.toString();
-            }
-
-            // Core/Enterprise object format:
-            // {"error":"...","data":{"error_message":"..."}}
-            if (isV3PartialWriteError(error) && dataNode != null && dataNode.isObject()) {
-                final String errorMessage = errNonEmptyField(dataNode, "error_message");
-                return errorMessage == null
-                        ? error
-                        : error + ":\n\t" + errorMessage;
-            }
-
-            return error;
+            return objectMapper.readTree(body);
         } catch (JsonProcessingException e) {
             LOG.debug("Can't parse msg from response body {}", body, e);
             return null;
@@ -312,76 +313,152 @@ final class RestClient implements AutoCloseable {
     }
 
     @Nonnull
-    private List<InfluxDBPartialWriteException.LineError> parsePartialWriteLineErrors(
-            @Nonnull final String body,
-            @Nullable final String contentType) {
-        if (body.isEmpty()) {
-            return List.of();
-        }
-
-        if (!errIsJsonLikeContentType(contentType)) {
-            return List.of();
-        }
-
-        try {
-            final JsonNode root = objectMapper.readTree(body);
-            if (!root.isObject()) {
-                return List.of();
-            }
-
-            final String error = errNonEmptyField(root, "error");
-            final JsonNode dataNode = root.get("data");
-            if (!isV3PartialWriteError(error) || dataNode == null) {
-                return List.of();
-            }
-
-            if (dataNode.isArray()) {
-                final ErrDataArrayItem[] parsed = errReadDataArray(dataNode);
-                if (parsed == null) {
-                    return List.of();
-                }
-
-                final List<InfluxDBPartialWriteException.LineError> lineErrors = new ArrayList<>();
-                for (ErrDataArrayItem item : parsed) {
-                    final InfluxDBPartialWriteException.LineError lineError = errToLineError(item);
-                    if (lineError != null) {
-                        lineErrors.add(lineError);
-                    }
-                }
-                return lineErrors;
-            }
-
-            if (dataNode.isObject()) {
-                try {
-                    final ErrDataArrayItem item = objectMapper.treeToValue(dataNode, ErrDataArrayItem.class);
-                    final InfluxDBPartialWriteException.LineError lineError = errToLineError(item);
-                    return lineError == null ? List.of() : List.of(lineError);
-                } catch (JsonProcessingException e) {
-                    return List.of();
-                }
-            }
-
-            return List.of();
-        } catch (JsonProcessingException e) {
-            LOG.debug("Can't parse line errors from response body {}", body, e);
-            return List.of();
-        }
+    private InfluxDBApiHttpException createHttpException(final int statusCode,
+                                                         @Nullable final String reason,
+                                                         @Nonnull final HttpResponse<String> response
+    ) {
+        String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
+        return new InfluxDBApiHttpException(message, response.headers(), response.statusCode());
     }
 
-    private boolean isV3PartialWriteError(@Nullable final String errorMessage) {
-        if (errorMessage == null || errorMessage.isEmpty()) {
+    private void handlePartialWriteError(final int statusCode,
+                                         @Nonnull final HttpResponse<String> response,
+                                         @Nonnull final ObjectNode root,
+                                         @Nonnull final String baseReason
+    ) {
+        ParseLineErrorResult result = parsePartialWriteLineErrors(root);
+        List<String> errorMsgDetails = createErrorMsgDetails(result, root);
+        String reason = baseReason;
+
+        if (!errorMsgDetails.isEmpty()) {
+            StringBuilder sb = new StringBuilder(baseReason).append(":");
+            for (String detailError : errorMsgDetails) {
+                sb.append("\n\t").append(detailError);
+            }
+            reason = sb.toString();
+        }
+
+        String message = String.format("HTTP status code: %d; Message: %s", statusCode, reason);
+        throw new InfluxDBPartialWriteException(
+                message,
+                response.headers(),
+                response.statusCode(),
+                result.lineErrors()
+        );
+    }
+
+    @Nonnull
+    private static String extractErrorMsgInHeader(@Nonnull final HttpResponse<String> response) {
+        String reason = "";
+        reason = Stream.of("X-Platform-Error-Code", "X-Influx-Error", "X-InfluxDb-Error")
+                .map(name -> response.headers().firstValue(name).orElse(null))
+                .filter(message -> message != null && !message.isEmpty()).findFirst()
+                .orElse("");
+
+        return reason;
+    }
+
+    @Nonnull
+    private String formatObjectDataError(@Nonnull final JsonNode dataNode, @Nonnull final String error) {
+        String lineNumber = Optional.ofNullable(errNonEmptyField(dataNode, "line_number")).orElse("");
+        String errorMessage = Optional.ofNullable(errNonEmptyField(dataNode, "error_message")).orElse("");
+        String originalLine = Optional.ofNullable(errNonEmptyField(dataNode, "original_line")).orElse("");
+
+        if (!errorMessage.isEmpty() && (lineNumber.isEmpty() || !Utils.isInteger(lineNumber))) {
+            return error + ":\n\t" + errorMessage;
+        } else if (!errorMessage.isEmpty() && Utils.isInteger(lineNumber) && originalLine.isEmpty()) {
+            return String.format("%s:\n\tline %s: %s", error, lineNumber, errorMessage);
+        } else if (!errorMessage.isEmpty() && !originalLine.isEmpty()) {
+            return String.format("%s:\n\tline %s: %s (%s)", error, lineNumber, errorMessage, originalLine);
+        }
+        return error;
+    }
+
+    @Nonnull
+    private List<String> createErrorMsgDetails(
+            @Nonnull final ParseLineErrorResult result,
+            @Nonnull final ObjectNode root
+    ) {
+        if (result.allTyped()) {
+            return result.lineErrors().stream()
+                    .map(this::formatLineError)
+                    .collect(Collectors.toList());
+        }
+
+        List<String> errorMsgDetails = new ArrayList<>();
+        root.path("data").forEach(node -> errorMsgDetails.add(node.toString()));
+        return errorMsgDetails;
+    }
+
+    @Nullable
+    private String formatLineError(@Nonnull final InfluxDBPartialWriteException.LineError lineError) {
+        Integer lineNumber = lineError.lineNumber();
+        String originalLine = lineError.originalLine();
+        String errorMessage = lineError.errorMessage();
+
+        if (lineNumber != null) {
+            if (originalLine != null && !originalLine.isEmpty()) {
+                return String.format("line %d: %s (%s)", lineNumber, errorMessage, originalLine);
+            }
+            return String.format("line %d: %s", lineNumber, errorMessage);
+        }
+        return errorMessage;
+    }
+
+    @Nonnull
+    private ParseLineErrorResult parsePartialWriteLineErrors(@Nonnull final ObjectNode root) {
+        var allTyped = true;
+        final List<InfluxDBPartialWriteException.LineError> lineErrors = new ArrayList<>();
+        for (JsonNode node : root.withArray("data")) {
+            final InfluxDBPartialWriteException.LineError lineError = parseLineError(node);
+            if (lineError != null) {
+                lineErrors.add(lineError);
+            } else {
+                allTyped = false;
+            }
+        }
+        return new ParseLineErrorResult(lineErrors, !lineErrors.isEmpty() && allTyped);
+    }
+
+    @Nullable
+    private InfluxDBPartialWriteException.LineError parseLineError(@Nonnull final JsonNode node) {
+        if (!node.isObject()) {
+            return null;
+        }
+
+        final String errorMessage = errNonEmptyField(node, "error_message");
+        if (errorMessage == null) {
+            return null;
+        }
+
+        final String lineNumberStr = errNonEmptyField(node, "line_number");
+        Integer lineNumber = null;
+        if (lineNumberStr != null) {
+            if (!Utils.isInteger(lineNumberStr)) {
+                return null;
+            }
+            lineNumber = Integer.parseInt(lineNumberStr);
+        }
+
+        final String originalLine = errNonEmptyField(node, "original_line");
+        return new InfluxDBPartialWriteException.LineError(lineNumber, errorMessage, originalLine);
+    }
+
+    private boolean isV3PartialWriteError(@Nonnull final Integer statusCode,
+                                          @Nonnull final String path,
+                                          final boolean isAcceptPartial,
+                                          final boolean isWriteUseV2Api,
+                                          @Nullable final JsonNode bodyRoot
+    ) {
+        final String error = errNonEmptyField(bodyRoot, "error");
+        if (error == null || error.isEmpty()) {
             return false;
         }
-        String normalized = errorMessage.toLowerCase(Locale.ROOT);
-        return normalized.contains("partial write of line protocol occurred")
-                || normalized.contains("parsing failed for write_lp endpoint") // for Core 3.9 and earlier
-                || normalized.contains("line protocol parsing error"); // for Core 3.10 and later
-    }
-
-    private boolean errIsJsonLikeContentType(@Nullable final String contentType) {
-        return contentType == null
-                || contentType.isEmpty()
-                || contentType.regionMatches(true, 0, "application/json", 0, "application/json".length());
+        return statusCode == 400
+                && "api/v3/write_lp".equals(path)
+                && isAcceptPartial
+                && !isWriteUseV2Api
+                && bodyRoot.path("data").isArray();
     }
 
     @Nullable
@@ -408,88 +485,6 @@ final class RestClient implements AutoCloseable {
             return null;
         }
         return errNonEmptyText(object.get(fieldName));
-    }
-
-    @Nonnull
-    private List<String> errFormatDataArrayDetails(@Nonnull final JsonNode dataNode) {
-        final ErrDataArrayItem[] parsed = errReadDataArray(dataNode);
-        if (parsed != null) {
-            final List<String> details = new ArrayList<>();
-            for (ErrDataArrayItem item : parsed) {
-                final InfluxDBPartialWriteException.LineError lineError = errToLineError(item);
-                if (lineError == null) {
-                    continue;
-                }
-
-                if (lineError.lineNumber() != null) {
-                    final StringBuilder detail = new StringBuilder()
-                            .append("line ").append(lineError.lineNumber())
-                            .append(": ").append(lineError.errorMessage());
-                    if (lineError.originalLine() != null) {
-                        detail.append(" (").append(lineError.originalLine()).append(")");
-                    }
-                    details.add(detail.toString());
-                } else {
-                    details.add(lineError.errorMessage());
-                }
-            }
-            return details;
-        }
-
-        final List<String> details = new ArrayList<>();
-        for (JsonNode item : dataNode) {
-            final String raw = errNonEmptyRawJsonToken(item);
-            if (raw != null) {
-                details.add(raw);
-            }
-        }
-        return details;
-    }
-
-    @Nullable
-    private String errNonEmptyRawJsonToken(@Nonnull final JsonNode node) {
-        if (node.isNull()) {
-            return null;
-        }
-
-        final String value;
-        if (node.isNumber() || node.isBoolean()) {
-            value = node.asText();
-        } else {
-            value = node.toString();
-        }
-        return value;
-    }
-
-    @Nullable
-    private ErrDataArrayItem[] errReadDataArray(@Nonnull final JsonNode dataNode) {
-        try {
-            return objectMapper.treeToValue(dataNode, ErrDataArrayItem[].class);
-        } catch (JsonProcessingException e) {
-            return null;
-        }
-    }
-
-    @Nullable
-    private InfluxDBPartialWriteException.LineError errToLineError(@Nullable final ErrDataArrayItem item) {
-        if (item == null || item.errorMessage == null || item.errorMessage.isEmpty()) {
-            return null;
-        }
-
-        final String originalLine =
-                (item.originalLine == null || item.originalLine.isEmpty()) ? null : item.originalLine;
-        return new InfluxDBPartialWriteException.LineError(item.lineNumber, item.errorMessage, originalLine);
-    }
-
-    private static final class ErrDataArrayItem {
-        @JsonProperty("error_message")
-        private String errorMessage;
-
-        @JsonProperty("line_number")
-        private Integer lineNumber;
-
-        @JsonProperty("original_line")
-        private String originalLine;
     }
 
     private X509TrustManager getX509TrustManagerFromFile(@Nonnull final String filePath) {
@@ -527,4 +522,8 @@ final class RestClient implements AutoCloseable {
     @Override
     public void close() {
     }
+
+    private record ParseLineErrorResult(List<InfluxDBPartialWriteException.LineError> lineErrors, boolean allTyped) {
+    }
 }
+
