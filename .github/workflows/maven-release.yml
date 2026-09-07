@@ -118,6 +118,8 @@ jobs:
             -Darguments="-DskipTests -DskipITs -Dlicense.skip -DperformRelease=true"
       - name: Prepare next cycle
         run: |
+          # DEBUG show commands only temporarily
+          set -x
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
             echo "This is a prerelease so the next release cycle will not be prepared."
             echo "TODO in production exit cleanly here.  But for debugging purposes currently continue"
@@ -136,6 +138,10 @@ jobs:
           git branch # FOR DEBUG AND VERIFICATION
           mvn versions:set-scm-tag  -DnewTag="HEAD"
           mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
+          # DEBUG command below
+          echo "==== diff start"
+          git diff
+          echo "==== diff end"
           # DEBUG command below
           head -n 72 pom.xml
           # gh pr create -B base_branch -H branch_to_merge --title 'Merge branch_to_merge into base_branch' --body 'Created by Github action'
