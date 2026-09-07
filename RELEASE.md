@@ -2,9 +2,17 @@
 
 This document contains a general description and tips for releasing Influxdb3-java using Github Actions with the ultimate goal of pushing the release to Maven Central.
 
+### Overview
+
+Releasing involves three general steps.
+
+1. Preparing the release in a new release branch
+2. Triggering the automatic release by creating a new tag a release in Github.
+3. Preparing the next release cycle by merging the next release branch created by the automated release script back into `main`.
+
 ### Preparing the release.
 
-1. from `main` create a new release branch, e.g. `git branch chore/release-1.12.0 git && git switch chore/release-1.12.0`
+1. from `main` create a new release branch, e.g. `git checkout -b chore/release-1.12.0`
 2. In the new branch, update the version settings in `pom.xml`
 
 ```
@@ -12,7 +20,7 @@ $ mvn versions:set -DremoveSnapshot=true
 $ mvn versions:set-scm-tag  -DnewTag="v1.12.0"
 ```
 3. In `README.md` update the `<version>` tag value in the Maven dependency example.
-4. Update the date for this release to the current date.
+4. In `CHANGELOG.md` verify all commit information for the current cycle is up-to-date, fix any discrepancies, then update the date for this release to the current date.
 5. Commit and push these changes to Github.
 
 ### Initiating the release
@@ -21,11 +29,11 @@ In Github `influxComunit/influxb3-java`...
 
 1. In the project home page open the _Releases_ section.
 2. Click _Draft a new release_
-3. In the _Target_ drop down check the release branch.
+3. In the _Target_ drop down check the new release branch.
 4. In the _Tag_ drop down click `Create new tag`, supply the tag matching the value added in the `set-scm-tag` command above.  Note that the tag should be prefixed with the letter _v_.  Click _Create_.
 5. In the _Release title_ text control set the title to match the `<version>` tag in `pom.xml`.
 6. In the _Release notes_ text field copy changes added since the last release from `CHANEGLOG.md`.
-7. If this is a pre-release check the radio button.  Note that the release workflow will not publish pre-release builds to Maven Central.
+7. If this is a pre-release check the _pre-release_ radio button.  Note that the release workflow will not publish pre-release builds to Maven Central.
 8. Click `Publish release`.
 
 The creation of the new release will trigger the `maven-release.yml` workflow.  It will:
@@ -35,13 +43,13 @@ The creation of the new release will trigger the `maven-release.yml` workflow.  
 3. Check and sign the build.
 4. Upload the archives and pom files to Maven Central.
 5. TODO - Publish documentation to https://github.com/influxcommunity/influxdb3-java/tree/gh-pages
-5. TODO - prepare the `pom.xml` and `CHANGELOG.md` files for the next release cycle and push them in a new branch.
+6. prepare the `pom.xml` and `CHANGELOG.md` files for the next release cycle and push them to a new branch named `ci/next-cycle-<NEXT_RELEASE_VERSION>`.
 
 ### Preparing the next release cycle
 
-A new branch with an updated `pom.xml` file will have been created by the Maven Release action.
+A new branch `ci/next-cycle-<NEXT_RELEASE_VERSION>` with an updated `pom.xml` file will have been created by the Maven Release action.
 
-1. create a PR to merge the branch into `main`.
+1. create a PR from the branch `ci/next-cycle-<NEXT_RELEASE_VERSION>` to merge it into `main`.
 2. review the PR and if everything has been generated correctly, squash and merge it.
 
 ## The Release environment

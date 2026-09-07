@@ -116,6 +116,14 @@ jobs:
             -Dgoals=deploy \
             -s ./deploy-settings.xml \
             -Darguments="-DskipTests -DskipITs -Dlicense.skip -DperformRelease=true"
+      - name: Publish documentation
+        run: |
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+             echo "This is a pre release, so site documentation will not be updated to Github pages."
+             exit 0
+          fi
+          mvn clean site site:stage -DskipTests
+          mvn scm-publish:publish-scm
       - name: Prepare next cycle
         run: |
           # DEBUG show commands only temporarily

@@ -9,8 +9,8 @@
     - Workflow successfully revised.  But no longer relying on `mvn release:prepare` to create tags and update `pom.xml`.
     - So need to ensure that support scripts and workflow put everything into place correctly. IN PROGRESS
        -  add scm:tag check to on-release.sh - 1eee676.  N.B. this was still using HEAD in jar and pom pushed to Maven Central.
-- Look into using `mvn versions:set` for updating pom.xml after successful release IN PROGRESS
-- Need to implement documentation releasing step.  From manual instructions... TODO
+- ~~Look into using `mvn versions:set` for updating pom.xml after successful release~~ DONE
+- Need to implement documentation releasing step.  From manual instructions... IN PROGRESS
 ```
 mvn clean site site:stage -DskipTests
 mvn scm-publish:publish-scm
