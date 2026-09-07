@@ -131,7 +131,7 @@ jobs:
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
             echo "This is a prerelease so the next release cycle will not be prepared."
             # exit 0
-            echor "Continue for now for debugging and review"
+            echo "Continue for now for debugging and review"
           fi
           echo "Preparing next release cycle"
 
