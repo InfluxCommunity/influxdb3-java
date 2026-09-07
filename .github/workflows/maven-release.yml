@@ -124,7 +124,7 @@ jobs:
           fi
           echo "Preparing next release cycle"
 
-          VERSION_CLEAN=${TEST_TAG_NAME:1}
+          VERSION_CLEAN=${RELEASE_TAG_NAME}
           PARTS=(${VERSION_CLEAN//./ })
           NEW_MINOR=$((PARTS[1]+1))
           NEXT_RELEASE="${PARTS[0]}.${NEW_MINOR}.${PARTS[2]}"
