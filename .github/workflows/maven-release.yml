@@ -138,6 +138,7 @@ jobs:
           git branch # FOR DEBUG AND VERIFICATION
           mvn versions:set-scm-tag  -DnewTag="HEAD"
           mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
+          sed -i "1s/^/### ${TEST_RELEASE_TAG:1} [unreleased]\n/" CHANGELOG.md
           # DEBUG command below
           echo "==== diff start"
           git diff
