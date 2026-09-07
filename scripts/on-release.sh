@@ -36,6 +36,7 @@ PROJECT_DIR="${SCRIPT_DIR}/.."
 CHANGELOG_PATH="${PROJECT_DIR}/CHANGELOG.md"
 README_PATH="${PROJECT_DIR}/README.md"
 POM_XML_PATH="${PROJECT_DIR}/pom.xml"
+EXAMPLE_POM_XML_PATH="${PROJECT_DIR}/examples/pom.xml"
 
 RELEASE_NUM=""
 NEXT_RELEASE_NUM=""
@@ -193,6 +194,17 @@ verify_version(){
 
 }
 
+verify_example_pom(){
+  EXAMPLE_DEPENDENCY_VERSION=$(xmllint --xpath "//*[local-name()='dependencies']/*[local-name()='dependency']/*[local-name()='version']/text()" ${EXAMPLE_POM_XML_PATH})
+  if [ "${RELEASE_NUM}" != "${EXAMPLE_DEPENDENCY_VERSION}" ]
+  then
+    printf "Example dependency version %s does not match the release number %s\n" "${EXAMPLE_DEPENDENCY_VERSION}" "${RELEASE_NUM}"
+    printf "Please update the project dependency version in %s" "${EXAMPLE_POM_XML_PATH}"
+    printf "%s\n" "${FAILURE_BOILERPLATE}"
+    exit 1
+  fi
+}
+
 verify_readme(){
   printf "Verifying README %s\n" "${README_PATH}"
   README_NODE_RAW="$(sed -n "/<version>.*<\/version>/p" "${README_PATH}")"
@@ -229,6 +241,7 @@ verify_rc_or_beta
 set_release_number
 
 verify_changelog
+verify_example_pom
 verify_readme
 verify_version
 

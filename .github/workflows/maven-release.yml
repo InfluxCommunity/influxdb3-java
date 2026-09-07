@@ -126,11 +126,12 @@ jobs:
           mvn scm-publish:publish-scm
       - name: Prepare next cycle
         run: |
-          # DEBUG show commands only temporarily
+          # DEBUGGING config follows
           set -x
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
             echo "This is a prerelease so the next release cycle will not be prepared."
-            echo "TODO in production exit cleanly here.  But for debugging purposes currently continue"
+            # exit 0
+            echor "Continue for now for debugging and review"
           fi
           echo "Preparing next release cycle"
 
@@ -139,23 +140,17 @@ jobs:
           NEW_MINOR=$((PARTS[1]+1))
           NEXT_RELEASE="${PARTS[0]}.${NEW_MINOR}.${PARTS[2]}"
           NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
-          echo "DEBUG NEXT_RELEASE ${NEXT_RELEASE} ${NEXT_RELEASE_BRANCH}"
           gh --version
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config user.name ${GITHUB_ACTOR}
-          git branch # FOR DEBUG AND VERIFICATION
           git checkout -b ${NEXT_RELEASE_BRANCH}
-          git branch # FOR DEBUG AND VERIFICATION
           mvn versions:set-scm-tag  -DnewTag="HEAD"
           mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
           sed -i "1s/^/## ${NEXT_RELEASE:1} [unreleased]\n\n/" CHANGELOG.md
-          # DEBUG command below
-          echo "==== diff start"
+          sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE:1}-SNAPSHOT<\/version>/" examples/pom.xml
+          # DEBUG step follows
           git diff
-          echo "==== diff end"
           git add pom.xml CHANGELOG.md
           git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
-          # DEBUG command below
-          git log -1
           git push --set-upstream origin ${NEXT_RELEASE_BRANCH}
           echo "The branch ${NEXT_RELEASE_BRANCH} has been created.  You can create and merge a PR manually from it to start the next release cycle."
