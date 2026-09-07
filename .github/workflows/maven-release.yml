@@ -150,4 +150,4 @@ jobs:
           # DEBUG command below
           git log -1
           git push --set-upstream origin ${NEXT_RELEASE_BRANCH}
-          # gh pr create -B base_branch -H branch_to_merge --title 'Merge branch_to_merge into base_branch' --body 'Created by Github action'
+          gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
