@@ -199,7 +199,7 @@ verify_example_pom(){
   if [ "${RELEASE_NUM}" != "${EXAMPLE_DEPENDENCY_VERSION}" ]
   then
     printf "Example dependency version %s does not match the release number %s\n" "${EXAMPLE_DEPENDENCY_VERSION}" "${RELEASE_NUM}"
-    printf "Please update the project dependency version in %s" "${EXAMPLE_POM_XML_PATH}"
+    printf "Please update the project dependency version in %s\n" "${EXAMPLE_POM_XML_PATH}"
     printf "%s\n" "${FAILURE_BOILERPLATE}"
     exit 1
   fi
