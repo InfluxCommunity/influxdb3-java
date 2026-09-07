@@ -9,7 +9,6 @@ jobs:
   release:
     permissions:
       contents: write # may want to update version
-      pull-requests: write # will need to create PR for next release cycle branch
     runs-on: ubuntu-latest
     env:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
@@ -151,4 +150,4 @@ jobs:
           # DEBUG command below
           git log -1
           git push --set-upstream origin ${NEXT_RELEASE_BRANCH}
-          gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "ci: merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
+          echo "The branch ${NEXT_RELEASE_BRANCH} has been created.  You can create and merge a PR manually from it to start the next release cycle."
