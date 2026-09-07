@@ -128,9 +128,12 @@ jobs:
           PARTS=(${VERSION_CLEAN//./ })
           NEW_MINOR=$((PARTS[1]+1))
           NEXT_RELEASE="${PARTS[0]}.${NEW_MINOR}.${PARTS[2]}"
-          echo "DEBUG NEXT_RELEASE %s" "${NEXT_RELEASE}"
+          NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}
+          echo "DEBUG NEXT_RELEASE ${NEXT_RELEASE} ${NEXT_RELEASE_BRANCH}"
           gh --version
-          git branch
+          git branch # FOR DEBUG AND VERIFICATION
+          git checkout -b ${NEXT_RELEASE_BRANCH}
+          git branch # FOR DEBUG AND VERIFICATION
           mvn versions:set-scm-tag  -DnewTag="HEAD"
           mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
           # DEBUG command below
