@@ -143,6 +143,9 @@ jobs:
           echo "==== diff start"
           git diff
           echo "==== diff end"
+          git add pom.xml CHANGELOG.md
+          git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
           # DEBUG command below
-          head -n 72 pom.xml
+          git log -1
+          git push
           # gh pr create -B base_branch -H branch_to_merge --title 'Merge branch_to_merge into base_branch' --body 'Created by Github action'
