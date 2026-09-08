@@ -101,8 +101,11 @@ jobs:
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release, so site documentation will not be updated to Github pages."
-             exit 0
+             # exit 0
+             echo "DEBUG need to troubleshoot why this stopped working.  So continue for now."
           fi
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config user.name ${GITHUB_ACTOR}
           mvn clean site site:stage -DskipTests
           mvn scm-publish:publish-scm
       - name: Prepare next cycle
