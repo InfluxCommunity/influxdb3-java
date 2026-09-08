@@ -33,15 +33,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libxml2-utils
-      - name: Check environment
-        run: |
-          # TODO this is a debug step and can be removed before push to production
-          env
-      - name: Verify
+      - name: Verify Env
         run: |
           if [[ -n "$SONATYPE_USERNAME" ]]
           then
-            echo "DEBUG have SONATYPE_USERNAME"
+            echo "have SONATYPE_USERNAME"
           else
             echo "Release requires SONATYPE_USERNAME, which was not found. exiting"
             exit 1
@@ -71,11 +67,7 @@ jobs:
             export GPG_PASSPHRASE="$GPG_PASSPHRASE_PRELIM"
           fi
 
-          echo "DEBUG GPG_PASSPHRASE ${GPG_PASSPHRASE}"
-
           echo "GPG_PASSPHRASE=${GPG_PASSPHRASE}" >> $GITHUB_ENV
-
-          echo "ROVER_ACTION=JUMP_THE_FENCE" >> $GITHUB_ENV
 
           # Verify GPG2 environment
           if ! command -v gpg2 &> /dev/null
@@ -86,20 +78,12 @@ jobs:
 
           gpg2 --version
           export GPG_EXECUTABLE=$(command -v gpg2)
-          echo "DEBUG GPG_EXECUTABLE ${GPG_EXECUTABLE}"
-
-          echo "DEBUG MAVEN_SETTINGS_EXPERIM ${MAVEN_SETTINGS_EXPERIM}"
-          echo "DEBUG MAVEN_SETTINGS_FILE ${{ vars.MAVEN_SETTINGS_FILE }}"
-
-          # N.B. this is for debugging only.  TODO remove before release
-          mvn -s ${{ vars.MAVEN_SETTINGS_FILE }} help:effective-settings
-          # mvn help:effective-settings
       - name: Script
         run: |
           echo "DEBUG IS_PRERELEASE ^^^${IS_PRERELEASE}^^^"
           echo "DEBUG GITHUB_ACTOR ${GITHUB_ACTOR}"
           ./scripts/on-release.sh
-      - name: Model release
+      - name: Release
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release and will not be deployed to Maven Central."
@@ -126,8 +110,6 @@ jobs:
           mvn scm-publish:publish-scm
       - name: Prepare next cycle
         run: |
-          # DEBUGGING config follows
-          set -x
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
             echo "This is a prerelease so the next release cycle will not be prepared."
             # exit 0
@@ -148,8 +130,6 @@ jobs:
           mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
           sed -i "1s/^/## ${NEXT_RELEASE:1} [unreleased]\n\n/" CHANGELOG.md
           sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE:1}-SNAPSHOT<\/version>/" examples/pom.xml
-          # DEBUG step follows
-          git diff
           git add pom.xml CHANGELOG.md
           git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
           git push --set-upstream origin ${NEXT_RELEASE_BRANCH}
