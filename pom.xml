@@ -639,7 +639,7 @@
                 <version>3.3.0</version>
                 <configuration>
                     <content>target/staging</content>
-                    <pubScmUrl>scm:git:https://github.com/karel-rehor/influxdb3-java.git</pubScmUrl>
+                    <pubScmUrl>scm:git:git@github.com:karel-rehor/influxdb3-java.git</pubScmUrl>
                     <checkoutDirectory>${project.basedir}/../influxdb3-scmpublish-checkout</checkoutDirectory>
                     <scmBranch>gh-pages</scmBranch>
                     <siteOutputEncoding>UTF-8</siteOutputEncoding>
