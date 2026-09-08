@@ -104,10 +104,16 @@ jobs:
              # exit 0
              echo "DEBUG need to troubleshoot why this stopped working.  So continue for now."
           fi
-          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config --global user.name ${GITHUB_ACTOR}
+          # git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          # git config --global user.name ${GITHUB_ACTOR}
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mvn clean site site:stage -DskipTests
-          mvn scm-publish:publish-scm
+          mvn --batch-mode scm-publish:publish-scm \
+            -DpubScmUrl=scm:git:https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git \
+            -DscmBranch=gh-pages
+          # mvn clean site site:stage -DskipTests
+          # mvn scm-publish:publish-scm
       - name: Prepare next cycle
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
