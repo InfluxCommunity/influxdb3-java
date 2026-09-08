@@ -125,6 +125,13 @@ jobs:
           gh --version
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config user.name ${GITHUB_ACTOR}
+          BRANCH_CHECK=$(git ls-remote --heads origin refs/heads/${NEXT_RELEASE_BRANCH})
+          if [ -n "${BRANCH_CHECK}" ]
+          then
+            echo "${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
+            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
+            exit 1
+          fi
           git checkout -b ${NEXT_RELEASE_BRANCH}
           mvn versions:set-scm-tag  -DnewTag="HEAD"
           mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
