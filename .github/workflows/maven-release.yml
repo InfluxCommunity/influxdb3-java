@@ -128,7 +128,7 @@ jobs:
           BRANCH_CHECK=$(git ls-remote --heads origin refs/heads/${NEXT_RELEASE_BRANCH})
           if [ -n "${BRANCH_CHECK}" ]
           then
-            echo "${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
+            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
             echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
             exit 1
           fi
