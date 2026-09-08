@@ -80,8 +80,6 @@ jobs:
           export GPG_EXECUTABLE=$(command -v gpg2)
       - name: Script
         run: |
-          echo "DEBUG IS_PRERELEASE ^^^${IS_PRERELEASE}^^^"
-          echo "DEBUG GITHUB_ACTOR ${GITHUB_ACTOR}"
           ./scripts/on-release.sh
       - name: Release
         run: |
@@ -95,11 +93,10 @@ jobs:
           EOF
           cat release.properties
           ls -al
-          # TODO fix -Darguments - we don't want to skip everything in production
           mvn release:perform \
             -Dgoals=deploy \
             -s ./deploy-settings.xml \
-            -Darguments="-DskipTests -DskipITs -Dlicense.skip -DperformRelease=true"
+            -Darguments="-DskipTests -DskipITs -DperformRelease=true"
       - name: Publish documentation
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
