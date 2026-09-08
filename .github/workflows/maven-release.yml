@@ -99,22 +99,18 @@ jobs:
             -Darguments="-DskipTests -DskipITs -DperformRelease=true"
       - name: Publish documentation
         run: |
+          echo "==== DEBUG env"
+          env
+          echo "==="
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release, so site documentation will not be updated to Github pages."
              # exit 0
              echo "DEBUG need to troubleshoot why this stopped working.  So continue for now."
           fi
-          # git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          # git config --global user.name ${GITHUB_ACTOR}
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # mvn clean site site:stage -DskipTests
-          mvn --batch-mode clean site site:stage -DskipTests scm-publish:publish-scm \
-            -DpubScmUrl=scm:git:https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git \
-            -DcheckoutDirectory=../influxdb3-scmpublish-checkout
-            -DscmBranch=gh-pages
-          # mvn clean site site:stage -DskipTests
-          # mvn scm-publish:publish-scm
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --global user.name ${GITHUB_ACTOR}
+          mvn clean site site:stage -DskipTests
+          mvn scm-publish:publish-scm
       - name: Prepare next cycle
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
