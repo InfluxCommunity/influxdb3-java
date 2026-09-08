@@ -62,49 +62,45 @@ public class InfluxDBPartialWriteException extends InfluxDBApiHttpException {
     }
 
     /**
-     * Represents one failed line from a partial write response.
-     */
-    public static final class LineError {
-
-        private final Integer lineNumber;
-        private final String errorMessage;
-        private final String originalLine;
-
-        /**
-         * @param lineNumber  line number in the write payload; may be null if not provided by server
-         * @param errorMessage line-level error message
-         * @param originalLine original line protocol row; may be null if not provided by server
+         * Represents one failed line from a partial write response.
          */
-        public LineError(@Nullable final Integer lineNumber,
-                         @Nonnull final String errorMessage,
-                         @Nullable final String originalLine) {
-            this.lineNumber = lineNumber;
-            this.errorMessage = errorMessage;
-            this.originalLine = originalLine;
-        }
+        public record LineError(Integer lineNumber, String errorMessage, String originalLine) {
 
-        /**
-         * @return line number or null if server didn't provide it
-         */
-        @Nullable
-        public Integer lineNumber() {
-            return lineNumber;
-        }
+            /**
+             * @param lineNumber   line number in the write payload; may be null if not provided by server
+             * @param errorMessage line-level error message
+             * @param originalLine original line protocol row; may be null if not provided by server
+             */
+            public LineError(@Nullable final Integer lineNumber,
+                             @Nonnull final String errorMessage,
+                             @Nullable final String originalLine) {
+                this.lineNumber = lineNumber;
+                this.errorMessage = errorMessage;
+                this.originalLine = originalLine;
+            }
 
-        /**
-         * @return line-level error message
-         */
-        @Nonnull
-        public String errorMessage() {
-            return errorMessage;
-        }
+            /**
+             * @return line number or null if server didn't provide it
+             */
+            @Nullable
+            public Integer lineNumber() {
+                return lineNumber;
+            }
 
-        /**
-         * @return original line protocol row or null if server didn't provide it
-         */
-        @Nullable
-        public String originalLine() {
-            return originalLine;
+            /**
+             * @return line-level error message
+             */
+            @Nonnull
+            public String errorMessage() {
+                return errorMessage;
+            }
+
+            /**
+             * @return original line protocol row or null if server didn't provide it
+             */
+            @Nullable
+            public String originalLine() {
+                return originalLine;
+            }
         }
-    }
 }
