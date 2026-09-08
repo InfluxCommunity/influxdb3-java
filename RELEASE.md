@@ -46,6 +46,10 @@ The creation of the new release will trigger the `maven-release.yml` workflow.  
 5. Publish site documentation to https://github.com/influxcommunity/influxdb3-java/tree/gh-pages
 6. prepare the `pom.xml` and `CHANGELOG.md` files for the next release cycle and push them to a new branch named `ci/next-cycle-<NEXT_RELEASE_VERSION>`.
 
+### Publish release in Maven Central.
+
+On the Maven Central account, review and publish the release to make it available to the public.
+
 ### Preparing the next release cycle
 
 A new branch `ci/next-cycle-<NEXT_RELEASE_VERSION>` with an updated `pom.xml` file will have been created by the Maven Release action.
