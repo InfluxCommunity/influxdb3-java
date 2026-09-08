@@ -46,21 +46,6 @@ IS_SNAPSHOT=false
 
 FAILURE_BOILERPLATE="Please delete the tag ${CIRCLE_TAG} and the related release, and start again."
 
-# GITHUB_REF_NAME=v0.2.0
-
-echo "DEBUG GITHUB_REF_NAME #${GITHUB_REF_NAME}#"
-
-#if [[ ${IS_PRERELEASE} ]]; then
-#  "DEBUG detected PRERELEASE"
-#else
-#  "DEBUG PRERELEASE NOT detected"
-#fi
-
-echo "DEBUG IS_PRERELEASE #${IS_PRERELEASE}#"
-
-echo "DEBUG AUTHOR NAME #${RELEASE_AUTHOR_NAME}#"
-echo "DEBUG SONATYPE_USERNAME #${SONATYPE_USERNAME}#"
-
 github_check(){
 
   if [ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]; then
@@ -246,7 +231,3 @@ verify_readme
 verify_version
 
 setup
-
-echo "====== DEBUG ENV ====="
-
-env

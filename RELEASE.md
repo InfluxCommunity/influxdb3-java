@@ -48,7 +48,7 @@ The creation of the new release will trigger the `maven-release.yml` workflow.  
 
 ### Publish release in Maven Central.
 
-On the Maven Central account, review and publish the release to make it available to the public.
+From the Maven Central account, review and publish the release to make it available to the public.
 
 ### Preparing the next release cycle
 
