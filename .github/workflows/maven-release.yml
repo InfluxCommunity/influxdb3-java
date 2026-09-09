@@ -101,8 +101,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # DEBUG following is a debug step
-          ls -al
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release, so site documentation will not be updated to Github pages."
              # exit 0
@@ -119,20 +117,10 @@ jobs:
             </servers>
           </settings>
           EOF
-          echo "==== DEBUG scm-settings.xml"
-          cat scm-settings.xml
           git config --global user.email "test@example.com"
           git config --global user.name "Github Action"
-          echo "M2_HOME=$(dirname $(dirname `which mvn`))" >> $GITHUB_ENV
-          echo "==== DEBUG env"
-          env
-          echo "==="
-          echo "DEBUG check git config"
-          git config --list
-          echo "DEBUG check /home/runner m2 settings"
-          cat /home/runner/.m2/settings.xml
           mvn clean site site:stage -DskipTests
-          mvn -s scm-settings.xml --batch-mode scm-publish:publish-scm -Dscmpublish.serverId=github -X
+          mvn -s scm-settings.xml --batch-mode scm-publish:publish-scm -Dscmpublish.serverId=github
       - name: Prepare next cycle
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
