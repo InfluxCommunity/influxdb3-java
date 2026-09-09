@@ -109,8 +109,9 @@ jobs:
              # exit 0
              echo "DEBUG need to troubleshoot why this stopped working.  So continue for now."
           fi
-          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config --global user.name ${GITHUB_ACTOR}
+          git config --global user.email "test@example.com"
+          git config --global user.name "Github Action"
+          echo "M2_HOME=$(dirname $(dirname `which mvn`))" >> $GITHUB_ENV
           # mvn clean site site:stage -DskipTests
           mvn --batch-mode scm-publish:publish-scm
       - name: Prepare next cycle
