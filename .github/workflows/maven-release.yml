@@ -109,11 +109,15 @@ jobs:
              echo "DEBUG need to troubleshoot why this stopped working.  So continue for now."
           fi
           cat << EOF > scm-settings.xml
-          <server>
-            <id>github</id>
-            <username>x-access-token</username>
-            <password>${GITHUB_TOKEN}</password>
-          </server>
+          <settings>
+            <servers>
+              <server>
+                <id>github</id>
+                <username>x-access-token</username>
+                <password>${GITHUB_TOKEN}</password>
+              </server>
+            </servers>
+          </settings>
           EOF
           echo "==== DEBUG scm-settings.xml"
           cat scm-settings.xml
