@@ -81,7 +81,7 @@
         </repository>
         <site>
             <id>GitHubPages</id>
-            <url>https://github.com/karel-rehor/influxdb3-java</url>
+            <url>scm:git:https://github.com/karel-rehor/influxdb3-java</url>
         </site>
     </distributionManagement>
 
