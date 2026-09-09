@@ -114,6 +114,7 @@ jobs:
           echo "==== DEBUG env"
           env
           echo "==="
+          git config --list
           # mvn clean site site:stage -DskipTests
           mvn --batch-mode scm-publish:publish-scm
       - name: Prepare next cycle
