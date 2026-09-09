@@ -112,7 +112,7 @@ jobs:
           <server>
             <id>github</id>
             <username>x-access-token</username>
-            <password>${env.GITHUB_TOKEN}</password>
+            <password>${GITHUB_TOKEN}</password>
           </server>
           EOF
           echo "==== DEBUG scm-settings.xml"
