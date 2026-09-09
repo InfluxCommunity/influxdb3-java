@@ -114,7 +114,10 @@ jobs:
           echo "==== DEBUG env"
           env
           echo "==="
+          echo "DEBUG check git config"
           git config --list
+          echo "DEBUG check /home/runner m2 settings"
+          cat /home/runner/.m2/settings.xml
           # mvn clean site site:stage -DskipTests
           mvn --batch-mode scm-publish:publish-scm
       - name: Prepare next cycle
