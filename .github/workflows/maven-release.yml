@@ -108,6 +108,15 @@ jobs:
              # exit 0
              echo "DEBUG need to troubleshoot why this stopped working.  So continue for now."
           fi
+          cat << EOF > scm-settings.xml
+          <server>
+            <id>github</id>
+            <username>x-access-token</username>
+            <password>${env.GITHUB_TOKEN}</password>
+          </server>
+          EOF
+          echo "==== DEBUG scm-settings.xml"
+          cat scm-settings.xml
           git config --global user.email "test@example.com"
           git config --global user.name "Github Action"
           echo "M2_HOME=$(dirname $(dirname `which mvn`))" >> $GITHUB_ENV
@@ -119,7 +128,7 @@ jobs:
           echo "DEBUG check /home/runner m2 settings"
           cat /home/runner/.m2/settings.xml
           # mvn clean site site:stage -DskipTests
-          mvn --batch-mode scm-publish:publish-scm -X
+          mvn -s scm-settings.xml --batch-mode scm-publish:publish-scm -X
       - name: Prepare next cycle
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
