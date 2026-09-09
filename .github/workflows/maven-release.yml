@@ -119,7 +119,7 @@ jobs:
           echo "DEBUG check /home/runner m2 settings"
           cat /home/runner/.m2/settings.xml
           # mvn clean site site:stage -DskipTests
-          mvn --batch-mode scm-publish:publish-scm
+          mvn --batch-mode scm-publish:publish-scm -X
       - name: Prepare next cycle
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
