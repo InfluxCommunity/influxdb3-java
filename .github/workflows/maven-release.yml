@@ -101,9 +101,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "==== DEBUG env"
-          env
-          echo "==="
+          # DEBUG following is a debug step
+          ls -al
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release, so site documentation will not be updated to Github pages."
              # exit 0
@@ -112,6 +111,9 @@ jobs:
           git config --global user.email "test@example.com"
           git config --global user.name "Github Action"
           echo "M2_HOME=$(dirname $(dirname `which mvn`))" >> $GITHUB_ENV
+          echo "==== DEBUG env"
+          env
+          echo "==="
           # mvn clean site site:stage -DskipTests
           mvn --batch-mode scm-publish:publish-scm
       - name: Prepare next cycle
