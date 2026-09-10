@@ -34,12 +34,12 @@ In Github `influxComunit/influxb3-java`...
 4. In the _Tag_ dropdown click `Create new tag`, supply the tag matching the value added in the `set-scm-tag` command above.  Note that the tag should be prefixed with the letter _v_.  Click _Create_.
 5. In the _Release title_ text control set the title to match the `<version>` tag in `pom.xml`.
 6. In the _Release notes_ text field copy changes added since the last release from `CHANEGLOG.md`.
-7. If this is a pre-release check the _pre-release_ radio button.  Note that for "pre-release" releases the release workflow will not publish builds to Maven Central, will not publish site documentation and will not prepare the next release cycle.  This setting can be useful for debugging the workflow.
+7. If this is a pre-release check the _pre-release_ radio button.  Note that for "pre-release" releases the release workflow will not publish modules to Maven Central, will not publish site documentation and will not prepare the next release cycle.  This setting can be useful for debugging the workflow.
 8. Click `Publish release`.
 
 The creation of the new release will trigger the `maven-release.yml` workflow.  It will:
 
-1. Verify required secrets and environment variables are set
+1. Verify required secrets and environment variables are set, and that SCM values in `pom.xml` match the repository from which the release is being triggered.
 2. Check that the `pom.xml` version matches the release tag and that versioning references in documentation and examples are up-to-date and valid.
 3. Check and sign the build.
 4. Upload the archives and pom files to Maven Central.
@@ -48,11 +48,11 @@ The creation of the new release will trigger the `maven-release.yml` workflow.  
 
 ### Publish release in Maven Central.
 
-From the Maven Central account, review and publish the release to make it available to the public.
+From the Maven Central account, review and publish the release to make it available to the public or drop it if the release workflow failed or if there are discrepancies in the files to be published.
 
 ### Preparing the next release cycle
 
-A new branch `ci/next-cycle-<NEXT_RELEASE_VERSION>` with an updated `pom.xml` file will have been created by the Maven Release action.
+A new branch `ci/next-cycle-<NEXT_RELEASE_VERSION>` with an updated `pom.xml` file will have been created when the Maven Release action completes successfully.
 
 1. create a PR from the branch `ci/next-cycle-<NEXT_RELEASE_VERSION>` to merge it into `main`.
 2. review the PR and if everything has been generated correctly, squash and merge it.
