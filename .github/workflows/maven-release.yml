@@ -1,0 +1,186 @@
+name: Maven Releasing
+
+on:
+
+  release:
+    types: [created]
+
+jobs:
+  release:
+    permissions:
+      contents: write # may want to update version
+    runs-on: ubuntu-latest
+    env:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      MAVEN_SETTINGS_EXPERIM: ${{ vars.MAVEN_SETTINGS_FILE }}
+      GPG_PASSPHRASE_PRELIM: ${{ secrets.GPG_PASSPHRASE }}
+      RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+      IS_PRERELEASE: ${{ github.event.release.prerelease }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+      - name: Add dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxml2-utils
+      - name: Verify Env
+        run: |
+          # ensure scm properties match current project - don't want to modify other repository inadvertently
+          POM_SITE_URL=$(xmllint --xpath "//*[local-name()='distributionManagement']/*[local-name()='site']/*[local-name()='url']/text()" ./pom.xml)
+          POM_SCM_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='connection']/text()" ./pom.xml)
+          POM_SCM_DEVELOPER_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='developerConnection']/text()" ./pom.xml)
+
+          if [[ ! "${POM_SITE_URL}" =~ .*${GITHUB_REPOSITORY}$ ]]
+          then
+            echo "POM_SITE_URL ${POM_SITE_URL} does not match GITHUB_REPOSITORY ${GITHUB_REPOSITORY}"
+            exit 1
+          else
+            echo "POM_SITE_URL OK ✓."
+          fi
+
+          if [[ ! "${POM_SCM_CONNECTION}" =~ .*${GITHUB_REPOSITORY}\.git$ ]]
+          then
+            echo "POM_SCM_CONNECTION ${POM_SCM_CONNECTION} does not match GITHUB_REPOSITORY ${GITHUB_REPOSITORY}"
+            exit 1
+          else
+            echo "POM_SCM_CONNECTION OK ✓."
+          fi
+
+          if [[ ! "${POM_SCM_DEVELOPER_CONNECTION}" =~ .*${GITHUB_REPOSITORY}\.git$ ]]
+          then
+            echo "POM_SCM_DEVELOPER_CONNECTION ${POM_SCM_DEVELOPER_CONNECTION} does not match GITHUB_REPOSITORY ${GITHUB_REPOSITORY}"
+            exit 1
+          else
+            echo "POM_SCM_DEVELOPER_CONNECTION OK ✓."
+          fi
+
+          if [[ -n "$SONATYPE_USERNAME" ]]
+          then
+            echo "have SONATYPE_USERNAME"
+          else
+            echo "Release requires SONATYPE_USERNAME, which was not found. exiting"
+            exit 1
+          fi
+
+          if [[ -n "$SONATYPE_PASSWORD" ]]
+          then
+            echo "have SONATYPE_PASSWORD"
+          else
+            echo "Release requires SONATYPE_PASSWORD, which was not found. exiting"
+            exit 1
+          fi
+
+          if [[ -n "$GPG_PASSPHRASE_PRELIM" ]]
+          then
+            echo "have GPG_PASSPHRASE_PRELIM"
+          else
+            echo "Release requires GPG_PASSPHRASE, which was not found. exiting"
+            exit 1
+          fi
+
+          if [[ "$GPG_PASSPHRASE_PRELIM" == "EMPTY" ]]
+          then
+            echo "GPG_PASSPHRASE empty requested"
+            export GPG_PASSPHRASE=""
+          else
+            export GPG_PASSPHRASE="$GPG_PASSPHRASE_PRELIM"
+          fi
+
+          echo "GPG_PASSPHRASE=${GPG_PASSPHRASE}" >> $GITHUB_ENV
+
+          # Verify GPG2 environment
+          if ! command -v gpg2 &> /dev/null
+          then
+            echo "Failed to locate gpg2 on this host.  GPG2 is required to continue."
+            exit 1
+          fi
+
+          gpg2 --version
+          export GPG_EXECUTABLE=$(command -v gpg2)
+      - name: Script
+        run: |
+          ./scripts/on-release.sh
+      - name: Release
+        run: |
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+             echo "This is a pre release and will not be deployed to Maven Central."
+             exit 0
+          fi
+          cat << EOF > release.properties
+          scm.url=scm\:git\:https\://github.com/${GITHUB_REPOSITORY}.git
+          scm.tag=${RELEASE_TAG_NAME}
+          EOF
+          cat release.properties
+          mvn release:perform \
+            -Dgoals=deploy \
+            -s ./deploy-settings.xml \
+            -Darguments="-DskipTests -DskipITs -DperformRelease=true"
+      - name: Publish documentation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+             echo "This is a pre release, so site documentation will not be updated to Github pages."
+             exit 0
+          fi
+          cat << EOF > scm-settings.xml
+          <settings>
+            <servers>
+              <server>
+                <id>github</id>
+                <username>x-access-token</username>
+                <password>${GITHUB_TOKEN}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+          git config --global user.email "test@example.com"
+          git config --global user.name "Github Action"
+          mvn clean site site:stage -DskipTests
+          mvn -s scm-settings.xml --batch-mode scm-publish:publish-scm -Dscmpublish.serverId=github
+      - name: Prepare next cycle
+        run: |
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            echo "This is a prerelease so the next release cycle will not be prepared."
+            exit 0
+          fi
+          echo "Preparing next release cycle"
+
+          VERSION_CLEAN=${RELEASE_TAG_NAME}
+          PARTS=(${VERSION_CLEAN//./ })
+          NEW_MINOR=$((PARTS[1]+1))
+          NEXT_RELEASE="${PARTS[0]}.${NEW_MINOR}.${PARTS[2]}"
+          NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config user.name ${GITHUB_ACTOR}
+          BRANCH_CHECK=$(git ls-remote --heads origin refs/heads/${NEXT_RELEASE_BRANCH})
+          if [ -n "${BRANCH_CHECK}" ]
+          then
+            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
+            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
+            exit 1
+          fi
+          git checkout -b ${NEXT_RELEASE_BRANCH}
+          mvn versions:set-scm-tag  -DnewTag="HEAD"
+          mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
+          sed -i "1s/^/## ${NEXT_RELEASE:1} [unreleased]\n\n/" CHANGELOG.md
+          sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE:1}-SNAPSHOT<\/version>/" examples/pom.xml
+          git add pom.xml CHANGELOG.md
+          git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
+          git push --set-upstream origin ${NEXT_RELEASE_BRANCH}
+          # The following requires special permissions on the organizational and project level to work.  Switching off for now.
+          # gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
+          # The alternative is to create the PR by hand
+          echo "The branch ${NEXT_RELEASE_BRANCH} has been created.  You can create and merge a PR manually from it to start the next release cycle."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

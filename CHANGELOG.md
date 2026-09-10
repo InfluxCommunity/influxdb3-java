@@ -1,5 +1,9 @@
 ## 1.12.0 [unreleased]
 
+### CI
+
+1. [#440](https://github.com/InfluxCommunity/influxdb3-java/pull/440): Sets up automated releasing to Maven Central
+
 ## 1.11.0 [2026-08-27]
 
 ### Breaking Changes

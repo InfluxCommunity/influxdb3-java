@@ -28,7 +28,7 @@
     <groupId>com.influxdb</groupId>
     <artifactId>influxdb3-java</artifactId>
     <packaging>jar</packaging>
-    <version>1.12.0-SNAPSHOT</version>
+    <version>1.12.0</version>
 
     <name>InfluxDB 3 Java Client</name>
     <description>
@@ -64,10 +64,10 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:InfluxCommunity/influxdb3-java.git</connection>
-        <developerConnection>scm:git:git@github.com:InfluxCommunity/influxdb3-java.git</developerConnection>
+        <connection>scm:git:https://github.com/InfluxCommunity/influxdb3-java.git</connection>
+        <developerConnection>scm:git:https://github.com/InfluxCommunity/influxdb3-java.git</developerConnection>
         <url>https://github.com/InfluxCommunity/influxdb3-java/tree/main</url>
-        <tag>HEAD</tag>
+        <tag>v1.12.0</tag>
     </scm>
 
     <distributionManagement>
@@ -81,7 +81,7 @@
         </repository>
         <site>
             <id>GitHubPages</id>
-            <url>https://InfluxCommunity.github.io/influxdb3-java/</url>
+            <url>scm:git:https://github.com/InfluxCommunity/influxdb3-java</url>
         </site>
     </distributionManagement>
 
@@ -410,6 +410,12 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.3.1</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${plugin.checkstyle.version}</version>
                 <configuration>
@@ -632,11 +638,8 @@
                 <artifactId>maven-scm-publish-plugin</artifactId>
                 <version>3.3.0</version>
                 <configuration>
-                    <content>target/staging</content>
-                    <pubScmUrl>scm:git:git@github.com:InfluxCommunity/influxdb3-java.git</pubScmUrl>
-                    <checkoutDirectory>${project.basedir}/../influxdb3-scmpublish-checkout</checkoutDirectory>
+                    <checkoutDirectory>${project.build.directory}/scm-publish</checkoutDirectory>
                     <scmBranch>gh-pages</scmBranch>
-                    <siteOutputEncoding>UTF-8</siteOutputEncoding>
                 </configuration>
             </plugin>
 
@@ -749,20 +752,16 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.9.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://ossrh-staging-api.central.sonatype.com/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                            <stagingProgressTimeoutMinutes>15</stagingProgressTimeoutMinutes>
+                            <publishingServerId>central</publishingServerId>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
     </profiles>
-
 </project>
