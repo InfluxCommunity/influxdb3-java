@@ -123,7 +123,6 @@ jobs:
           scm.tag=${RELEASE_TAG_NAME}
           EOF
           cat release.properties
-          ls -al
           mvn release:perform \
             -Dgoals=deploy \
             -s ./deploy-settings.xml \
@@ -164,7 +163,6 @@ jobs:
           NEW_MINOR=$((PARTS[1]+1))
           NEXT_RELEASE="${PARTS[0]}.${NEW_MINOR}.${PARTS[2]}"
           NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
-          gh --version
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config user.name ${GITHUB_ACTOR}
           BRANCH_CHECK=$(git ls-remote --heads origin refs/heads/${NEXT_RELEASE_BRANCH})
