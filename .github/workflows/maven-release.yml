@@ -37,7 +37,35 @@ jobs:
           sudo apt-get install libxml2-utils
       - name: Verify Env
         run: |
-          # TODO ensure scm properties match current project 
+          # ensure scm properties match current project - don't want to modify other repository inadvertently
+          POM_SITE_URL=$(xmllint --xpath "//*[local-name()='distributionManagement']/*[local-name()='site']/*[local-name()='url']/text()" ../pom.xml)
+          POM_SCM_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='connection']/text()" ../pom.xml)
+          POM_SCM_DEVELOPER_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='developerConnection']/text()" ../pom.xml)
+
+          if [[ ! "${POM_SITE_URL}" =~ .*${GITHUB_REPOSITORY}$ ]]
+          then
+            echo "POM_SITE_URL ${POM_SITE_URL} does not match GITHUB_REPOSITORY ${GITHUB_REPOSITORY}"
+            exit 1
+          else
+            echo "POM_SITE_URL OK ✓."
+          fi
+
+          if [[ ! "${POM_SCM_CONNECTION}" =~ .*${GITHUB_REPOSITORY}\.git$ ]]
+          then
+            echo "POM_SCM_CONNECTION ${POM_SCM_CONNECTION} does not match GITHUB_REPOSITORY ${GITHUB_REPOSITORY}"
+            exit 1
+          else
+            echo "POM_SCM_CONNECTION OK ✓."
+          fi
+
+          if [[ ! "${POM_SCM_DEVELOPER_CONNECTION}" =~ .*${GITHUB_REPOSITORY}\.git$ ]]
+          then
+            echo "POM_SCM_DEVELOPER_CONNECTION ${POM_SCM_DEVELOPER_CONNECTION} does not match GITHUB_REPOSITORY ${GITHUB_REPOSITORY}"
+            exit 1
+          else
+            echo "POM_SCM_DEVELOPER_CONNECTION OK ✓."
+          fi
+
           echo "=== DEBUG env"
           env
           echo "==="
