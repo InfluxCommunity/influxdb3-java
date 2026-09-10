@@ -10,12 +10,12 @@ Releasing involves three general steps.
 2. Triggering the automatic release by creating a new tag and release in Github.
 3. Preparing the next release cycle by merging the next release branch created by the automated release script back into `main`.
 
-### Preparing the release.
+### Preparing the release
 
 1. from `main` create a new release branch, e.g. `git checkout -b chore/release-1.12.0`
 2. In the new branch, update the version settings in `pom.xml`
 
-```
+```bash
 $ mvn versions:set -DremoveSnapshot=true
 $ mvn versions:set-scm-tag  -DnewTag="v1.12.0"
 ```
@@ -74,168 +74,169 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
 
 e.g. On a Linux box...
 
-```
-$ head -c 6 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9+-'
-jEtkLlyG
-```
+    ```bash
+    $ head -c 6 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9+-'
+    jEtkLlyG
+    ```
 Store this somewhere safe.
 
-2. Generate a key with a passphrase and no expiration.
+1. Generate a key with a passphrase and no expiration.
 
-```
-$ gpg --batch --passphrase=<GENERATED_PASSPHRASE> --quick-generate-key "karel-rehor@users.noreply.github.com" default default never
-gpg: revocation certificate stored as '/home/karl/.gnupg/openpgp-revocs.d/REDACTED_KEY_ID.rev'
-```
+    ```bash
+    $ gpg --batch --passphrase=<GENERATED_PASSPHRASE> --quick-generate-key "karel-rehor@users.noreply.github.com" default default never
+    gpg: revocation certificate stored as '/home/karl/.gnupg/openpgp-revocs.d/REDACTED_KEY_ID.rev'
+    ```
 
-3. Verify key.
+1. Verify key.
 
-```
-$ gpg --list-keys
-gpg: checking the trustdb
-gpg: marginals needed: 3  completes needed: 1  trust model: pgp
-gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
-/home/karl/.gnupg/pubring.kbx
------------------------------
-pub   ed25519 2026-09-03 [SC]
-      REDACTED_KEY_ID
-uid           [ultimate] karel-rehor@users.noreply.github.com
-sub   cv25519 2026-09-03 [E]
-```
+    ```bash
+    $ gpg --list-keys
+    gpg: checking the trustdb
+    gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+    gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+    /home/karl/.gnupg/pubring.kbx
+    -----------------------------
+    pub   ed25519 2026-09-03 [SC]
+          REDACTED_KEY_ID
+    uid           [ultimate] karel-rehor@users.noreply.github.com
+    sub   cv25519 2026-09-03 [E]
+    ```
 
-4. Distribute the key.
+1. Distribute the key.
 
-```
-$ gpg2 --keyserver keyserver.ubuntu.com --send-keys REDACTED_KEY_ID
-gpg: sending key REDACETD to hkp://keyserver.ubuntu.com
-```
+    ```bash
+    $ gpg2 --keyserver keyserver.ubuntu.com --send-keys REDACTED_KEY_ID
+    gpg: sending key REDACETD to hkp://keyserver.ubuntu.com
+    ```
 
-5. Verify key is on remote.  Note, that it may take a few minutes to be registered.
+1. Verify key is on remote.  Note, that it may take a few minutes to be registered.
 
-```
-$ gpg2 --keyserver keyserver.ubuntu.com --search-keys REDACTED_KEY_ID
-gpg: data source: http://185.125.188.27:11371
-(1)	karel-rehor@users.noreply.github.com
-	  263 bit EDDSA key REDACTED, created: 2026-09-03
-Keys 1-1 of 1 for "REDACTED_KEY_ID".  Enter number(s), N)ext, or Q)uit > 1
-gpg: key REDACTED: "karel-rehor@users.noreply.github.com" not changed
-gpg: Total number processed: 1
-gpg:              unchanged: 1
-```
+    ```bash
+    $ gpg2 --keyserver keyserver.ubuntu.com --search-keys REDACTED_KEY_ID
+    gpg: data source: http://185.125.188.27:11371
+    (1)	karel-rehor@users.noreply.github.com
+          263 bit EDDSA key REDACTED, created: 2026-09-03
+    Keys 1-1 of 1 for "REDACTED_KEY_ID".  Enter number(s), N)ext, or Q)uit > 1
+    gpg: key REDACTED: "karel-rehor@users.noreply.github.com" not changed
+    gpg: Total number processed: 1
+    gpg:              unchanged: 1
+    ```
 
-6. Get the secret key associated with this key.  It will need to be copied then pasted to the Github project secret GPG_PRIVATE_KEY.  Note you will be prompted for the passphrase.
+1. Get the secret key associated with this key.  It will need to be copied then pasted to the Github project secret GPG_PRIVATE_KEY.  Note you will be prompted for the passphrase.
 
-```
-$ gpg2 --export-secret-keys --armor REDACTED_KEY_ID
------BEGIN PGP PRIVATE KEY BLOCK-----
+    ```bash
+    $ gpg2 --export-secret-keys --armor REDACTED_KEY_ID
+    -----BEGIN PGP PRIVATE KEY BLOCK-----
 
-   ...REDACTED...
+       ...REDACTED...
 
------END PGP PRIVATE KEY BLOCK-----
-```
+    -----END PGP PRIVATE KEY BLOCK-----
+    ```
+
 #### Revoking a compromised GPG2 key
 
 
 1. verify that the key is on the local server.
 
-```
-$ gpg2 --list-keys
-/home/karl/.gnupg/pubring.kbx
------------------------------
-pub   ed25519 2026-07-27 [SC] [expires: 2029-07-26]
-      KEY_ID_REDACTED
-uid           [ultimate] karel-rehor@users.noreply.github.com
-sub   REDACTED 2026-07-27 [E]
+    ```bash
+    $ gpg2 --list-keys
+    /home/karl/.gnupg/pubring.kbx
+    -----------------------------
+    pub   ed25519 2026-07-27 [SC] [expires: 2029-07-26]
+          KEY_ID_REDACTED
+    uid           [ultimate] karel-rehor@users.noreply.github.com
+    sub   REDACTED 2026-07-27 [E]
 
-```
+    ```
 
-or...
+    or...
 
-```
-$ gpg2 --list-keys KEY_ID_REDACTED
-pub   ed25519 2026-07-27 [SC] [expires: 2029-07-26]
-      KEY_ID_REDACTED
-uid           [ultimate] karel-rehor@users.noreply.github.com
-sub   REDACTED 2026-07-27 [E]
-```
+    ```bash
+    $ gpg2 --list-keys KEY_ID_REDACTED
+    pub   ed25519 2026-07-27 [SC] [expires: 2029-07-26]
+          KEY_ID_REDACTED
+    uid           [ultimate] karel-rehor@users.noreply.github.com
+    sub   REDACTED 2026-07-27 [E]
+    ```
 
-2. Verify that the key is on the remote server. 
+1. Verify that the key is on the remote server.
 
-```
-$ gpg2 --keyserver keyserver.ubuntu.com --search-keys KEY_ID_REDACTED
-gpg: data source: http://185.125.188.27:11371
-(1)	karel-rehor@users.noreply.github.com
-	  263 bit EDDSA key REDACTED, created: 2026-07-27
-Keys 1-1 of 1 for "KEY_ID_REDACTED".  Enter number(s), N)ext, or Q)uit > 1
-gpg: key REDACTED: "karel-rehor@users.noreply.github.com" not changed
-gpg: Total number processed: 1
-gpg:              unchanged: 1
-```
+    ```bash
+    $ gpg2 --keyserver keyserver.ubuntu.com --search-keys KEY_ID_REDACTED
+    gpg: data source: http://185.125.188.27:11371
+    (1) karel-rehor@users.noreply.github.com
+          263 bit EDDSA key REDACTED, created: 2026-07-27
+    Keys 1-1 of 1 for "KEY_ID_REDACTED".  Enter number(s), N)ext, or Q)uit > 1
+    gpg: key REDACTED: "karel-rehor@users.noreply.github.com" not changed
+    gpg: Total number processed: 1
+    gpg:              unchanged: 1
+    ```
 
-3. Create a revocation request locally. 
+1. Create a revocation request locally.
 
-```
-$ gpg2 --output revoke-karel-rehor.asc --gen-revoke KEY_ID_REDACTED
-...
-```
+    ```bash
+    $ gpg2 --output revoke-karel-rehor.asc --gen-revoke KEY_ID_REDACTED
+    ...
+    ```
 
-4. Revoke the key locally.
+1. Revoke the key locally.
 
-```
-$ gpg2 --import revoke-karel-rehor.asc 
-gpg: key REDACTED: "karel-rehor@users.noreply.github.com" revocation certificate imported
-gpg: Total number processed: 1
-gpg:    new key revocations: 1
-gpg: marginals needed: 3  completes needed: 1  trust model: pgp
-gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
-gpg: next trustdb check due at 2029-07-26
-```
+    ```bash
+    $ gpg2 --import revoke-karel-rehor.asc
+    gpg: key REDACTED: "karel-rehor@users.noreply.github.com" revocation certificate imported
+    gpg: Total number processed: 1
+    gpg:    new key revocations: 1
+    gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+    gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+    gpg: next trustdb check due at 2029-07-26
+    ```
 
-5. Verify revocation succeeded. 
+1. Verify revocation succeeded.
 
-```
-$ gpg2 --list-keys
-/home/karl/.gnupg/pubring.kbx
------------------------------
-pub   ed25519 2026-07-27 [SC] [revoked: 2026-09-03]
-      KEY_ID_REDACTED
-uid           [ revoked] karel-rehor@users.noreply.github.com
-```
+    ```bash
+    $ gpg2 --list-keys
+    /home/karl/.gnupg/pubring.kbx
+    -----------------------------
+    pub   ed25519 2026-07-27 [SC] [revoked: 2026-09-03]
+          KEY_ID_REDACTED
+    uid           [ revoked] karel-rehor@users.noreply.github.com
+    ```
 
-6. Push change of key state to remote server. 
+1. Push change of key state to remote server.
 
-```
-$ gpg2 --keyserver keyserver.ubuntu.com --send-keys KEY_ID_REDACTED
-gpg: sending key REDACTED to hkp://keyserver.ubuntu.com
-```
+    ```bash
+    $ gpg2 --keyserver keyserver.ubuntu.com --send-keys KEY_ID_REDACTED
+    gpg: sending key REDACTED to hkp://keyserver.ubuntu.com
+    ```
 
-7. Verify key state on remote server.
+1. Verify key state on remote server.
 
-```
-$ gpg2 --keyserver keyserver.ubuntu.com --search-keys KEY_ID_REDACTED
-gpg: data source: http://185.125.188.27:11371
-gpg: key "KEY_ID_REDACTED" not found on keyserver
-```
+    ```bash
+    $ gpg2 --keyserver keyserver.ubuntu.com --search-keys KEY_ID_REDACTED
+    gpg: data source: http://185.125.188.27:11371
+    gpg: key "KEY_ID_REDACTED" not found on keyserver
+    ```
 
-8. Delete secret key locally. 
+1. Delete secret key locally.
 
-```
-$ gpg2 --delete-secret-key KEY_ID_REDACTED
-...
-# Confirmation required
-```
+    ```bash
+    $ gpg2 --delete-secret-key KEY_ID_REDACTED
+    ...
+    # Confirmation required
+    ```
 
-9. Delete key locally
+1. Delete key locally
 
-```
-$ gpg2 --delete-key 01EAECEC736391172C6520F48B5778484117B952
-...
-# Confirmation required
-```
+    ```bash
+    $ gpg2 --delete-key 01EAECEC736391172C6520F48B5778484117B952
+    ...
+    # Confirmation required
+    ```
 
-10. Verify key is deleted
+1. Verify key is deleted
 
-```
-$ gpg2 --list-keys
-gpg: checking the trustdb
-gpg: no ultimately trusted keys found
-```
+    ```bash
+    $ gpg2 --list-keys
+    gpg: checking the trustdb
+    gpg: no ultimately trusted keys found
+    ```
