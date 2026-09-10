@@ -638,11 +638,8 @@
                 <artifactId>maven-scm-publish-plugin</artifactId>
                 <version>3.3.0</version>
                 <configuration>
-                    <!-- content>target/staging</content>
-                    <pubScmUrl>scm:git:git@github.com:karel-rehor/influxdb3-java.git</pubScmUrl-->
                     <checkoutDirectory>${project.build.directory}/scm-publish</checkoutDirectory>
                     <scmBranch>gh-pages</scmBranch>
-                    <!-- siteOutputEncoding>UTF-8</siteOutputEncoding -->
                 </configuration>
             </plugin>
 
