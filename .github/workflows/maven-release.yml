@@ -9,8 +9,6 @@ jobs:
   release:
     permissions:
       contents: write # may want to update version
-      pull-requests: write
-      repository-projects: write
     runs-on: ubuntu-latest
     env:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
