@@ -1,24 +1,4 @@
-## 1.12.0 [2026-09-04]
-
-### karel-rehor fork TODOs
-
-- `pom.xml`
-   1. ~~cleanup to get stable working release with `central-publishing-maven-plugin`~~. DONE
-   2. Once the above is proven to work - revert `scm` and other values to `influxCommunity` before creating PR to production.
-- `.github/workflows/maven-release.yml` - ~~some tasks defined in `maven-release.yml` are covered by the maven release plugin workflow.  This includes automated tag generation, which may cause conflicts.  So, the workflow needs a review and some revisions~~. DONE
-    - Workflow successfully revised.  But no longer relying on `mvn release:prepare` to create tags and update `pom.xml`.
-    - So need to ensure that support scripts and workflow put everything into place correctly. IN PROGRESS
-       -  ~~add scm:tag check to on-release.sh - 1eee676.  N.B. this was still using HEAD in jar and pom pushed to Maven Central.~~ DONE
-- ~~Look into using `mvn versions:set` for updating pom.xml after successful release~~ DONE
-- ~~Need to implement documentation releasing step.  From manual instructions...~~ DONE
-```
-mvn clean site site:stage -DskipTests
-mvn scm-publish:publish-scm
-```
-- Document new releasing procedures in `RELEASE.md` and in bonitoo docs. IN PROGRESS (note RELEASE.md document already started in branch ci/gh-action-maven-releasing)
-- Full cycle test with above changes - then drop test release. PARTIALLY DONE - Core workflow validated and results dropped.
-- Test hot release (1.11.1?) from maven central using fork.  Can it be used in a client app?
-- Cleanup, including removing this TODO List, and create PR.
+## 1.12.0 [unreleased]
 
 ## 1.11.0 [2026-08-27]
 

@@ -25,7 +25,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.karel-rehor</groupId>
+    <groupId>com.influxdb</groupId>
     <artifactId>influxdb3-java</artifactId>
     <packaging>jar</packaging>
     <version>1.12.0</version>
@@ -64,9 +64,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:https://github.com/karel-rehor/influxdb3-java.git</connection>
-        <developerConnection>scm:git:https://github.com/karel-rehor/influxdb3-java.git</developerConnection>
-        <url>https://github.com/karel-rehor/influxdb3-java/tree/main</url>
+        <connection>scm:git:https://github.com/InfluxCommunity/influxdb3-java.git</connection>
+        <developerConnection>scm:git:https://github.com/InfluxCommunity/influxdb3-java.git</developerConnection>
+        <url>https://github.com/InfluxCommunity/influxdb3-java/tree/main</url>
         <tag>v1.12.0</tag>
     </scm>
 
@@ -81,7 +81,7 @@
         </repository>
         <site>
             <id>GitHubPages</id>
-            <url>scm:git:https://github.com/karel-rehor/influxdb3-java</url>
+            <url>scm:git:https://github.com/InfluxCommunity/influxdb3-java</url>
         </site>
     </distributionManagement>
 
