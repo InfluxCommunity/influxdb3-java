@@ -153,4 +153,7 @@ jobs:
           git add pom.xml CHANGELOG.md
           git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
           git push --set-upstream origin ${NEXT_RELEASE_BRANCH}
-          echo "The branch ${NEXT_RELEASE_BRANCH} has been created.  You can create and merge a PR manually from it to start the next release cycle."
+          gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
+          # echo "The branch ${NEXT_RELEASE_BRANCH} has been created.  You can create and merge a PR manually from it to start the next release cycle."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
