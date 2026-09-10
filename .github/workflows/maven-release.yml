@@ -38,9 +38,9 @@ jobs:
       - name: Verify Env
         run: |
           # ensure scm properties match current project - don't want to modify other repository inadvertently
-          POM_SITE_URL=$(xmllint --xpath "//*[local-name()='distributionManagement']/*[local-name()='site']/*[local-name()='url']/text()" ../pom.xml)
-          POM_SCM_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='connection']/text()" ../pom.xml)
-          POM_SCM_DEVELOPER_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='developerConnection']/text()" ../pom.xml)
+          POM_SITE_URL=$(xmllint --xpath "//*[local-name()='distributionManagement']/*[local-name()='site']/*[local-name()='url']/text()" ./pom.xml)
+          POM_SCM_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='connection']/text()" ./pom.xml)
+          POM_SCM_DEVELOPER_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='developerConnection']/text()" ./pom.xml)
 
           if [[ ! "${POM_SITE_URL}" =~ .*${GITHUB_REPOSITORY}$ ]]
           then
