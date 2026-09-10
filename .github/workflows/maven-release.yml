@@ -37,6 +37,10 @@ jobs:
           sudo apt-get install libxml2-utils
       - name: Verify Env
         run: |
+          # TODO ensure scm properties match current project 
+          echo "=== DEBUG env"
+          env
+          echo "==="
           if [[ -n "$SONATYPE_USERNAME" ]]
           then
             echo "have SONATYPE_USERNAME"
@@ -105,8 +109,7 @@ jobs:
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release, so site documentation will not be updated to Github pages."
-             # exit 0
-             echo "DEBUG need to troubleshoot why this stopped working.  So continue for now."
+             exit 0
           fi
           cat << EOF > scm-settings.xml
           <settings>
@@ -127,8 +130,7 @@ jobs:
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
             echo "This is a prerelease so the next release cycle will not be prepared."
-            # exit 0
-            echo "Continue for now for debugging and review"
+            exit 0
           fi
           echo "Preparing next release cycle"
 
