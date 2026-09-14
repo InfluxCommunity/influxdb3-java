@@ -13,40 +13,41 @@ Releasing involves three general steps.
 ### Preparing the release
 
 1. from `main` create a new release branch, e.g. `git checkout -b chore/release-1.12.0`
-2. In the new branch, update the version settings in `pom.xml`
+1. In the new branch, update the version settings in `pom.xml`
 
-```bash
-$ mvn versions:set -DremoveSnapshot=true
-$ mvn versions:set-scm-tag  -DnewTag="v1.12.0"
-```
-3. In `README.md` update the `<version>` tag value in the Maven dependency example.
-4. In `CHANGELOG.md` verify all commit information for the current cycle is up-to-date, fix any discrepancies, then update the date for this release to the current date.
-5. In `examples/pom.xml` update the version of the Influxdb3-java dependency to the version to be released.
-6. Commit and push these changes to Github.
+   ```bash
+   $ mvn versions:set -DremoveSnapshot=true
+   $ mvn versions:set-scm-tag  -DnewTag="v1.12.0"
+   ```
+
+1. In `README.md` update the `<version>` tag value in the Maven dependency example.
+1. In `CHANGELOG.md` verify all commit information for the current cycle is up-to-date, fix any discrepancies, then update the date for this release to the current date.
+1. In `examples/pom.xml` update the version of the Influxdb3-java dependency to the version to be released.
+1. Commit and push these changes to Github.
 
 ### Initiating the release
 
 In Github `influxComunit/influxb3-java`...
 
 1. In the project home page open the _Releases_ section.
-2. Click _Draft a new release_
-3. In the _Target_ dropdown check the new release branch.
-4. In the _Tag_ dropdown click `Create new tag`, supply the tag matching the value added in the `set-scm-tag` command above.  Note that the tag should be prefixed with the letter _v_.  Click _Create_.
-5. In the _Release title_ text control set the title to match the `<version>` tag in `pom.xml`.
-6. In the _Release notes_ text field copy changes added since the last release from `CHANEGLOG.md`.
-7. If this is a pre-release check the _pre-release_ radio button.  Note that for "pre-release" releases the release workflow will not publish modules to Maven Central, will not publish site documentation and will not prepare the next release cycle.  This setting can be useful for debugging the workflow.
-8. Click `Publish release`.
+1. Click _Draft a new release_
+1. In the _Target_ dropdown check the new release branch.
+1. In the _Tag_ dropdown click `Create new tag`, supply the tag matching the value added in the `set-scm-tag` command above.  Note that the tag should be prefixed with the letter _v_.  Click _Create_.
+1. In the _Release title_ text control set the title to match the `<version>` tag in `pom.xml`.
+1. In the _Release notes_ text field copy changes added since the last release from `CHANEGLOG.md`.
+1. If this is a pre-release check the _pre-release_ radio button.  Note that for "pre-release" releases the release workflow will not publish modules to Maven Central, will not publish site documentation and will not prepare the next release cycle.  This setting can be useful for debugging the workflow.
+1. Click `Publish release`.
 
 The creation of the new release will trigger the `maven-release.yml` workflow.  It will:
 
 1. Verify required secrets and environment variables are set, and that SCM values in `pom.xml` match the repository from which the release is being triggered.
-2. Check that the `pom.xml` version matches the release tag and that versioning references in documentation and examples are up-to-date and valid.
-3. Check and sign the build.
-4. Upload the archives and pom files to Maven Central.
-5. Publish site documentation to https://github.com/influxcommunity/influxdb3-java/tree/gh-pages
-6. prepare the `pom.xml` and `CHANGELOG.md` files for the next release cycle and push them to a new branch named `ci/next-cycle-<NEXT_RELEASE_VERSION>`.
+1. Check that the `pom.xml` version matches the release tag and that versioning references in documentation and examples are up-to-date and valid.
+1. Check and sign the build.
+1. Upload the archives and pom files to Maven Central.
+1. Publish site documentation to [Github Pages](https://github.com/influxcommunity/influxdb3-java/tree/gh-pages)
+1. prepare the `pom.xml` and `CHANGELOG.md` files for the next release cycle and push them to a new branch named `ci/next-cycle-<NEXT_RELEASE_VERSION>`.
 
-### Publish release in Maven Central.
+### Publish release in Maven Central
 
 From the Maven Central account, review and publish the release to make it available to the public or drop it if the release workflow failed or if there are discrepancies in the files to be published.
 
@@ -72,7 +73,7 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
 
 1. Generate a random password for the key.
 
-e.g. On a Linux box...
+   e.g. On a Linux box...
 
     ```bash
     $ head -c 6 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9+-'
@@ -114,7 +115,7 @@ Store this somewhere safe.
     ```bash
     $ gpg2 --keyserver keyserver.ubuntu.com --search-keys REDACTED_KEY_ID
     gpg: data source: http://185.125.188.27:11371
-    (1)	karel-rehor@users.noreply.github.com
+    (1) karel-rehor@users.noreply.github.com
           263 bit EDDSA key REDACTED, created: 2026-09-03
     Keys 1-1 of 1 for "REDACTED_KEY_ID".  Enter number(s), N)ext, or Q)uit > 1
     gpg: key REDACTED: "karel-rehor@users.noreply.github.com" not changed
@@ -134,7 +135,6 @@ Store this somewhere safe.
     ```
 
 #### Revoking a compromised GPG2 key
-
 
 1. verify that the key is on the local server.
 
