@@ -17,7 +17,21 @@ Releasing involves three general steps.
 
    ```bash
    $ mvn versions:set -DremoveSnapshot=true
+    ...
+   [INFO] Scanning for projects...
+   [INFO]
+   [INFO] --------------------< com.influxdb:influxdb3-java >---------------------
+   [INFO] Building InfluxDB 3 Java Client 1.12.0-SNAPSHOT
+   [INFO] --------------------------------[ jar ]---------------------------------
+   ...
    $ mvn versions:set-scm-tag  -DnewTag="v1.12.0"
+   ...
+    [INFO] --- versions-maven-plugin:2.21.0:set-scm-tag (default-cli) @ influxdb3-java ---
+    [INFO] Updating tag: HEAD -> v1.12.0
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD SUCCESS
+    [INFO] ------------------------------------------------------------------------
+   ...
    ```
 
 1. In `README.md` update the `<version>` tag value in the Maven dependency example.
@@ -79,7 +93,8 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
     $ head -c 6 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9+-'
     jEtkLlyG
     ```
-Store this somewhere safe.
+
+   Store this somewhere safe.
 
 1. Generate a key with a passphrase and no expiration.
 
