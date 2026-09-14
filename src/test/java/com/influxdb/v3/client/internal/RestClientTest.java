@@ -42,7 +42,6 @@ import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 import okhttp3.Headers;
 import org.assertj.core.api.Assertions;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -667,9 +666,9 @@ public class RestClientTest extends AbstractMockServerTest {
     private static final String LINE_ERROR = "invalid column type for column 'temp', expected "
             + "iox::column_type::field::float, got iox::column_type::field::string";
 
-    private List<PartialWriteTestCase> testCases() {
-        return List.of(
-                new PartialWriteTestCase(
+    private static Stream<Arguments> testCases() {
+        return Stream.of(
+                Arguments.of(
                         "V3 accept partial with renamed error and non-empty array",
                         400,
                         "application/json",
@@ -683,7 +682,7 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         List.of(new InfluxDBPartialWriteException.LineError(2, LINE_ERROR, REJECTED_LINE))
                 ),
-                new PartialWriteTestCase(
+                Arguments.of(
                         "V3 accept partial without content type",
                         400,
                         null,
@@ -697,7 +696,7 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         List.of(new InfluxDBPartialWriteException.LineError(2, LINE_ERROR, REJECTED_LINE))
                 ),
-                new PartialWriteTestCase(
+                Arguments.of(
                         "V3 accept partial with malformed non-empty array",
                         400,
                         "application/json",
@@ -712,7 +711,7 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         Collections.emptyList()
                 ),
-                new PartialWriteTestCase(
+                Arguments.of(
                         "V3 accept partial with mixed primitive and typed entries",
                         400,
                         "application/json",
@@ -727,7 +726,7 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         List.of(new InfluxDBPartialWriteException.LineError(2, LINE_ERROR, REJECTED_LINE))
                 ),
-                new PartialWriteTestCase(
+                Arguments.of(
                         "V3 accept partial with string entries",
                         400,
                         "application/json",
@@ -740,7 +739,7 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         Collections.emptyList()
                 ),
-                new PartialWriteTestCase(
+                Arguments.of(
                         "V3 accept partial with error message only",
                         400,
                         "application/json",
@@ -753,7 +752,7 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         List.of(new InfluxDBPartialWriteException.LineError(null, LINE_ERROR, null))
                 ),
-                new PartialWriteTestCase(
+                Arguments.of(
                         "V3 accept partial with line number but no original line",
                         400,
                         "application/json",
@@ -766,7 +765,7 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         List.of(new InfluxDBPartialWriteException.LineError(2, LINE_ERROR, null))
                 ),
-                new PartialWriteTestCase(
+                Arguments.of(
                         "V3 accept partial with entry missing error message",
                         400,
                         "application/json",
@@ -779,14 +778,15 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 accept partial with empty array", 400, "application/json",
+                Arguments.of("V3 accept partial with empty array", 400, "application/json",
                         "{\"error\":\"write failed\",\"data\":[]}",
                         false,
                         true,
                         "HTTP status code: 400; Message: write failed",
-                        true
+                        true,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 accept partial with object details remains generic", 400,
+                Arguments.of("V3 accept partial with object details remains generic", 400,
                         "application/json",
                         "{\"error\":\"line protocol parsing error\",\"data\":{\"error_message\":\""
                                 + LINE_ERROR + "\",\"line_number\":2,\"original_line\":\""
@@ -795,9 +795,10 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         "HTTP status code: 400; Message: line protocol parsing error:\n\tline 2: "
                                 + LINE_ERROR + " (" + REJECTED_LINE + ")",
-                        false
+                        false,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 reject partial with object details", 400, "application/json",
+                Arguments.of("V3 reject partial with object details", 400, "application/json",
                         "{\"error\":\"line protocol parsing error\",\"data\":{\"error_message\":\""
                                 + LINE_ERROR + "\",\"line_number\":2,\"original_line\":\""
                                 + REJECTED_LINE_JSON + "\"}}",
@@ -805,9 +806,10 @@ public class RestClientTest extends AbstractMockServerTest {
                         false,
                         "HTTP status code: 400; Message: line protocol parsing error:\n\tline 2: "
                                 + LINE_ERROR + " (" + REJECTED_LINE + ")",
-                        false
+                        false,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V2 never returns partial write error", 400, "application/json",
+                Arguments.of("V2 never returns partial write error", 400, "application/json",
                         "{\"error\":\"partial write of line protocol occurred\","
                                 + "\"data\":[{\"error_message\":\""
                                 + LINE_ERROR + "\",\"line_number\":2,\"original_line\":\""
@@ -815,9 +817,10 @@ public class RestClientTest extends AbstractMockServerTest {
                         true,
                         true,
                         "HTTP status code: 400; Message: partial write of line protocol occurred",
-                        false
+                        false,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 non-400 never returns partial write error", 500,
+                Arguments.of("V3 non-400 never returns partial write error", 500,
                         "application/json",
                         "{\"error\":\"partial write of line protocol occurred\","
                                 + "\"data\":[{\"error_message\":\""
@@ -826,71 +829,84 @@ public class RestClientTest extends AbstractMockServerTest {
                         false,
                         true,
                         "HTTP status code: 500; Message: partial write of line protocol occurred",
-                        false
+                        false,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 scalar data remains generic", 400, "application/json",
+                Arguments.of("V3 scalar data remains generic", 400, "application/json",
                         "{\"error\":\"write failed\",\"data\":\"invalid\"}",
                         false,
                         true,
                         "HTTP status code: 400; Message: write failed",
-                        false
+                        false,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 object data error without error_message", 400, "application/json",
+                Arguments.of("V3 object data error without error_message", 400, "application/json",
                         "{\"error\":\"write failed\",\"data\":{\"line_number\": 1}}",
                         false,
                         false,
                         "HTTP status code: 400; Message: write failed",
-                        false
+                        false,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 empty object data remains generic", 400, "application/json",
+                Arguments.of("V3 empty object data remains generic", 400, "application/json",
                         "{\"error\":\"write failed\",\"data\":{}}",
                         false,
                         true,
                         "HTTP status code: 400; Message: write failed",
-                        false
+                        false,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 null data remains generic", 400, "application/json",
+                Arguments.of("V3 null data remains generic", 400, "application/json",
                         "{\"error\":\"write failed\",\"data\":null}",
                         false,
                         true,
                         "HTTP status code: 400; Message: write failed",
-                        false
+                        false,
+                        Collections.emptyList()
                 ),
-                new PartialWriteTestCase("V3 malformed JSON preserves raw response", 400,
+                Arguments.of("V3 malformed JSON preserves raw response", 400,
                         "application/json",
                         "{\"error\":\"write failed\"",
                         false,
                         true,
                         "HTTP status code: 400; Message: {\"error\":\"write failed\"",
-                        false
+                        false,
+                        Collections.emptyList()
                 )
         );
     }
 
-    @Test
-    public void testPartialWriteException() {
-        for (PartialWriteTestCase testCase : testCases()) {
-            mockServer.enqueue(createResponse(testCase.statusCode(),
-                    testCase.contentType(),
-                    null,
-                    testCase.responseBody()));
-            restClient = new RestClient(new ClientConfig.Builder()
-                    .host(baseURL)
-                    .build());
-            Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST,
-                    null, null, null, testCase.acceptPartial(), testCase.useV2Api()));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("testCases")
+    public void testWriteErrorException(final String testName,
+                                        final int statusCode,
+                                        final String contentType,
+                                        final String responseBody,
+                                        final boolean useV2Api,
+                                        final boolean acceptPartial,
+                                        final String expectedMsg,
+                                        final boolean expectPartial,
+                                        final List<InfluxDBPartialWriteException.LineError> expectedLines) {
+        mockServer.enqueue(createResponse(statusCode,
+                contentType,
+                null,
+                responseBody));
+        restClient = new RestClient(new ClientConfig.Builder()
+                .host(baseURL)
+                .build());
+        Throwable thrown = catchThrowable(() -> restClient.request("api/v3/write_lp", HttpMethod.POST,
+                null, null, null, acceptPartial, useV2Api));
 
-            Assertions.assertThat(thrown).as(testCase.name()).isNotNull();
-            Assertions.assertThat(thrown.getMessage()).as(testCase.name()).isEqualTo(testCase.expectedMsg());
-            if (testCase.expectPartial()) {
-                Assertions.assertThat(thrown).as(testCase.name()).isInstanceOf(InfluxDBPartialWriteException.class);
-                InfluxDBPartialWriteException partial = (InfluxDBPartialWriteException) thrown;
-                Assertions.assertThat(partial.lineErrors())
-                        .as(testCase.name())
-                        .containsExactlyElementsOf(testCase.expectedLines());
-            } else {
-                Assertions.assertThat(thrown).as(testCase.name()).isInstanceOf(InfluxDBApiHttpException.class);
-            }
+        Assertions.assertThat(thrown).as(testName).isNotNull();
+        Assertions.assertThat(thrown.getMessage()).as(testName).isEqualTo(expectedMsg);
+        if (expectPartial) {
+            Assertions.assertThat(thrown).as(testName).isInstanceOf(InfluxDBPartialWriteException.class);
+            InfluxDBPartialWriteException partial = (InfluxDBPartialWriteException) thrown;
+            Assertions.assertThat(partial.lineErrors())
+                    .as(testName)
+                    .containsExactlyElementsOf(expectedLines);
+        } else {
+            Assertions.assertThat(thrown).as(testName).isInstanceOf(InfluxDBApiHttpException.class);
         }
     }
 
@@ -1151,41 +1167,5 @@ public class RestClientTest extends AbstractMockServerTest {
                 .build());
         String version = restClient.getServerVersion();
         Assertions.assertThat(version).isEqualTo(null);
-    }
-}
-
-record PartialWriteTestCase(
-        String name,
-        int statusCode,
-        String contentType,
-        String responseBody,
-        boolean useV2Api,
-        boolean acceptPartial,
-        String expectedMsg,
-        boolean expectPartial,
-        List<InfluxDBPartialWriteException.LineError> expectedLines
-) {
-    PartialWriteTestCase(final String name, final
-                         int statusCode,
-                         final String contentType,
-                         final String responseBody,
-                         final boolean useV2Api,
-                         final boolean acceptPartial,
-                         final String expectedMsg,
-                         final boolean expectPartial) {
-        this(name,
-                statusCode,
-                contentType,
-                responseBody,
-                useV2Api,
-                acceptPartial,
-                expectedMsg,
-                expectPartial,
-                Collections.emptyList());
-    }
-
-    @Override
-    public @NonNull String toString() {
-        return name;
     }
 }
