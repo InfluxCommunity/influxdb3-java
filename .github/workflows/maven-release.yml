@@ -96,7 +96,7 @@ jobs:
             export GPG_PASSPHRASE="$GPG_PASSPHRASE_PRELIM"
           fi
 
-          echo "GPG_PASSPHRASE=${GPG_PASSPHRASE}" >> $GITHUB_ENV
+          echo "GPG_PASSPHRASE=${GPG_PASSPHRASE}" >> "$GITHUB_ENV"
 
           # Verify GPG2 environment
           if ! command -v gpg2 &> /dev/null
