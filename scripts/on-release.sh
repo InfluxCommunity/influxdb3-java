@@ -39,10 +39,7 @@ POM_XML_PATH="${PROJECT_DIR}/pom.xml"
 EXAMPLE_POM_XML_PATH="${PROJECT_DIR}/examples/pom.xml"
 
 RELEASE_NUM=""
-NEXT_RELEASE_NUM=""
-NEXT_RELEASE_BRANCH_BASE="chore/prepare-next-release-"
 RC_OR_BETA=false
-IS_SNAPSHOT=false
 
 FAILURE_BOILERPLATE="Please delete the tag ${CIRCLE_TAG} and the related release, and start again."
 
@@ -103,11 +100,11 @@ setup(){
 }
 
 set_release_number(){
-    RELEASE_NUM=$(echo ${RELEASE_TAG_NAME} | sed -r "s/-(rc|beta)[0-9]+//" | sed -r "s/^v//")
+    RELEASE_NUM=$(echo "${RELEASE_TAG_NAME}" | sed -r "s/-(rc|beta)[0-9]+//" | sed -r "s/^v//")
 }
 
 verify_rc_or_beta(){
-  if [  -n "$(echo ${RELEASE_TAG_NAME} | grep -E "rc|beta")" ]
+  if echo "${RELEASE_TAG_NAME}" | grep -q "rc|beta"
   then
     RC_OR_BETA=true
   fi
@@ -180,7 +177,7 @@ verify_version(){
 }
 
 verify_example_pom(){
-  EXAMPLE_DEPENDENCY_VERSION=$(xmllint --xpath "//*[local-name()='dependencies']/*[local-name()='dependency']/*[local-name()='version']/text()" ${EXAMPLE_POM_XML_PATH})
+  EXAMPLE_DEPENDENCY_VERSION=$(xmllint --xpath "//*[local-name()='dependencies']/*[local-name()='dependency']/*[local-name()='version']/text()" "${EXAMPLE_POM_XML_PATH}")
   if [ "${RELEASE_NUM}" != "${EXAMPLE_DEPENDENCY_VERSION}" ]
   then
     printf "Example dependency version %s does not match the release number %s\n" "${EXAMPLE_DEPENDENCY_VERSION}" "${RELEASE_NUM}"
@@ -223,6 +220,7 @@ echo "Running in Github Actions container."
 github_check
 
 verify_rc_or_beta
+export RC_OR_BETA
 set_release_number
 
 verify_changelog
