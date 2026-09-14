@@ -41,7 +41,7 @@ EXAMPLE_POM_XML_PATH="${PROJECT_DIR}/examples/pom.xml"
 RELEASE_NUM=""
 RC_OR_BETA=false
 
-FAILURE_BOILERPLATE="Please delete the tag ${CIRCLE_TAG} and the related release, and start again."
+FAILURE_BOILERPLATE="Please delete the tag ${RELEASE_TAG_NAME} and the related release, and start again."
 
 github_check(){
 
