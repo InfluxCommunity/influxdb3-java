@@ -99,8 +99,8 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
 1. Generate a key with a passphrase and no expiration.
 
     ```bash
-    $ gpg --batch --passphrase=<GENERATED_PASSPHRASE> --quick-generate-key "karel-rehor@users.noreply.github.com" default default never
-    gpg: revocation certificate stored as '/home/karl/.gnupg/openpgp-revocs.d/REDACTED_KEY_ID.rev'
+    $ gpg --batch --passphrase=<GENERATED_PASSPHRASE> --quick-generate-key "your-user-name@users.noreply.github.com" default default never
+    gpg: revocation certificate stored as '/home/<your_user_name>/.gnupg/openpgp-revocs.d/REDACTED_KEY_ID.rev'
     ```
 
 1. Verify key.
@@ -110,11 +110,11 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
     gpg: checking the trustdb
     gpg: marginals needed: 3  completes needed: 1  trust model: pgp
     gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
-    /home/karl/.gnupg/pubring.kbx
+    /home/<your_user_name>/.gnupg/pubring.kbx
     -----------------------------
     pub   ed25519 2026-09-03 [SC]
           REDACTED_KEY_ID
-    uid           [ultimate] karel-rehor@users.noreply.github.com
+    uid           [ultimate] your-user-name@users.noreply.github.com
     sub   cv25519 2026-09-03 [E]
     ```
 
@@ -130,10 +130,10 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
     ```bash
     $ gpg2 --keyserver keyserver.ubuntu.com --search-keys REDACTED_KEY_ID
     gpg: data source: http://185.125.188.27:11371
-    (1) karel-rehor@users.noreply.github.com
+    (1) your-user-name@users.noreply.github.com
           263 bit EDDSA key REDACTED, created: 2026-09-03
     Keys 1-1 of 1 for "REDACTED_KEY_ID".  Enter number(s), N)ext, or Q)uit > 1
-    gpg: key REDACTED: "karel-rehor@users.noreply.github.com" not changed
+    gpg: key REDACTED: "your-user-name@users.noreply.github.com" not changed
     gpg: Total number processed: 1
     gpg:              unchanged: 1
     ```
@@ -155,11 +155,11 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
 
     ```bash
     $ gpg2 --list-keys
-    /home/karl/.gnupg/pubring.kbx
+    /home/<your_user_name>/.gnupg/pubring.kbx
     -----------------------------
     pub   ed25519 2026-07-27 [SC] [expires: 2029-07-26]
           KEY_ID_REDACTED
-    uid           [ultimate] karel-rehor@users.noreply.github.com
+    uid           [ultimate] your_user_name@users.noreply.github.com
     sub   REDACTED 2026-07-27 [E]
 
     ```
@@ -170,7 +170,7 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
     $ gpg2 --list-keys KEY_ID_REDACTED
     pub   ed25519 2026-07-27 [SC] [expires: 2029-07-26]
           KEY_ID_REDACTED
-    uid           [ultimate] karel-rehor@users.noreply.github.com
+    uid           [ultimate] your-user-name@users.noreply.github.com
     sub   REDACTED 2026-07-27 [E]
     ```
 
@@ -179,10 +179,10 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
     ```bash
     $ gpg2 --keyserver keyserver.ubuntu.com --search-keys KEY_ID_REDACTED
     gpg: data source: http://185.125.188.27:11371
-    (1) karel-rehor@users.noreply.github.com
+    (1) your-user-name@users.noreply.github.com
           263 bit EDDSA key REDACTED, created: 2026-07-27
     Keys 1-1 of 1 for "KEY_ID_REDACTED".  Enter number(s), N)ext, or Q)uit > 1
-    gpg: key REDACTED: "karel-rehor@users.noreply.github.com" not changed
+    gpg: key REDACTED: "your-user-name@users.noreply.github.com" not changed
     gpg: Total number processed: 1
     gpg:              unchanged: 1
     ```
@@ -190,15 +190,15 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
 1. Create a revocation request locally.
 
     ```bash
-    $ gpg2 --output revoke-karel-rehor.asc --gen-revoke KEY_ID_REDACTED
+    $ gpg2 --output revoke-<your_user_name>.asc --gen-revoke KEY_ID_REDACTED
     ...
     ```
 
 1. Revoke the key locally.
 
     ```bash
-    $ gpg2 --import revoke-karel-rehor.asc
-    gpg: key REDACTED: "karel-rehor@users.noreply.github.com" revocation certificate imported
+    $ gpg2 --import revoke-<your_user_name>.asc
+    gpg: key REDACTED: "your-user-name@users.noreply.github.com" revocation certificate imported
     gpg: Total number processed: 1
     gpg:    new key revocations: 1
     gpg: marginals needed: 3  completes needed: 1  trust model: pgp
@@ -210,11 +210,11 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
 
     ```bash
     $ gpg2 --list-keys
-    /home/karl/.gnupg/pubring.kbx
+    /home/<your_user_name>/.gnupg/pubring.kbx
     -----------------------------
     pub   ed25519 2026-07-27 [SC] [revoked: 2026-09-03]
           KEY_ID_REDACTED
-    uid           [ revoked] karel-rehor@users.noreply.github.com
+    uid           [ revoked] your-user-name@users.noreply.github.com
     ```
 
 1. Push change of key state to remote server.
