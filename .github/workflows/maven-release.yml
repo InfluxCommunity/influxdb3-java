@@ -111,6 +111,7 @@ jobs:
       - name: Script
         run: |
           ./scripts/on-release.sh
+          # TODO after run verify value RC_OR_BETA and then use this to exit release if this is true.
       - name: Release
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
