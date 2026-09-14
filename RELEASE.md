@@ -41,14 +41,14 @@ Releasing involves three general steps.
 
 ### Initiating the release
 
-In Github `influxComunit/influxb3-java`...
+In Github `influxComunity/influxb3-java`...
 
 1. In the project home page open the _Releases_ section.
 1. Click _Draft a new release_
 1. In the _Target_ dropdown check the new release branch.
 1. In the _Tag_ dropdown click `Create new tag`, supply the tag matching the value added in the `set-scm-tag` command above.  Note that the tag should be prefixed with the letter _v_.  Click _Create_.
 1. In the _Release title_ text control set the title to match the `<version>` tag in `pom.xml`.
-1. In the _Release notes_ text field copy changes added since the last release from `CHANEGLOG.md`.
+1. In the _Release notes_ text field copy changes added since the last release from `CHANGELOG.md`.
 1. If this is a pre-release check the _pre-release_ radio button.  Note that for "pre-release" releases the release workflow will not publish modules to Maven Central, will not publish site documentation and will not prepare the next release cycle.  This setting can be useful for debugging the workflow.
 1. Click `Publish release`.
 
