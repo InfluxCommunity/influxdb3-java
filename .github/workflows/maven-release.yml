@@ -106,7 +106,8 @@ jobs:
           fi
 
           gpg2 --version
-          export GPG_EXECUTABLE=$(command -v gpg2)
+          GPG_EXECUTABLE=$(command -v gpg2)
+          export GPG_EXECUTABLE
       - name: Script
         run: |
           ./scripts/on-release.sh
@@ -157,27 +158,27 @@ jobs:
           echo "Preparing next release cycle"
 
           VERSION_CLEAN=${RELEASE_TAG_NAME}
-          PARTS=(${VERSION_CLEAN//./ })
+          PARTS=("${VERSION_CLEAN//./ }")
           NEW_MINOR=$((PARTS[1]+1))
           NEXT_RELEASE="${PARTS[0]}.${NEW_MINOR}.${PARTS[2]}"
           NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config user.name ${GITHUB_ACTOR}
-          BRANCH_CHECK=$(git ls-remote --heads origin refs/heads/${NEXT_RELEASE_BRANCH})
+          git config user.name "${GITHUB_ACTOR}"
+          BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
           if [ -n "${BRANCH_CHECK}" ]
           then
             echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
             echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
             exit 1
           fi
-          git checkout -b ${NEXT_RELEASE_BRANCH}
+          git checkout -b "${NEXT_RELEASE_BRANCH}"
           mvn versions:set-scm-tag  -DnewTag="HEAD"
           mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
           sed -i "1s/^/## ${NEXT_RELEASE:1} [unreleased]\n\n/" CHANGELOG.md
           sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE:1}-SNAPSHOT<\/version>/" examples/pom.xml
           git add pom.xml CHANGELOG.md
           git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
-          git push --set-upstream origin ${NEXT_RELEASE_BRANCH}
+          git push --set-upstream origin "${NEXT_RELEASE_BRANCH}"
           # The following requires special permissions on the organizational and project level to work.  Switching off for now.
           # gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
           # The alternative is to create the PR by hand
