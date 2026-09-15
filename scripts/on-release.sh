@@ -104,7 +104,8 @@ set_release_number(){
 }
 
 verify_rc_or_beta(){
-  if echo "${RELEASE_TAG_NAME}" | grep -q "rc|beta"
+  LOWER_TAG_NAME=$(echo "${RELEASE_TAG_NAME}" | tr '[:upper:]' '[:lower:]')
+  if echo "${LOWER_TAG_NAME}" | grep -q "[rc|beta]"
   then
     RC_OR_BETA=true
   fi

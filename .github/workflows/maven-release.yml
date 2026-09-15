@@ -118,6 +118,11 @@ jobs:
              echo "This is a pre release and will not be deployed to Maven Central."
              exit 0
           fi
+          if [[ "${RC_OR_BETA}" == "true" ]]
+          then
+            echo "This is an RC or BETA release and will not be deployed to Maven Central."
+            exit 0
+          fi
           cat << EOF > release.properties
           scm.url=scm\:git\:https\://github.com/${GITHUB_REPOSITORY}.git
           scm.tag=${RELEASE_TAG_NAME}
@@ -134,6 +139,11 @@ jobs:
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release, so site documentation will not be updated to Github pages."
              exit 0
+          fi
+          if [[ "${RC_OR_BETA}" == "true" ]]
+          then
+            echo "This is an RC or BETA release, so site documentation will not be updated to Github pages."
+            exit 0
           fi
           cat << EOF > scm-settings.xml
           <settings>
@@ -154,6 +164,11 @@ jobs:
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
             echo "This is a prerelease so the next release cycle will not be prepared."
+            exit 0
+          fi
+          if [[ "${RC_OR_BETA}" == "true" ]]
+          then
+            echo "This is an RC or BETA release so next release cycle will not be prepared."
             exit 0
           fi
           echo "Preparing next release cycle"
