@@ -41,7 +41,7 @@ Releasing involves three general steps.
 
 ### Initiating the release
 
-In Github `influxComunity/influxb3-java`...
+In Github `influxCommunity/influxb3-java`...
 
 1. In the project home page open the _Releases_ section.
 1. Click _Draft a new release_

@@ -757,7 +757,7 @@
                         <version>0.9.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <publishingServerId>central</publishingServerId>
+                            <publishingServerId>ossrh</publishingServerId>
                         </configuration>
                     </plugin>
                 </plugins>

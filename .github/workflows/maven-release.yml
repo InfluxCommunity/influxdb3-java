@@ -3,7 +3,7 @@ name: Maven Releasing
 on:
 
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   release:
@@ -35,6 +35,11 @@ jobs:
           sudo apt-get install libxml2-utils
       - name: Verify Env
         run: |
+          if [[ -z "${{ secrets.GPG_PRIVATE_KEY }}" ]]
+          then
+            echo "ERROR GPG_PRIVATE_KEY is missing."
+            exit 1
+          fi
           # ensure scm properties match current project - don't want to modify other repository inadvertently
           POM_SITE_URL=$(xmllint --xpath "//*[local-name()='distributionManagement']/*[local-name()='site']/*[local-name()='url']/text()" ./pom.xml)
           POM_SCM_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='connection']/text()" ./pom.xml)
@@ -108,6 +113,7 @@ jobs:
           gpg2 --version
           GPG_EXECUTABLE=$(command -v gpg2)
           export GPG_EXECUTABLE
+          echo "GPG_EXECUTABLE=${GPG_EXECUTABLE}" >> "$GITHUB_ENV"
       - name: Script
         run: |
           . ./scripts/on-release.sh
