@@ -117,7 +117,7 @@ jobs:
       - name: Script
         run: |
           . ./scripts/on-release.sh
-          # TODO after run verify value RC_OR_BETA and then use this to exit release if this is true.
+          echo "RC_OR_BETA=${RC_OR_BETA}" >> "$GITHUB_ENV"
       - name: Release
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
