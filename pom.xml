@@ -600,7 +600,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>2.21.0</version>
+                <version>2.22.0</version>
                 <configuration>
                     <rulesUri>file://${project.basedir}/maven-version-rules.xml</rulesUri>
                 </configuration>
@@ -703,7 +703,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>2.21.0</version>
+                <version>2.22.0</version>
                 <reportSets>
                     <reportSet>
                         <reports>
