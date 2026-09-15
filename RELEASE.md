@@ -41,7 +41,7 @@ Releasing involves three general steps.
 
 ### Initiating the release
 
-In Github `influxCommunity/influxb3-java`...
+In Github `influxCommunity/influxdb3-java`...
 
 1. In the project home page open the _Releases_ section.
 1. Click _Draft a new release_
@@ -77,7 +77,7 @@ A new branch `ci/next-cycle-<NEXT_RELEASE_VERSION>` with an updated `pom.xml` fi
 The release workflow is managed by `.github/workflows/maven-release.yml`.  In order for the release workflow to succeed a number of environment secrets need to be set in the project. It may be necessary to update these in the future.
 
 - `GPG_PASSPHRASE` - password for the key used to sign archives and pom files to be uploaded to Maven Central.  See _Generating a new GPG signing key_ below.
-- `GPG_PRIVATE_KEY` - private key associate with public key pulled from a GPG repository and used to sign archives and pom files.
+- `GPG_PRIVATE_KEY` - private key associated with public key pulled from a GPG repository and used to sign archives and pom files.
 - `SONATYPE_PASSWORD` - password for the user account used to upload archives and pom files to Maven Central.
 - `SONATYPE_USERNAME` - name of user account used to upload archives and pom files to Maven Central.
 
@@ -122,7 +122,7 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
 
     ```bash
     $ gpg2 --keyserver keyserver.ubuntu.com --send-keys REDACTED_KEY_ID
-    gpg: sending key REDACETD to hkp://keyserver.ubuntu.com
+    gpg: sending key REDACTED to hkp://keyserver.ubuntu.com
     ```
 
 1. Verify key is on remote.  Note, that it may take a few minutes to be registered.
