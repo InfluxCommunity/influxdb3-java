@@ -114,6 +114,37 @@ jobs:
           GPG_EXECUTABLE=$(command -v gpg2)
           export GPG_EXECUTABLE
           echo "GPG_EXECUTABLE=${GPG_EXECUTABLE}" >> "$GITHUB_ENV"
+
+          # Verify tag and next version
+          if ! echo "${RELEASE_TAG_NAME}" | grep -Ei '^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|beta|snapshot)[0-9]*)?$'
+          then
+            echo "RELEASE_TAG_NAME ${RELEASE_TAG_NAME} does not match expected pattern, e.g. (v1.9.0).  Exiting."
+            exit 1
+          fi
+          VERSION_CLEAN="${RELEASE_TAG_NAME:1}"
+          # shellcheck disable=SC2206
+          PARTS=(${VERSION_CLEAN//./ })
+          # TODO Check if PARTS[2] starts with 0 or [1-9] if not 0 then this is hot release and should not trigger publishing
+          if ! echo "${PARTS[2]}" | grep -q "^0.*"
+          then
+            echo "Detected hot fix release ${RELEASE_TAG_NAME}"
+            echo "IS_HOT_FIX=true" >> "${GITHUB_ENV}"
+          fi
+          NEW_MINOR=$((PARTS[1]+1))
+          NEXT_RELEASE="${PARTS[0]}.${NEW_MINOR}.0"
+          echo "NEXT_RELEASE=${NEXT_RELEASE}" >> "${GITHUB_ENV}"
+          NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config user.name "${GITHUB_ACTOR}"
+          BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
+          if [ -n "${BRANCH_CHECK}" ]
+          then
+            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
+            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
+            exit 1
+          fi
+          echo "NEXT_RELEASE_BRANCH=${NEXT_RELEASE_BRANCH}" >> "$GITHUB_ENV"
+
       - name: Script
         run: |
           . ./scripts/on-release.sh
@@ -129,6 +160,11 @@ jobs:
             echo "This is an RC or BETA release and will not be deployed to Maven Central."
             exit 0
           fi
+          if [[ "${IS_HOT_FIX}" == "true" ]]
+          then
+            echo "This is a hot fix release ${RELEASE_TAG_NAME} and will not be deployed to Maven Central."
+            exit 0
+          fi
           cat << EOF > release.properties
           scm.url=scm\:git\:https\://github.com/${GITHUB_REPOSITORY}.git
           scm.tag=${RELEASE_TAG_NAME}
@@ -138,6 +174,42 @@ jobs:
             -Dgoals=deploy \
             -s ./deploy-settings.xml \
             -Darguments="-DskipTests -DskipITs -DperformRelease=true"
+      - name: Prepare next cycle
+        run: |
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            echo "This is a prerelease so the next release cycle will not be prepared."
+            exit 0
+          fi
+          if [[ "${RC_OR_BETA}" == "true" ]]
+          then
+            echo "This is an RC or BETA release so next release cycle will not be prepared."
+            exit 0
+          fi
+          if [[ "${IS_HOT_FIX}" == "true" ]]
+          then
+            echo "This is a hot fix release ${RELEASE_TAG_NAME}, so next release cycle will not be prepared."
+            exit 0
+          fi
+
+          echo "Preparing next release cycle"
+
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config user.name "${GITHUB_ACTOR}"
+          echo "checking out next release branch ${NEXT_RELEASE_BRANCH}"
+          git checkout -b "${NEXT_RELEASE_BRANCH}"
+          mvn versions:set-scm-tag  -DnewTag="HEAD"
+          mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
+          sed -i "1s/^/## ${NEXT_RELEASE:1} [unreleased]\n\n/" CHANGELOG.md
+          sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE:1}-SNAPSHOT<\/version>/" examples/pom.xml
+          git add pom.xml examples/pom.xml CHANGELOG.md
+          git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
+          git push --set-upstream origin "${NEXT_RELEASE_BRANCH}"
+          # The following requires special permissions on the organizational and project level to work.  Switching off for now.
+          # gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
+          # The alternative is to create the PR by hand
+          echo "The branch ${NEXT_RELEASE_BRANCH} has been created.  You can create and merge a PR manually from it to start the next release cycle."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish documentation
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -149,6 +221,11 @@ jobs:
           if [[ "${RC_OR_BETA}" == "true" ]]
           then
             echo "This is an RC or BETA release, so site documentation will not be updated to Github pages."
+            exit 0
+          fi
+          if [[ "${IS_HOT_FIX}" == "true" ]]
+          then
+            echo "This is a hot fix release ${RELEASE_TAG_NAME}, so site documentation will not be updated to Github pages."
             exit 0
           fi
           cat << EOF > scm-settings.xml
@@ -166,44 +243,3 @@ jobs:
           git config --global user.name "Github Action"
           mvn clean site site:stage -DskipTests
           mvn -s scm-settings.xml --batch-mode scm-publish:publish-scm -Dscmpublish.serverId=github
-      - name: Prepare next cycle
-        run: |
-          if [[ "${IS_PRERELEASE}" == "true" ]]; then
-            echo "This is a prerelease so the next release cycle will not be prepared."
-            exit 0
-          fi
-          if [[ "${RC_OR_BETA}" == "true" ]]
-          then
-            echo "This is an RC or BETA release so next release cycle will not be prepared."
-            exit 0
-          fi
-          echo "Preparing next release cycle"
-
-          VERSION_CLEAN=${RELEASE_TAG_NAME}
-          PARTS=("${VERSION_CLEAN//./ }")
-          NEW_MINOR=$((PARTS[1]+1))
-          NEXT_RELEASE="${PARTS[0]}.${NEW_MINOR}.${PARTS[2]}"
-          NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config user.name "${GITHUB_ACTOR}"
-          BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
-          if [ -n "${BRANCH_CHECK}" ]
-          then
-            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
-            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
-            exit 1
-          fi
-          git checkout -b "${NEXT_RELEASE_BRANCH}"
-          mvn versions:set-scm-tag  -DnewTag="HEAD"
-          mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
-          sed -i "1s/^/## ${NEXT_RELEASE:1} [unreleased]\n\n/" CHANGELOG.md
-          sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE:1}-SNAPSHOT<\/version>/" examples/pom.xml
-          git add pom.xml examples/pom.xml CHANGELOG.md
-          git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
-          git push --set-upstream origin "${NEXT_RELEASE_BRANCH}"
-          # The following requires special permissions on the organizational and project level to work.  Switching off for now.
-          # gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
-          # The alternative is to create the PR by hand
-          echo "The branch ${NEXT_RELEASE_BRANCH} has been created.  You can create and merge a PR manually from it to start the next release cycle."
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
