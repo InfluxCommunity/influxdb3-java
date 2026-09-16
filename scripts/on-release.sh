@@ -71,9 +71,9 @@ github_check(){
     exit 1
   fi
 
-  if [ -z "${RELEASE_TAG_NAME}" ]; then
-    # TODO validate RELEASE_TAG_NAME is acceptable
-    echo "This script requires a release tag, but none was found."
+  if ! echo "${RELEASE_TAG_NAME}" | grep -Ei '^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|beta|snapshot)[0-9]*)?$'
+  then
+    echo "This script requires a valid release tag (e.g. v1.9.0), but RELEASE_TAG_NAME=${RELEASE_TAG_NAME} was found."
     exit 1
   fi
 
@@ -106,8 +106,7 @@ set_release_number(){
 
 verify_rc_or_beta(){
   LOWER_TAG_NAME=$(echo "${RELEASE_TAG_NAME}" | tr '[:upper:]' '[:lower:]')
-  # TODO fix grep match to match () full tokens rc or beta
-  if echo "${LOWER_TAG_NAME}" | grep -q "[rc|beta]"
+  if echo "${LOWER_TAG_NAME}" | grep -q "rc\|beta"
   then
     RC_OR_BETA=true
   fi
@@ -136,8 +135,8 @@ verify_changelog() {
     printf "CHANGELOG.md release number check: OK ✓\n"
   fi
 
-  if [[ ! "$HEADER_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-    # TODO parse value as data and verify that it is legit instead of regex
+  if ! date --date="${HEADER_DATE}"
+  then
     printf "ERROR invalid commit date (%s) in last CHANGELOG.md entry\n" "$HEADER_DATE"
     printf "Please update the commit date in CHANGELOG.md\n"
     printf "%s\n" "${FAILURE_BOILERPLATE}"
