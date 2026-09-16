@@ -96,10 +96,10 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
 
    Store this somewhere safe.
 
-1. Generate a key with a passphrase and no expiration.
+1. Generate a key with a passphrase and no expiration.  Note you will be required to enter the passphrase from above.
 
     ```bash
-    $ gpg --batch --passphrase=<GENERATED_PASSPHRASE> --quick-generate-key "your-user-name@users.noreply.github.com" default default never
+    $ gpg --batch --quick-generate-key "your-user-name@users.noreply.github.com" default default never
     gpg: revocation certificate stored as '/home/<your_user_name>/.gnupg/openpgp-revocs.d/REDACTED_KEY_ID.rev'
     ```
 

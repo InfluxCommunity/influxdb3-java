@@ -116,7 +116,7 @@ jobs:
           echo "GPG_EXECUTABLE=${GPG_EXECUTABLE}" >> "$GITHUB_ENV"
 
           # Verify tag and next version
-          if ! echo "${RELEASE_TAG_NAME}" | grep -Ei '^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|beta|snapshot)[0-9]*)?$'
+          if ! echo "${RELEASE_TAG_NAME}" | grep -Ei '^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|beta)[0-9]*)?$'
           then
             echo "RELEASE_TAG_NAME ${RELEASE_TAG_NAME} does not match expected pattern, e.g. (v1.9.0).  Exiting."
             exit 1
@@ -136,6 +136,13 @@ jobs:
           NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config user.name "${GITHUB_ACTOR}"
+          BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
+          if [ -n "${BRANCH_CHECK}" ]
+          then
+            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
+            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
+            exit 1
+          fi
 
           echo "NEXT_RELEASE_BRANCH=${NEXT_RELEASE_BRANCH}" >> "$GITHUB_ENV"
 
@@ -178,14 +185,6 @@ jobs:
           then
             echo "This is a hot fix release ${RELEASE_TAG_NAME}, so next release cycle will not be prepared."
             exit 0
-          fi
-
-          BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
-          if [ -n "${BRANCH_CHECK}" ]
-          then
-            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
-            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
-            exit 1
           fi
 
           echo "Preparing next release cycle"
