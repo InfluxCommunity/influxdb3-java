@@ -60,8 +60,7 @@ github_check(){
       RELEASE_TAG_NAME="${GITHUB_REF_NAME}"
       return
     else
-      echo " Checking env"
-      env
+      printf 'GITHUB_REF_NAME=%s failed to match valid release tag pattern.\n' "${GITHUB_REF_NAME}"
       exit 1
     fi
   fi

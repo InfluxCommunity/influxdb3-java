@@ -45,7 +45,7 @@ jobs:
           POM_SCM_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='connection']/text()" ./pom.xml)
           POM_SCM_DEVELOPER_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='developerConnection']/text()" ./pom.xml)
 
-          if [[ ! "${POM_SITE_URL}" != "scm:git:https://github.com/${GITHUB_REPOSITORY}" ]]
+          if [[ "${POM_SITE_URL}" != "scm:git:https://github.com/${GITHUB_REPOSITORY}" ]]
           then
             echo "POM_SITE_URL ${POM_SITE_URL} does not match GITHUB_REPOSITORY ${GITHUB_REPOSITORY}"
             exit 1
