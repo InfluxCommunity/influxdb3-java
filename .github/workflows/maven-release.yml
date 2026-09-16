@@ -136,13 +136,7 @@ jobs:
           NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config user.name "${GITHUB_ACTOR}"
-          BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
-          if [ -n "${BRANCH_CHECK}" ]
-          then
-            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
-            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
-            exit 1
-          fi
+
           echo "NEXT_RELEASE_BRANCH=${NEXT_RELEASE_BRANCH}" >> "$GITHUB_ENV"
 
       - name: Script
@@ -158,11 +152,6 @@ jobs:
           if [[ "${RC_OR_BETA}" == "true" ]]
           then
             echo "This is an RC or BETA release and will not be deployed to Maven Central."
-            exit 0
-          fi
-          if [[ "${IS_HOT_FIX}" == "true" ]]
-          then
-            echo "This is a hot fix release ${RELEASE_TAG_NAME} and will not be deployed to Maven Central."
             exit 0
           fi
           cat << EOF > release.properties
@@ -189,6 +178,14 @@ jobs:
           then
             echo "This is a hot fix release ${RELEASE_TAG_NAME}, so next release cycle will not be prepared."
             exit 0
+          fi
+
+          BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
+          if [ -n "${BRANCH_CHECK}" ]
+          then
+            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
+            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
+            exit 1
           fi
 
           echo "Preparing next release cycle"
@@ -241,5 +238,6 @@ jobs:
           EOF
           git config --global user.email "${GITHUB_TRIGGERING_ACTOR}@noreply.github.com"
           git config --global user.name "Github Action"
+          git checkout "${RELEASE_TAG_NAME}"
           mvn clean site site:stage -DskipTests
           mvn -s scm-settings.xml --batch-mode scm-publish:publish-scm -Dscmpublish.serverId=github

@@ -101,7 +101,7 @@ setup(){
 }
 
 set_release_number(){
-    RELEASE_NUM=$(echo "${RELEASE_TAG_NAME}" | sed -r "s/-(rc|beta)[0-9]+//" | sed -r "s/^v//")
+    RELEASE_NUM=$(echo "${RELEASE_TAG_NAME}" | sed -r "/-(rc|beta|snapshot)[0-9]+/Is///" | sed -r "s/^v//")
 }
 
 verify_rc_or_beta(){
