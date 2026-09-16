@@ -45,7 +45,7 @@ jobs:
           POM_SCM_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='connection']/text()" ./pom.xml)
           POM_SCM_DEVELOPER_CONNECTION=$(xmllint --xpath "//*[local-name()='scm']/*[local-name()='developerConnection']/text()" ./pom.xml)
 
-          if [[ ! "${POM_SITE_URL}" =~ .*${GITHUB_REPOSITORY}$ ]]
+          if [[ ! "${POM_SITE_URL}" != "scm:git:https://github.com/${GITHUB_REPOSITORY}" ]]
           then
             echo "POM_SITE_URL ${POM_SITE_URL} does not match GITHUB_REPOSITORY ${GITHUB_REPOSITORY}"
             exit 1
@@ -136,12 +136,18 @@ jobs:
           NEXT_RELEASE_BRANCH="ci/next-cycle-${NEXT_RELEASE}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config user.name "${GITHUB_ACTOR}"
-          BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
-          if [ -n "${BRANCH_CHECK}" ]
+
+          if [[ "${IS_PRERELEASE}" != "true" && "${RELEASE_TAG_NAME,,}" =~ ^v[0-9]+\.[0-9]+\.0$ ]]
           then
-            echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
-            echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
-            exit 1
+            BRANCH_CHECK=$(git ls-remote --heads origin "refs/heads/${NEXT_RELEASE_BRANCH}")
+            if [ -n "${BRANCH_CHECK}" ]
+            then
+              echo "branch ${NEXT_RELEASE_BRANCH} already exists in project.  Cannot recreate it automatically."
+              echo "If you wish to use this automatically created branch, please delete the existing branch and start the release again"
+              exit 1
+            fi
+          else
+            echo "Skipping next release cycle branch check because this is either a pre-release or a patch fix."
           fi
 
           echo "NEXT_RELEASE_BRANCH=${NEXT_RELEASE_BRANCH}" >> "$GITHUB_ENV"
@@ -194,7 +200,7 @@ jobs:
           echo "checking out next release branch ${NEXT_RELEASE_BRANCH}"
           git checkout -b "${NEXT_RELEASE_BRANCH}"
           mvn versions:set-scm-tag  -DnewTag="HEAD"
-          mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=2
+          mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=1
           sed -i "1s/^/## ${NEXT_RELEASE:1} [unreleased]\n\n/" CHANGELOG.md
           sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE:1}-SNAPSHOT<\/version>/" examples/pom.xml
           git add pom.xml examples/pom.xml CHANGELOG.md
