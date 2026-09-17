@@ -207,7 +207,7 @@ jobs:
           git commit -m "ci: setting up release cycle ${NEXT_RELEASE}"
           git push --set-upstream origin "${NEXT_RELEASE_BRANCH}"
           # The following requires special permissions on the organizational and project level to work.  Switching off for now.
-          # gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
+          # gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by GitHub action'
           # The alternative is to create the PR by hand
           echo "The branch ${NEXT_RELEASE_BRANCH} has been created.  You can create and merge a PR manually from it to start the next release cycle."
         env:
@@ -217,17 +217,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
-             echo "This is a pre release, so site documentation will not be updated to Github pages."
+             echo "This is a pre release, so site documentation will not be updated to GitHub pages."
              exit 0
           fi
           if [[ "${RC_OR_BETA}" == "true" ]]
           then
-            echo "This is an RC or BETA release, so site documentation will not be updated to Github pages."
+            echo "This is an RC or BETA release, so site documentation will not be updated to GitHub pages."
             exit 0
           fi
           if [[ "${IS_HOT_FIX}" == "true" ]]
           then
-            echo "This is a hot fix release ${RELEASE_TAG_NAME}, so site documentation will not be updated to Github pages."
+            echo "This is a hot fix release ${RELEASE_TAG_NAME}, so site documentation will not be updated to GitHub pages."
             exit 0
           fi
           cat << EOF > scm-settings.xml
@@ -242,7 +242,7 @@ jobs:
           </settings>
           EOF
           git config --global user.email "${GITHUB_ACTOR}@noreply.github.com"
-          git config --global user.name "Github Action"
+          git config --global user.name "GitHub Action"
           git checkout "${RELEASE_TAG_NAME}"
           mvn clean site site:stage -DskipTests
           mvn -s scm-settings.xml --batch-mode scm-publish:publish-scm -Dscmpublish.serverId=github
