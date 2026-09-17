@@ -1,13 +1,13 @@
 ## Releasing
 
-This document contains a general description and tips for releasing Influxdb3-java using Github Actions with the ultimate goal of pushing the release to Maven Central.
+This document contains a general description and tips for releasing Influxdb3-java using GitHub Actions with the ultimate goal of pushing the release to Maven Central.
 
 ### Overview
 
 Releasing involves three general steps.
 
 1. Preparing the release in a new release branch
-2. Triggering the automatic release by creating a new tag and release in Github.
+2. Triggering the automatic release by creating a new tag and release in GitHub.
 3. Preparing the next release cycle by merging the next release branch created by the automated release script back into `main`.
 
 ### Preparing the release
@@ -21,7 +21,7 @@ Releasing involves three general steps.
    [INFO] Scanning for projects...
    [INFO]
    [INFO] --------------------< com.influxdb:influxdb3-java >---------------------
-   [INFO] Building InfluxDB 3 Java Client 1.12.0-SNAPSHOT
+   [INFO] Building InfluxDB 3 Java Client 1.12.0
    [INFO] --------------------------------[ jar ]---------------------------------
    ...
    $ mvn versions:set-scm-tag  -DnewTag="v1.12.0"
@@ -37,11 +37,11 @@ Releasing involves three general steps.
 1. In `README.md` update the `<version>` tag value in the Maven dependency example.
 1. In `CHANGELOG.md` verify all commit information for the current cycle is up-to-date, fix any discrepancies, then update the date for this release to the current date.
 1. In `examples/pom.xml` update the version of the Influxdb3-java dependency to the version to be released.
-1. Commit and push these changes to Github.
+1. Commit and push these changes to GitHub.
 
 ### Initiating the release
 
-In Github `influxCommunity/influxdb3-java`...
+In GitHub `influxCommunity/influxdb3-java`...
 
 1. In the project home page open the _Releases_ section.
 1. Click _Draft a new release_
@@ -61,7 +61,7 @@ The creation of the new release will trigger the `maven-release.yml` workflow.  
 1. Check that the `pom.xml` version matches the release tag and that versioning references in documentation and examples are up-to-date and valid.
 1. Check and sign the build.
 1. Upload the archives and pom files to Maven Central.
-1. Publish site documentation to [Github Pages](https://github.com/influxcommunity/influxdb3-java/tree/gh-pages)
+1. Publish site documentation to [GitHub Pages](https://github.com/influxcommunity/influxdb3-java/tree/gh-pages)
 1. prepare the `pom.xml` and `CHANGELOG.md` files for the next release cycle and push them to a new branch named `ci/next-cycle-<NEXT_RELEASE_VERSION>`.
 
 ### Publish release in Maven Central
@@ -141,7 +141,7 @@ The release workflow is managed by `.github/workflows/maven-release.yml`.  In or
     gpg:              unchanged: 1
     ```
 
-1. Get the secret key associated with this key.  It will need to be copied then pasted to the Github project secret GPG_PRIVATE_KEY.  Note you will be prompted for the passphrase.
+1. Get the secret key associated with this key.  It will need to be copied then pasted to the GitHub project secret GPG_PRIVATE_KEY.  Note you will be prompted for the passphrase.
 
     ```bash
     $ gpg2 --export-secret-keys --armor REDACTED_KEY_ID
