@@ -205,7 +205,7 @@ verify_readme(){
   README_NODE="${README_NODE_RAW#"${README_NODE_RAW%%[![:space:]]*}"}"
   README_VERSION="$(echo "${README_NODE}" | sed "s/<version>//" | sed "s/<\/version>//")"
 
-  if ! [ "${RELEASE_NUM}" == "${README_VERSION}" ]
+  if [ "${RELEASE_NUM}" != "${README_VERSION}" ]
   then
     VERSION_LINE=$(grep -n "<version>.*</version>" "${README_PATH}" | awk -F '[:]' '{ print $1 }')
     printf "Release tag (%s) does not match example <version> in README.md (%s) on line %s.\n" "${RELEASE_NUM}" "${README_VERSION}" "${VERSION_LINE}"
@@ -215,6 +215,16 @@ verify_readme(){
   fi
 
   printf "Version in README.md (%s) OK ✓.\n" "${README_VERSION}"
+
+  GRADLE_GROOVY_RELEASE="$(grep "implementation \"com.influxdb:influxdb3-java:" "${README_PATH}" | grep -o "[0-9]*\.[0-9]*\.[0-9]*")"
+
+  if [ "${RELEASE_NUM}" != "${GRADLE_GROOVY_RELEASE}"  ]
+  then
+  GROOVY_LINE=$(grep -n "implementation \"com.influxdb:influxdb3-java:" "${README_PATH}" | awk -F '[:]' '{ print $1 }')
+    printf "Release tag (%s) does not match gradle example in README.md (%s) on line %s.\n" "${RELEASE_NUM}" "${GROOVY_GRADLE_RELEASE}" "${GROOVY_LINE}"
+    printf "Please update README.md to the current release before continuing.\n"
+    printf "%s\n" "${FAILURE_BOILERPLATE}"
+  fi
 }
 
 echo "Running in Github Actions container."
