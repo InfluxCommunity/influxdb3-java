@@ -230,15 +230,7 @@ verify_readme(){
 
 echo "Running in Github Actions container."
 
-
-if ! command -v xmllint &> /dev/null
-then
-  echo "xmllint not found.  This script requires xmllint.  Please ensure it is installed and on the PATH."
-  echo "exiting."
-  exit 1
-else
-  echo "have xmllint"
-fi
+setup
 
 github_check
 
@@ -250,5 +242,3 @@ verify_changelog
 verify_example_pom
 verify_readme
 verify_version
-
-setup
