@@ -221,7 +221,7 @@ verify_readme(){
   if [ "${RELEASE_NUM}" != "${GRADLE_GROOVY_RELEASE}"  ]
   then
   GROOVY_LINE=$(grep -n "implementation \"com.influxdb:influxdb3-java:" "${README_PATH}" | awk -F '[:]' '{ print $1 }')
-    printf "Release tag (%s) does not match gradle example in README.md (%s) on line %s.\n" "${RELEASE_NUM}" "${GROOVY_GRADLE_RELEASE}" "${GROOVY_LINE}"
+    printf "Release tag (%s) does not match gradle example in README.md (%s) on line %s.\n" "${RELEASE_NUM}" "${GRADLE_GROOVY_RELEASE}" "${GROOVY_LINE}"
     printf "Please update README.md to the current release before continuing.\n"
     printf "%s\n" "${FAILURE_BOILERPLATE}"
   fi

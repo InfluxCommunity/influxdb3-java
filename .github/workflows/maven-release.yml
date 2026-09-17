@@ -201,10 +201,10 @@ jobs:
           git checkout -b "${NEXT_RELEASE_BRANCH}"
           mvn versions:set-scm-tag  -DnewTag="HEAD"
           mvn versions:set -DnextSnapshot=true -DnextSnapshotIndexToIncrement=1
-          sed -i "1s/^/## ${NEXT_RELEASE:1} [unreleased]\n\n/" CHANGELOG.md
-          sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE:1}-SNAPSHOT<\/version>/" examples/pom.xml
+          sed -i "1s/^/## ${NEXT_RELEASE} [unreleased]\n\n/" CHANGELOG.md
+          sed -i -e "s/<version>${RELEASE_TAG_NAME:1}<\/version>/<version>${NEXT_RELEASE}-SNAPSHOT<\/version>/" examples/pom.xml
           git add pom.xml examples/pom.xml CHANGELOG.md
-          git commit -m "ci: setting up release cycle ${NEXT_RELEASE:1}"
+          git commit -m "ci: setting up release cycle ${NEXT_RELEASE}"
           git push --set-upstream origin "${NEXT_RELEASE_BRANCH}"
           # The following requires special permissions on the organizational and project level to work.  Switching off for now.
           # gh pr create -B main -H ${NEXT_RELEASE_BRANCH} --title "Merge ${NEXT_RELEASE_BRANCH} into main" --body 'Created by Github action'
