@@ -14,6 +14,10 @@ __NOTE__ - this patch release is simply a test of the automated releasing workfl
 
 1. [#439](https://github.com/InfluxCommunity/influxdb3-java/pull/439): Fix unresolved variables in generated site documentation.
 
+### Documentation
+
+1. [#439](https://github.com/InfluxCommunity/influxdb3-java/pull/439): Fix unresolved variables in generated site documentation.
+
 ## 1.11.0 [2026-08-27]
 
 ### Breaking Changes
