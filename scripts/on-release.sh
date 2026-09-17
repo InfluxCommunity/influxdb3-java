@@ -70,7 +70,7 @@ github_check(){
     exit 1
   fi
 
-  if ! echo "${RELEASE_TAG_NAME}" | grep -Ei '^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|beta|snapshot)[0-9]*)?$'
+  if ! echo "${RELEASE_TAG_NAME}" | grep -Ei '^v[0-9]+\.[0-9]+\.[0-9]+(-(rc|beta)[0-9]*)?$'
   then
     echo "This script requires a valid release tag (e.g. v1.9.0), but RELEASE_TAG_NAME=${RELEASE_TAG_NAME} was found."
     exit 1
@@ -224,10 +224,21 @@ verify_readme(){
     printf "Release tag (%s) does not match gradle example in README.md (%s) on line %s.\n" "${RELEASE_NUM}" "${GRADLE_GROOVY_RELEASE}" "${GROOVY_LINE}"
     printf "Please update README.md to the current release before continuing.\n"
     printf "%s\n" "${FAILURE_BOILERPLATE}"
+    exit 1
   fi
 }
 
 echo "Running in Github Actions container."
+
+
+if ! command -v xmllint &> /dev/null
+then
+  echo "xmllint not found.  This script requires xmllint.  Please ensure it is installed and on the PATH."
+  echo "exiting."
+  exit 1
+else
+  echo "have xmllint"
+fi
 
 github_check
 
