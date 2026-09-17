@@ -49,8 +49,11 @@ In Github `influxCommunity/influxdb3-java`...
 1. In the _Tag_ dropdown click `Create new tag`, supply the tag matching the value added in the `set-scm-tag` command above.  Note that the tag should be prefixed with the letter _v_.  Click _Create_.
 1. In the _Release title_ text control set the title to match the `<version>` tag in `pom.xml`.
 1. In the _Release notes_ text field copy changes added since the last release from `CHANGELOG.md`.
-1. If this is a pre-release check the _pre-release_ radio button.  Note that for "pre-release" releases the release workflow will not publish modules to Maven Central, will not publish site documentation and will not prepare the next release cycle.  This setting can be useful for debugging the workflow.
+1. If this is a pre-release check the _pre-release_ radio button.
 1. Click `Publish release`.
+
+- Note that for "pre-release" and "-rc*" or "-beta*" releases the release workflow will not automatically publish modules to Maven Central, will not automatically publish site documentation and will not automatically prepare the next release cycle.  The _pre-release_ setting can be useful for debugging the workflow.
+- Note that patch releases (e.g. `1.11.1`) will be uploaded to Maven Central, but will not automatically publish site documentation, nor will they automatically prepare the next release cycle.
 
 The creation of the new release will trigger the `maven-release.yml` workflow.  It will:
 
