@@ -34,7 +34,7 @@ Releasing involves three general steps.
    ...
    ```
 
-1. In `README.md` update the `<version>` tag value in the Maven dependency example.
+1. In `README.md` update the `<version>` tag value in the Maven dependency example and the `dependency:implementation` version in the Gradle dependency example.
 1. In `CHANGELOG.md` verify all commit information for the current cycle is up-to-date, fix any discrepancies, then update the date for this release to the current date.
 1. In `examples/pom.xml` update the version of the Influxdb3-java dependency to the version to be released.
 1. Commit and push these changes to GitHub.
