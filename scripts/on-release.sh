@@ -27,7 +27,7 @@ echo "Starting ${0}"
 
 if [ -z "${GITHUB_ACTIONS}" ]
 then
-  echo "This script can only be run in a Github action container."
+  echo "This script can only be run in a GitHub action container."
   echo "Local runs are not yet supported."
   exit 1
 fi
@@ -66,7 +66,7 @@ github_check(){
   fi
 
   if [ "${GITHUB_EVENT_NAME}" != "release" ]; then
-    echo "This script can run only on 'release'.  Detected Github event ${GITHUB_EVENT_NAME}."
+    echo "This script can run only on 'release'.  Detected GitHub event ${GITHUB_EVENT_NAME}."
     exit 1
   fi
 
@@ -228,7 +228,7 @@ verify_readme(){
   fi
 }
 
-echo "Running in Github Actions container."
+echo "Running in GitHub Actions container."
 
 setup
 
