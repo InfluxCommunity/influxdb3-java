@@ -2,7 +2,7 @@
 
 ### CI
 
-1. [#445](https://github.com/InfluxCommunity/influxdb3-java/pull/445): Sets up automated releasing to Maven Central
+1. [#446](https://github.com/InfluxCommunity/influxdb3-java/pull/446): Sets up automated releasing to Maven Central
  
 ### Documentation
 
