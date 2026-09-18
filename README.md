@@ -57,7 +57,7 @@ Add the latest version of the client to your project:
 
 ```groovy
 dependencies {
-    implementation "com.influxdb:influxdb3-java:1.11.0"
+    implementation "com.influxdb:influxdb3-java:1.12.0"
 }
 ```
 
