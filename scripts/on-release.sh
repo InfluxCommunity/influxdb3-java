@@ -238,7 +238,7 @@ verify_rc_or_beta
 export RC_OR_BETA
 set_release_number
 
+verify_version
 verify_changelog
 verify_example_pom
 verify_readme
-verify_version
