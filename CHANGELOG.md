@@ -1,9 +1,9 @@
-## 1.12.0 [2026-09-17]
+## 1.12.0 [unreleased]
 
 ### CI
 
-1. [#445](https://github.com/InfluxCommunity/influxdb3-java/pull/445): Sets up automated releasing to Maven Central
-
+1. [#446](https://github.com/InfluxCommunity/influxdb3-java/pull/446): Sets up automated releasing to Maven Central
+ 
 ### Documentation
 
 1. [#439](https://github.com/InfluxCommunity/influxdb3-java/pull/439): Fix unresolved variables in generated site documentation.
