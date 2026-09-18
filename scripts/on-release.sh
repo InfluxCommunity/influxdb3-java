@@ -171,7 +171,7 @@ verify_version(){
 
   if [ "${SCM_TAG}" != "${RELEASE_TAG_NAME}" ]
   then
-    printf "SCM_TAG %s in pom.xml does not match tag %s" "${SCM_TAG}" "${RELEASE_TAG_NAME}"
+    printf "SCM_TAG %s in pom.xml does not match tag %s\n" "${SCM_TAG}" "${RELEASE_TAG_NAME}"
     printf "%s\n" "${FAILURE_BOILERPLATE}"
     exit 1
   fi
