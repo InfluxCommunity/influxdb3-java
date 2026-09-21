@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: write # may want to update version
     runs-on: ubuntu-latest
-    environment: release
+    environment: releasing
     env:
       MAVEN_SETTINGS_EXPERIM: ${{ vars.MAVEN_SETTINGS_FILE }}
       RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
