@@ -27,18 +27,18 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-          gpg-private-key: ${{ env.GPG_PRIVATE_KEY }}
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
       - name: Add dependencies
         run: |
           sudo apt-get update
           sudo apt-get -y install libxml2-utils
       - name: Verify Env
         env:
-          GPG_PASSPHRASE_PRELIM: ${{ env.GPG_PASSPHRASE }}
-          SONATYPE_USERNAME: ${{ env.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ env.SONATYPE_PASSWORD }}
+          GPG_PASSPHRASE_PRELIM: ${{ secrets.GPG_PASSPHRASE }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: |
-          if [[ -z "${{ env.GPG_PRIVATE_KEY }}" ]]
+          if [[ -z "${{ secrets.GPG_PRIVATE_KEY }}" ]]
           then
             echo "ERROR GPG_PRIVATE_KEY is missing."
             exit 1
@@ -151,9 +151,9 @@ jobs:
           echo "RC_OR_BETA=${RC_OR_BETA}" >> "$GITHUB_ENV"
       - name: Release
         env:
-          GPG_PASSPHRASE_PRELIM: ${{ env.GPG_PASSPHRASE }}
-          SONATYPE_USERNAME: ${{ env.SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ env.SONATYPE_PASSWORD }}
+          GPG_PASSPHRASE_PRELIM: ${{ secrets.GPG_PASSPHRASE }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release and will not be deployed to Maven Central."
