@@ -1,4 +1,6 @@
-## 1.12.0 [unreleased]
+## 1.11.1 [2026-09-21]
+
+__NOTE__ - this patch release is simply a test of the automated releasing workflow.
 
 ### CI
 
