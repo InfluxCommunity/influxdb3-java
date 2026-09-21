@@ -28,7 +28,7 @@
     <groupId>com.influxdb</groupId>
     <artifactId>influxdb3-java</artifactId>
     <packaging>jar</packaging>
-    <version>1.11.1</version>
+    <version>1.11.2</version>
 
     <name>InfluxDB 3 Java Client</name>
     <description>
