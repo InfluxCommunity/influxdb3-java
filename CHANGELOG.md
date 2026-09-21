@@ -1,4 +1,4 @@
-## 1.11.1 [2026-09-21]
+## 1.11.2 [2026-09-21]
 
 __NOTE__ - this patch release is simply a test of the automated releasing workflow.
 
