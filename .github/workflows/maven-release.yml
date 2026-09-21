@@ -4,12 +4,15 @@ on:
 
   release:
     types: [published]
+    tags:
+      - "v*"
 
 jobs:
   release:
     permissions:
       contents: write # may want to update version
     runs-on: ubuntu-latest
+    environment: release
     env:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
@@ -17,11 +20,12 @@ jobs:
       GPG_PASSPHRASE_PRELIM: ${{ secrets.GPG_PASSPHRASE }}
       RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
       IS_PRERELEASE: ${{ github.event.release.prerelease }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_REPO: ${{ github.repository }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Setup JDK 21
         uses: actions/setup-java@v5
         with:
@@ -230,17 +234,6 @@ jobs:
             echo "This is a hot fix release ${RELEASE_TAG_NAME}, so site documentation will not be updated to GitHub pages."
             exit 0
           fi
-          cat << EOF > scm-settings.xml
-          <settings>
-            <servers>
-              <server>
-                <id>github</id>
-                <username>x-access-token</username>
-                <password>${GITHUB_TOKEN}</password>
-              </server>
-            </servers>
-          </settings>
-          EOF
           git config --global user.email "${GITHUB_ACTOR}@noreply.github.com"
           git config --global user.name "GitHub Action"
           git checkout "${RELEASE_TAG_NAME}"
