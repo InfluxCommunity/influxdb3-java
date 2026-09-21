@@ -14,10 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     env:
-      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
       MAVEN_SETTINGS_EXPERIM: ${{ vars.MAVEN_SETTINGS_FILE }}
-      GPG_PASSPHRASE_PRELIM: ${{ secrets.GPG_PASSPHRASE }}
       RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
       IS_PRERELEASE: ${{ github.event.release.prerelease }}
       GITHUB_REPO: ${{ github.repository }}
@@ -38,6 +35,10 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install libxml2-utils
       - name: Verify Env
+        env:
+          GPG_PASSPHRASE_PRELIM: ${{ secrets.GPG_PASSPHRASE }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: |
           if [[ -z "${{ secrets.GPG_PRIVATE_KEY }}" ]]
           then
@@ -97,16 +98,6 @@ jobs:
             exit 1
           fi
 
-          if [[ "$GPG_PASSPHRASE_PRELIM" == "EMPTY" ]]
-          then
-            echo "GPG_PASSPHRASE empty requested"
-            export GPG_PASSPHRASE=""
-          else
-            export GPG_PASSPHRASE="$GPG_PASSPHRASE_PRELIM"
-          fi
-
-          echo "GPG_PASSPHRASE=${GPG_PASSPHRASE}" >> "$GITHUB_ENV"
-
           # Verify GPG2 environment
           if ! command -v gpg2 &> /dev/null
           then
@@ -161,6 +152,10 @@ jobs:
           . ./scripts/on-release.sh
           echo "RC_OR_BETA=${RC_OR_BETA}" >> "$GITHUB_ENV"
       - name: Release
+        env:
+          GPG_PASSPHRASE_PRELIM: ${{ secrets.GPG_PASSPHRASE }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: |
           if [[ "${IS_PRERELEASE}" == "true" ]]; then
              echo "This is a pre release and will not be deployed to Maven Central."
@@ -171,6 +166,13 @@ jobs:
             echo "This is an RC or BETA release and will not be deployed to Maven Central."
             exit 0
           fi
+          if [[ "$GPG_PASSPHRASE_PRELIM" == "EMPTY" ]]; then
+            echo "GPG_PASSPHRASE empty requested"
+            GPG_PASSPHRASE=""
+          else
+            GPG_PASSPHRASE="$GPG_PASSPHRASE_PRELIM"
+          fi
+          export GPG_PASSPHRASE
           cat << EOF > release.properties
           scm.url=scm\:git\:https\://github.com/${GITHUB_REPOSITORY}.git
           scm.tag=${RELEASE_TAG_NAME}
