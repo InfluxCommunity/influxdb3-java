@@ -30,8 +30,11 @@ import java.util.Properties;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.write.WriteOptions;
 import com.influxdb.v3.client.write.WritePrecision;
+
+import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 
 class ClientConfigTest {
 
@@ -446,6 +449,39 @@ class ClientConfigTest {
 
         Assertions.assertThat(config.getTimeout()).isEqualTo(Duration.ofSeconds(testTimeout));
         Assertions.assertThat(config.getWriteTimeout()).isEqualTo(Duration.ofSeconds(testTimeout));
+    }
+
+    @Test
+    void setBothCertFilePathAndP12FilePathTest() {
+        ClientConfig config = new ClientConfig.Builder()
+                .host("https://localhost:8086")
+                .token("my-token".toCharArray())
+                .certificateFilePath("path/to/client.crt", "path/to/client.key")
+                .certificateP12FilePath("path/to/client.p12", "changeit".toCharArray())
+                .build();
+
+        Throwable thrown = catchThrowable(() -> InfluxDBClient.getInstance(config));
+        Assertions.assertThat(thrown).isNotNull();
+        Assertions.assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThat(thrown.getMessage()).isEqualTo("Cannot set both certificateFilePath "
+                + "and certificateP12FilePath");
+
+    }
+
+    @Test
+    void setCertFileWithoutKeyfile() {
+        ClientConfig config = new ClientConfig.Builder()
+                .host("https://localhost:8086")
+                .token("my-token".toCharArray())
+                .certificateFilePath("path/to/client.crt", null)
+                .build();
+
+        Throwable thrown = catchThrowable(() -> InfluxDBClient.getInstance(config));
+        Assertions.assertThat(thrown).isNotNull();
+        Assertions.assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThat(thrown.getMessage())
+                .isEqualTo("Cannot set certificatePath without certificateKeyPath");
+
     }
 
 }

@@ -21,6 +21,7 @@
  */
 package com.influxdb.v3.client;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
@@ -30,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.apache.arrow.flight.FlightServer;
 import org.apache.arrow.flight.Location;
@@ -51,11 +53,35 @@ public final class TestUtils {
         throw new IllegalStateException("Utility class");
     }
 
+    @Nonnull
     public static FlightServer simpleFlightServer(@Nonnull final URI uri,
                                                   @Nonnull final BufferAllocator allocator,
-                                                  @Nonnull final NoOpFlightProducer producer) throws Exception {
+                                                  @Nonnull final NoOpFlightProducer producer) {
         Location location = Location.forGrpcInsecure(uri.getHost(), uri.getPort());
         return FlightServer.builder(allocator, location, producer).build();
+    }
+
+    @Nonnull
+    public static FlightServer secureFlightServer(@Nonnull final URI uri,
+                                                  @Nonnull final BufferAllocator allocator,
+                                                  @Nonnull final NoOpFlightProducer producer,
+                                                  @Nonnull final String serverCertPath,
+                                                  @Nonnull final String serverKeyPath,
+                                                  @Nullable final String clientCertPath) throws IOException {
+        Location location = Location.forGrpcTls(uri.getHost(), uri.getPort());
+
+        var serverBuilder = FlightServer.builder(allocator, location, producer)
+                .useTls(new File(serverCertPath), new File(serverKeyPath));
+
+        if (clientCertPath != null) {
+            if (clientCertPath.endsWith(".p12")) {
+                throw new IllegalArgumentException("Client certificate path must be in PEM "
+                        + "format likes .pem, .crt, .cert");
+            }
+            serverBuilder.useMTlsClientVerification(new File(clientCertPath));
+        }
+
+        return serverBuilder.build();
     }
 
     public static NoOpFlightProducer simpleProducer(@Nonnull final VectorSchemaRoot vectorSchemaRoot) {
