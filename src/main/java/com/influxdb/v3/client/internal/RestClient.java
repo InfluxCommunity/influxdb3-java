@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -127,16 +128,32 @@ final class RestClient implements AutoCloseable {
 
         if (baseUrl.startsWith("https")) {
             try {
-                SSLContext sslContext = SSLContext.getInstance("TLS");
                 if (config.getDisableServerCertificateValidation()) {
+                    SSLContext sslContext = SSLContext.getInstance("TLS");
                     sslContext.init(null, TRUST_ALL_CERTS, new SecureRandom());
-                } else if (config.sslRootsFilePath() != null) {
-                    X509TrustManager x509TrustManager = getX509TrustManagerFromFile(config.sslRootsFilePath());
-                    sslContext.init(null, new X509TrustManager[]{x509TrustManager}, new SecureRandom());
+                    builder.sslContext(sslContext);
                 } else {
-                    sslContext.init(null, null, new SecureRandom());
+                    TrustManagerFactory tmf = null;
+                    KeyManagerFactory kmf = null;
+                    if (config.sslRootsFilePath() != null) {
+                        tmf = Utils.createTmf(
+                                config.sslRootsFilePath(),
+                                config.getSslRootFilePassword());
+                    }
+
+                    if (config.getCertificatePath() != null && config.getCertificateKeyPath() != null) {
+                        kmf = Utils.createKmf(config.getCertificatePath(), config.getCertificateKeyPath());
+                    }
+
+                    if (config.getCertificateP12FilePath() != null) {
+                        kmf = Utils.createKmfP12(config.getCertificateP12FilePath(), config.getKeyPassword());
+                    }
+
+                    SSLContext sslContext = Utils.buildSslContext(kmf, tmf);
+                    if (sslContext != null) {
+                        builder.sslContext(sslContext);
+                    }
                 }
-                builder.sslContext(sslContext);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -487,6 +504,7 @@ final class RestClient implements AutoCloseable {
         return errNonEmptyText(object.get(fieldName));
     }
 
+    //todo remove?
     private X509TrustManager getX509TrustManagerFromFile(@Nonnull final String filePath) {
         try {
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
