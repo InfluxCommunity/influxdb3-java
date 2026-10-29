@@ -129,7 +129,15 @@ public final class ClientConfig {
     private final String proxyUrl;
     private final Authenticator authenticator;
     private final Map<String, String> headers;
+
+    private final String certificatePath;
+    private final String certificateKeyPath;
+    private final String certificateP12FilePath;
+    private final char[] keyPassword;
+
     private final String sslRootsFilePath;
+    private final char[] sslRootFilePassword;
+
     private final boolean disableGRPCCompression;
     private final List<ClientInterceptor> interceptors;
 
@@ -337,6 +345,31 @@ public final class ClientConfig {
         return sslRootsFilePath;
     }
 
+    @Nullable
+    public char[] getSslRootFilePassword() {
+        return sslRootFilePassword;
+    }
+
+    @Nullable
+    public String getCertificatePath() {
+        return certificatePath;
+    }
+
+    @Nullable
+    public String getCertificateKeyPath() {
+        return certificateKeyPath;
+    }
+
+    @Nullable
+    public String getCertificateP12FilePath() {
+        return certificateP12FilePath;
+    }
+
+    @Nullable
+    public char[] getKeyPassword() {
+        return keyPassword;
+    }
+
     /**
      * Gets the (proxy) authenticator.
      *
@@ -424,6 +457,11 @@ public final class ClientConfig {
                 && Objects.equals(authenticator, that.authenticator)
                 && Objects.equals(headers, that.headers)
                 && Objects.equals(sslRootsFilePath, that.sslRootsFilePath)
+                && Arrays.equals(sslRootFilePassword, that.sslRootFilePassword)
+                && Objects.equals(certificatePath, that.certificatePath)
+                && Objects.equals(certificateKeyPath, that.certificateKeyPath)
+                && Objects.equals(certificateP12FilePath, that.certificateP12FilePath)
+                && Arrays.equals(keyPassword, that.keyPassword)
                 && disableGRPCCompression == that.disableGRPCCompression
                 && Objects.equals(interceptors, that.interceptors);
     }
@@ -434,7 +472,9 @@ public final class ClientConfig {
                 database, writePrecision, gzipThreshold, writeNoSync, writeAcceptPartial, writeUseV2Api,
                 timeout, writeTimeout, queryTimeout, allowHttpRedirects, disableServerCertificateValidation,
                 proxy, proxyUrl, authenticator, headers,
-                defaultTags, sslRootsFilePath, disableGRPCCompression, interceptors);
+                defaultTags, sslRootsFilePath, Arrays.hashCode(sslRootFilePassword), certificatePath,
+                certificateKeyPath, certificateP12FilePath, Arrays.hashCode(keyPassword),
+                disableGRPCCompression, interceptors);
     }
 
     @Override
@@ -459,6 +499,11 @@ public final class ClientConfig {
                 .add("headers=" + headers)
                 .add("defaultTags=" + defaultTags)
                 .add("sslRootsFilePath=" + sslRootsFilePath)
+                .add("sslRootFilePassword=" + Arrays.toString(sslRootFilePassword))
+                .add("certificatePath=" + certificatePath)
+                .add("certificateKeyPath=" + certificateKeyPath)
+                .add("certificateP12FilePath=" + certificateP12FilePath)
+                .add("keyPassword=" + Arrays.toString(keyPassword))
                 .add("disableGRPCCompression=" + disableGRPCCompression)
                 .toString();
     }
@@ -490,7 +535,15 @@ public final class ClientConfig {
         private String proxyUrl;
         private Authenticator authenticator;
         private Map<String, String> headers;
+
+        private String certificatePath;
+        private String certificateKeyPath;
+        private String certificateP12FilePath;
+        private char[] keyPassword;
+
         private String sslRootsFilePath;
+        private char[] sslRootFilePassword;
+
         private boolean disableGRPCCompression;
         private List<ClientInterceptor> interceptors;
 
@@ -805,6 +858,45 @@ public final class ClientConfig {
             return this;
         }
 
+        @Nonnull
+        public Builder sslRootFilePassword(@Nullable final char[] sslRootFilePassword) {
+
+            this.sslRootFilePassword = sslRootFilePassword;
+            return this;
+        }
+
+        /**
+         * Sets the file paths for the certificate and its corresponding private key for secure connections.
+         *
+         * @param certificatePath the file path to the certificate file in PEM format, must not be null.
+         * @param certificateKeyPath the file path to the certificate's private key in PEM format, must not be null.
+         * @return the updated {@link ClientConfig.Builder} instance.
+         */
+        @Nonnull
+        public Builder certificateFilePath(@Nonnull final String certificatePath,
+                                           @Nonnull final String certificateKeyPath) {
+            this.certificatePath = certificatePath;
+            this.certificateKeyPath = certificateKeyPath;
+
+            return this;
+        }
+
+        @Nonnull
+        public Builder certificateP12FilePath(@Nonnull final String certificateP12FilePath,
+                                                                    @Nullable final char[] password) {
+            this.certificateP12FilePath = certificateP12FilePath;
+            this.keyPassword = password;
+
+            return this;
+        }
+
+        @Nonnull
+        public Builder keyPassword(@Nullable final char[] keyPassword) {
+
+            this.keyPassword = keyPassword;
+            return this;
+        }
+
         /**
          * Sets whether to disable gRPC compression. Default is 'false'.
          *
@@ -1023,6 +1115,11 @@ public final class ClientConfig {
         authenticator = builder.authenticator;
         headers = builder.headers;
         sslRootsFilePath = builder.sslRootsFilePath;
+        sslRootFilePassword = builder.sslRootFilePassword;
+        certificatePath = builder.certificatePath;
+        certificateKeyPath = builder.certificateKeyPath;
+        certificateP12FilePath = builder.certificateP12FilePath;
+        keyPassword = builder.keyPassword;
         disableGRPCCompression = builder.disableGRPCCompression;
         interceptors = builder.interceptors;
     }

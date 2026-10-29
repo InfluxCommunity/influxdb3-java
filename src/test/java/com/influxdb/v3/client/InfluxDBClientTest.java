@@ -26,11 +26,22 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
+import mockwebserver3.MockResponse;
+import mockwebserver3.MockWebServer;
+import okhttp3.Headers;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.influxdb.v3.client.config.ClientConfig;
+import com.influxdb.v3.client.internal.Utils;
+
+import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 
 public class InfluxDBClientTest {
 
@@ -144,10 +155,10 @@ public class InfluxDBClientTest {
         Map<String, String> defaultTags = Map.of("unit", "U2", "model", "M1");
 
         try (InfluxDBClient client = InfluxDBClient.getInstance(
-          "http://localhost:8086",
-          "MY-TOKEN".toCharArray(),
-          "MY-DATABASE",
-          defaultTags)) {
+                "http://localhost:8086",
+                "MY-TOKEN".toCharArray(),
+                "MY-DATABASE",
+                defaultTags)) {
             Assertions.assertThat(client).isNotNull();
         }
     }
@@ -166,4 +177,162 @@ public class InfluxDBClientTest {
                             + "class com.influxdb.v3.client.internal.InfluxDBClientImpl");
         }
     }
+
+    String tlsDir = "src/test/java/com/influxdb/v3/client/testdata/";
+
+    String influxdbCertPath = tlsDir + "influxdb.crt";
+    String influxdbKeyPath = tlsDir + "influxdb.key";
+    String influxdbP12 = tlsDir + "influxdb.p12";
+
+    String otherCertPath = tlsDir + "other-server.crt";
+    String otherKeyCertPath = tlsDir + "other-server.key";
+    String otherP12 = tlsDir + "other-server.p12";
+
+    String clientCertPath = tlsDir + "client.crt";
+    String clientKeyPath = tlsDir + "client.key";
+    String clientP12 = tlsDir + "client.p12";
+
+    char[] defaultPassword = "changeit".toCharArray();
+
+    record TlsTest(
+            @Nonnull String name,
+            @Nullable String certFilePath,
+            @Nullable String keyFilePath,
+            @Nullable String sslRootFilePath,
+            boolean expectSuccess
+    ) {
+    }
+
+    private List<TlsTest> tlsCases() {
+        return List.of(
+                new TlsTest(
+                        "Tls success with correct server certificate",
+                        null,
+                        null,
+                        influxdbCertPath,
+                        true
+                ),
+                new TlsTest(
+                        "Tls success with correct .p12 server certificate",
+                        null,
+                        null,
+                        influxdbP12,
+                        true
+                ),
+                new TlsTest(
+                        "Tls fail with incorrect server certificate",
+                        null,
+                        null,
+                        otherCertPath,
+                        false
+                ),
+                new TlsTest(
+                        "mtls success with correct client certificate .key and .crt file",
+                        clientCertPath,
+                        clientKeyPath,
+                        influxdbCertPath,
+                        true
+                ),
+                new TlsTest(
+                        "mtls success with correct client certificate .p12 file",
+                        clientP12,
+                        null,
+                        influxdbCertPath,
+                        true
+                ),
+                new TlsTest(
+                        "mtls fail with incorrect client certificate .crt and .key file",
+                        otherCertPath,
+                        otherKeyCertPath,
+                        influxdbCertPath,
+                        false
+                ),
+                new TlsTest(
+                        "mtls fail with incorrect client certificate .p12 file",
+                        otherP12,
+                        null,
+                        influxdbCertPath,
+                        false
+                )
+        );
+    }
+
+    @Test
+    public void testMutualTlsSuccess() throws Exception {
+        for (TlsTest tlsCase : tlsCases()) {
+            Throwable thrown = catchThrowable(() ->
+                    testTls(tlsCase.certFilePath, tlsCase.keyFilePath, tlsCase.sslRootFilePath));
+            if (!tlsCase.expectSuccess) {
+                Assertions.assertThat(thrown).isNotNull();
+                Assertions.assertThat(thrown).isInstanceOf(InfluxDBApiException.class);
+                Assertions.assertThat(thrown).hasMessageContaining("ssl");
+            } else {
+                Assertions.assertThat(thrown).isNull();
+            }
+        }
+    }
+
+    public void testTls(@Nullable final String certFilePath,
+                        @Nullable final String keyFilePath,
+                        @Nullable final String trustFilePath)
+            throws Exception {
+        MockWebServer mockServer = null;
+        InfluxDBClient client = null;
+        try {
+            mockServer = getMutualTlsMockServer(certFilePath != null);
+            ClientConfig.Builder configBuilder = new ClientConfig.Builder()
+                    .token("my-token".toCharArray())
+                    .database("mydb")
+                    .sslRootFilePassword(defaultPassword);
+            if (certFilePath != null) {
+                if (certFilePath.endsWith(".p12")) {
+                    configBuilder.certificateP12FilePath(certFilePath, defaultPassword);
+                } else {
+                    configBuilder.certificateFilePath(certFilePath, keyFilePath);
+                }
+            }
+
+            configBuilder.host(mockServer.url("/").url().toString());
+            if (trustFilePath != null) {
+                configBuilder.sslRootsFilePath(trustFilePath);
+                configBuilder.sslRootFilePassword(defaultPassword);
+            }
+            client = InfluxDBClient.getInstance(configBuilder.build());
+            client.writeRecord("mem,tag=one value=1.0");
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            if (client != null) {
+                client.close();
+            }
+
+            if (mockServer != null) {
+                mockServer.close();
+            }
+        }
+    }
+
+    private MockWebServer getMutualTlsMockServer(final boolean isMutualTls) throws Exception {
+        KeyManagerFactory kmf = Utils.createKmfP12(influxdbP12, defaultPassword);
+        var mockServer = new MockWebServer();
+        TrustManagerFactory tmf = null;
+        if (isMutualTls) {
+            tmf = Utils.createTmf(clientCertPath, defaultPassword);
+            mockServer.requireClientAuth();
+        }
+        SSLContext sslContext = Utils.buildSslContext(kmf, tmf);
+        mockServer.useHttps(sslContext.getSocketFactory());
+        mockServer.start();
+        mockServer.enqueue(createResponse());
+
+        return mockServer;
+    }
+
+    @Nonnull
+    protected MockResponse createResponse() {
+        return new MockResponse(200,
+                Headers.of("something", "something"),
+                "ok");
+    }
+
 }
