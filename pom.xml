@@ -540,9 +540,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${plugin.surefire.version}</version>
-                <configuration>
-                    <argLine>@{argLine} --add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
-                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.junit.vintage</groupId>
@@ -556,9 +553,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${plugin.surefire.version}</version>
-                <configuration>
-                    <argLine>@{argLine} --add-opens=java.base/java.nio=ALL-UNNAMED</argLine>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>
