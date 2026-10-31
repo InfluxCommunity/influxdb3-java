@@ -461,7 +461,7 @@
                                 **/target/**, **/*.jar, **/.git/**, **/.*, **/*.png, **/*.iml, **/*.bolt, .idea/**,
                                 **/*nightly*/**, **/.m2/**, LICENSE, **/*.md, **/.github/**, license_header.txt,
                                 release.properties/, **/pom.xml.releaseBackup, **/pom.xml.tag, **/semantic.yml,
-                                .circleci/config.yml, **/*.pem
+                                .circleci/config.yml, **/*.pem, **/*.p12, **/*.crt, **/*.key
                             </excludes>
                         </licenseSet>
                     </licenseSets>

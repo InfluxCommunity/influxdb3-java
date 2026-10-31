@@ -21,7 +21,6 @@
  */
 package com.influxdb.v3.client.internal;
 
-import java.io.FileInputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,6 +37,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -190,9 +191,28 @@ final class FlightSqlClient implements AutoCloseable {
             sslContextBuilder = GrpcSslContexts.forClient();
             if (config.getDisableServerCertificateValidation()) {
                 sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-            } else if (config.sslRootsFilePath() != null) {
-                try (FileInputStream fileInputStream = new FileInputStream(config.sslRootsFilePath())) {
-                    sslContextBuilder.trustManager(fileInputStream);
+            } else {
+                TrustManagerFactory tmf = null;
+                KeyManagerFactory kmf = null;
+                if (config.sslRootsFilePath() != null) {
+                    tmf = Utils.createTmf(
+                            config.sslRootsFilePath(),
+                            config.getSslRootFilePassword());
+                }
+
+                if (config.getCertificatePath() != null && config.getCertificateKeyPath() != null) {
+                    kmf = Utils.createKmf(config.getCertificatePath(), config.getCertificateKeyPath());
+                }
+
+                if (config.getCertificateP12FilePath() != null) {
+                    kmf = Utils.createKmfP12(config.getCertificateP12FilePath(), config.getKeyPassword());
+                }
+
+                if (tmf != null) {
+                    sslContextBuilder.trustManager(tmf);
+                }
+                if (kmf != null) {
+                    sslContextBuilder.keyManager(kmf);
                 }
             }
             return sslContextBuilder.build();
