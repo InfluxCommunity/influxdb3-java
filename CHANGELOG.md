@@ -1,5 +1,11 @@
 ## 1.12.0 [unreleased]
 
+### Features
+
+1. [#470](https://github.com/InfluxCommunity/influxdb3-java/pull/470):
+   - Add support for mTLS.
+   - Support separated .crt and .key files or bundled certificate and key in one .p12 file.
+
 ### CI
 
 1. [#446](https://github.com/InfluxCommunity/influxdb3-java/pull/446): Sets up automated releasing to Maven Central
